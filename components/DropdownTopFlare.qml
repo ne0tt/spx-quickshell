@@ -68,7 +68,7 @@ Canvas {
     layer.enabled: blurShadow
     layer.effect: MultiEffect {
         blurEnabled: blurShadow
-        blur:    0.3
-        blurMax: 8
+        blur:    0.65
+        blurMax: 18
     }
 }

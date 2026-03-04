@@ -100,13 +100,13 @@ ShellRoot {
 
         property string fontFamily: config.fontFamily
         property int fontSize: 12
-        property int fontWeight: Font.Regular
+        property int fontWeight: Font.Normal
 
         // Semi-transparent primary colour used for dim/inactive states
         readonly property color dimPrimary: Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.4)
 
         // Cached focused screen lookup (avoids repeated array searches)
-        readonly property var focusedScreen: Quickshell.screens.find(s => s.name === Hyprland.focusedMonitor.name) ?? root.screen
+        readonly property var focusedScreen: Quickshell.screens.find(s => s.name === Hyprland.focusedMonitor?.name) ?? root.screen
 
         // Close every open dropdown/drawer in one call
         function closeAllDropdowns() {
@@ -290,7 +290,7 @@ ShellRoot {
                         backgroundColor: colors.col_background
                         fontFamily: root.fontFamily
                         fontSize: 15
-                        fontWeight: root.Regular
+                        fontWeight: root.fontWeight
                     }
                 }
 
