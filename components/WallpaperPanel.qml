@@ -1,15 +1,15 @@
-// components/VlanPanel.qml
+// components/WallpaperPanel.qml
 
 import QtQuick
 
 // ============================================================
-// VLAN PANEL — bar icon button for the VLAN dropdown.
+// WALLPAPER PANEL — bar icon button for the wallpaper picker.
 // ============================================================
 Item {
     id: root
 
     property string fontFamily: config.fontFamily
-    property int    iconSize:   26
+    property int    iconSize:   20
 
     property bool   isActive:    false
     property color  accentColor: "white"
@@ -25,7 +25,7 @@ Item {
 
     Text {
         anchors.centerIn: parent
-        text:           "󰲝"
+        text:           "󰸉"
         font.family:    root.fontFamily
         font.pixelSize: root.iconSize
         color: root.isActive || root._hovered ? root.activeColor : root.accentColor

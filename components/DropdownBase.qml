@@ -89,7 +89,7 @@ PanelWindow {
     // ─── Footer ───────────────────────────────────────────
     // Always-visible zone at the very bottom — no margin or padding.
     // Default 32 = enough for just the hex sweep bar.
-    property int footerHeight: 32
+    property int footerHeight: 28
     property alias footerContent: _footerArea.data
 
     // ─── Content injection ────────────────────────────────
@@ -391,6 +391,7 @@ PanelWindow {
         // Fixed height, anchored to wrapper bottom.
         // Sits within the unified body background — no separate fill.
         // Hex sweeper has 10 px left/right margin.
+        // Clicking anywhere in the footer rolls up the panel.
         Item {
             id: _footerArea
             x: 16
@@ -403,7 +404,8 @@ PanelWindow {
                 id: _hexBar
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.verticalCenter: parent.verticalCenter
-                width: parent.width - 20
+                anchors.verticalCenterOffset: -5
+                width: parent.width - 30
                 height: 12
                 z: 100
                 backgroundColor: colors.col_background
@@ -412,6 +414,13 @@ PanelWindow {
                 trailColor: _base.accentColor
                 ambientColor: colors.col_main
                 sweepDuration: 1000
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                z: 101
+                onClicked: _base.closePanel()
             }
         }
     }

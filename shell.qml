@@ -267,43 +267,29 @@ ShellRoot {
                     }
 
                     // ---------------- Wallpaper Button ----------------
-                    Rectangle {
+                    WallpaperPanel {
                         id: wallpaperButton
-                        width: 32
-                        height: 24
-                        radius: 7
-                        color: colors.col_background
-                        border.color: "black"
-                        border.width: 1
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "󰸉"
-                            font.family: root.fontFamily
-                            font.pixelSize: 20
-                            color: wpDropdown.isOpen || wpBtnArea.containsMouse ? colors.col_source_color : colors.col_primary
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: 160
-                                }
+                        fontFamily:  root.fontFamily
+                        isActive:    wpDropdown.isOpen
+                        accentColor: colors.col_primary
+                        activeColor: colors.col_source_color
+                        hoverColor:  colors.col_source_color
+                        onClicked: function (clickX) {
+                            wpDropdown.panelX = clickX - wpDropdown.panelWidth / 2 - 16 + 250;
+                            if (wpDropdown.isOpen) {
+                                wpDropdown.closePanel();
+                            } else {
+                                root.switchPanel(() => wpDropdown.openPanel());
                             }
                         }
+                    }
 
-                        MouseArea {
-                            id: wpBtnArea
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            hoverEnabled: true
-                            onClicked: {
-                                var pos = wallpaperButton.mapToItem(null, 0, 0);
-                                wpDropdown.panelX = pos.x + wallpaperButton.width / 2 - wpDropdown.panelWidth / 2 - 16 + 250;
-                                if (wpDropdown.isOpen) {
-                                    wpDropdown.closePanel();
-                                } else {
-                                    root.switchPanel(() => wpDropdown.openPanel());
-                                }
-                            }
-                        }
+                    YayUpdatePanel {
+                        accentColor: colors.col_source_color
+                        backgroundColor: colors.col_background
+                        fontFamily: root.fontFamily
+                        fontSize: 13
+                        fontWeight: root.fontWeight
                     }
                 }
 
@@ -324,14 +310,6 @@ ShellRoot {
                         verticalCenter: parent.verticalCenter
                     }
                     spacing: 10
-
-                    YayUpdatePanel {
-                        accentColor: colors.col_source_color
-                        backgroundColor: colors.col_background
-                        fontFamily: root.fontFamily
-                        fontSize: 13
-                        fontWeight: root.fontWeight
-                    }
 
                     // VLAN BUTTON — opens / closes VlanDropdown
                     VlanPanel {

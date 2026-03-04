@@ -23,7 +23,7 @@ DropdownBase {
     property var _buf:          []     // accumulates {name, active} during wgProc run
 
     panelTitle:      "WireGuard"
-    panelIcon:       "󰆝"
+    panelIcon:       ""
     headerHeight:    34
     panelFullHeight: wgConnections.length > 0
         ? _padH + wgConnections.length * _cardH + (wgConnections.length - 1) * _gapH

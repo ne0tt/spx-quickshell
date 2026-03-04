@@ -15,7 +15,7 @@ DropdownBase {
     panelFullHeight: 274
     panelWidth:      270
     panelTitle:      "Network"
-    panelIcon:       "󰛳"
+    panelIcon:       "󰈀"
     headerHeight:    34
 
     // Refresh all info whenever the panel opens

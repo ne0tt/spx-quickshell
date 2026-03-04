@@ -68,14 +68,14 @@ DropdownBase {
                 id: bigIcon
                 anchors {
                     left: parent.left
-                    leftMargin: 18
+                    leftMargin: 10
                     top: parent.top
-                    topMargin: 24
+                    topMargin: -50
                 }
                 text: wDrop.wIcon
                 font.family: fontFamily
                 font.styleName: "Solid"
-                font.pixelSize: 58
+                font.pixelSize: 148
                 color: wDrop.accentColor
             }
 
@@ -88,7 +88,7 @@ DropdownBase {
                     top: parent.top
                     topMargin: 14
                 }
-                spacing: 3
+                spacing: 5
 
                 Text {
                     text: wDrop.wTemp
@@ -99,7 +99,7 @@ DropdownBase {
                 Text {
                     text: wDrop.wDesc
                     color: wDrop.dimColor
-                    font.pixelSize: 13
+                    font.pixelSize: 15
                     fontSizeMode: Text.HorizontalFit
                     minimumPixelSize: 9
                     width: currentCard.width - bigIcon.width - 14 - 36
@@ -111,7 +111,7 @@ DropdownBase {
             Row {
                 anchors {
                     bottom: parent.bottom
-                    bottomMargin: 20
+                    bottomMargin: 5
                     horizontalCenter: parent.horizontalCenter
                 }
                 spacing: 12
@@ -122,14 +122,14 @@ DropdownBase {
                         text: "\uf2c9"
                         font.family: fontFamily
                         font.styleName: "Solid"
-                        font.pixelSize: 11
+                        font.pixelSize: 13
                         color: wDrop.dimColor
                         anchors.verticalCenter: parent.verticalCenter
                     }
                     Text {
                         text: wDrop.wFeels
                         color: wDrop.dimColor
-                        font.pixelSize: 11
+                        font.pixelSize: 13
                         anchors.verticalCenter: parent.verticalCenter
                     }
                 }
@@ -140,14 +140,14 @@ DropdownBase {
                         text: "\uf043"
                         font.family: fontFamily
                         font.styleName: "Solid"
-                        font.pixelSize: 11
+                        font.pixelSize: 13
                         color: wDrop.dimColor
                         anchors.verticalCenter: parent.verticalCenter
                     }
                     Text {
                         text: wDrop.wHumidity
                         color: wDrop.dimColor
-                        font.pixelSize: 11
+                        font.pixelSize: 13
                         anchors.verticalCenter: parent.verticalCenter
                     }
                 }
@@ -158,14 +158,14 @@ DropdownBase {
                         text: "\uf72e"
                         font.family: fontFamily
                         font.styleName: "Solid"
-                        font.pixelSize: 11
+                        font.pixelSize: 13
                         color: wDrop.dimColor
                         anchors.verticalCenter: parent.verticalCenter
                     }
                     Text {
                         text: wDrop.wWind
                         color: wDrop.dimColor
-                        font.pixelSize: 11
+                        font.pixelSize: 13
                         anchors.verticalCenter: parent.verticalCenter
                     }
                 }
