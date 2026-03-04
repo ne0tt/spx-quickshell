@@ -15,7 +15,7 @@ DropdownBase {
     panelFullHeight: 186
     panelWidth:      260
     panelTitle:      "Power Profile"
-    panelIcon:       ""
+    panelIcon:       "󰚥"
     headerHeight:    34
 
     // currentProfile is injected from PowerProfilePanel via shell.qml —

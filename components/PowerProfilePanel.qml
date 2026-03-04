@@ -6,7 +6,7 @@ Rectangle {
     id: powerProfilePanel
 
     property string fontFamily:      config.fontFamily
-    property int    iconSize:        16
+    property int    iconSize:        14
     property int    fontWeight:      Font.Bold
 
     property bool   isActive:        false
