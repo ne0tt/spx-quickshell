@@ -282,7 +282,7 @@ DropdownBase {
                         anchors.verticalCenter: parent.verticalCenter
                         text: "󱘖"
                         font.family: fontFamily
-                        font.pixelSize: 24
+                        font.pixelSize: 18
                         color: netDrop.accentColor
                     }
                     Text {
