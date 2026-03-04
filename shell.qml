@@ -102,57 +102,29 @@ ShellRoot {
         property int fontSize: 11
         property int fontWeight: Font.Bold
 
+        // Semi-transparent primary colour used for dim/inactive states
+        readonly property color dimPrimary: Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.4)
+
         // Cached focused screen lookup (avoids repeated array searches)
         readonly property var focusedScreen: Quickshell.screens.find(s => s.name === Hyprland.focusedMonitor.name) ?? root.screen
 
         // Close every open dropdown/drawer in one call
         function closeAllDropdowns() {
-            const panels = [
-                {
-                    obj: calendarPanel,
-                    close: () => calendarPanel.closePanel()
-                },
-                {
-                    obj: volumeDropdown,
-                    close: () => volumeDropdown.closePanel()
-                },
-                {
-                    obj: vlanDropdown,
-                    close: () => vlanDropdown.closePanel()
-                },
-                {
-                    obj: powerProfileDropdown,
-                    close: () => powerProfileDropdown.closePanel()
-                },
-                {
-                    obj: networkDropdown,
-                    close: () => networkDropdown.closePanel()
-                },
-                {
-                    obj: vpnDropdown,
-                    close: () => vpnDropdown.closePanel()
-                },
-                {
-                    obj: bluetoothDropdown,
-                    close: () => bluetoothDropdown.closePanel()
-                },
-                {
-                    obj: wpDropdown,
-                    close: () => wpDropdown.closePanel()
-                },
-                {
-                    obj: weatherDropdown,
-                    close: () => weatherDropdown.closePanel()
-                },
-                {
-                    obj: appLauncher,
-                    close: () => appLauncher.closeLauncher()
-                }
+            const dropdowns = [
+                calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown,
+                networkDropdown, vpnDropdown, bluetoothDropdown, wpDropdown, weatherDropdown
             ];
-            for (const panel of panels) {
-                if (panel.obj.isOpen)
-                    panel.close();
+            for (const p of dropdowns) {
+                if (p.isOpen) p.closePanel();
             }
+            if (appLauncher.isOpen) appLauncher.closeLauncher();
+        }
+
+        // Returns true if any panel/dropdown is currently open
+        function isAnyPanelOpen() {
+            return [calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown,
+                    networkDropdown, vpnDropdown, bluetoothDropdown, wpDropdown,
+                    weatherDropdown, appLauncher].some(p => p.isOpen);
         }
 
         // Close all open panels, then open the requested one after animation
@@ -169,8 +141,7 @@ ShellRoot {
             }
         }
         function switchPanel(openFn) {
-            const panels = [calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown, networkDropdown, vpnDropdown, bluetoothDropdown, wpDropdown, weatherDropdown, appLauncher];
-            const anyOpen = panels.some(p => p.isOpen);
+            const anyOpen = root.isAnyPanelOpen();
             root.closeAllDropdowns();
             if (anyOpen) {
                 root.pendingOpen = openFn;
@@ -230,8 +201,6 @@ ShellRoot {
                 radius: 10
                 // Qt.rgba keeps children fully opaque — unlike `opacity` which cascades
                 color: Qt.rgba(colors.col_main.r, colors.col_main.g, colors.col_main.b, 1.0)
-                border.color: "black"
-                border.width: 0
 
                 // Close any open dropdown when the bare bar is clicked
                 MouseArea {
@@ -484,7 +453,7 @@ ShellRoot {
                             accentColor: colors.col_primary
                             activeColor: colors.col_source_color
                             hoverColor:  colors.col_source_color
-                            dimColor: Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.4)
+                            dimColor: root.dimPrimary
                             onClicked: function (clickX) {
                                 bluetoothDropdown.panelX = Math.max(0, clickX - bluetoothDropdown.panelWidth / 2 - 16)
                                 if (bluetoothDropdown.isOpen) {

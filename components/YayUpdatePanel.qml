@@ -8,7 +8,7 @@ Rectangle {
     property color borderColor: "black"
     property string fontFamily: config.fontFamily
     property int    fontSize:   11
-    property int    iconSize:   14
+    property int    iconSize:   20
     property int    fontWeight: Font.Bold
 
     property bool   isActive:   false
@@ -41,7 +41,7 @@ Rectangle {
         Text {
             id: updateIcon
             anchors.verticalCenter: parent.verticalCenter
-            text: ""
+            text: ""
             color: yayUpdatePanel.isActive ? yayUpdatePanel.activeColor : yayUpdatePanel._hovered ? yayUpdatePanel.hoverColor : yayUpdatePanel.accentColor
             font.family: yayUpdatePanel.fontFamily
             font.styleName: "Solid"
