@@ -11,8 +11,8 @@ Item {
 
     property string fontFamily:      ""
     property int    fontSize:        11
-    property int    iconSize:        20
-    property int    fontWeight:      Font.Bold
+    property int    iconSize:        16
+    property int    fontWeight:      Font.Regular
 
     property string ip:              ""
 
@@ -33,7 +33,7 @@ Item {
     // ── Pill background ──────────────────────────────────────
     Rectangle {
         id: pill
-        width:        pillRow.implicitWidth + 30
+        width:        150
         height:       24
         radius:       7
         color:        root.backgroundColor

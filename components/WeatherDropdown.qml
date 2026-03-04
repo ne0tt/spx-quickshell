@@ -70,12 +70,12 @@ DropdownBase {
                     left: parent.left
                     leftMargin: 10
                     top: parent.top
-                    topMargin: -50
+                    topMargin: 10
                 }
                 text: wDrop.wIcon
                 font.family: fontFamily
                 font.styleName: "Solid"
-                font.pixelSize: 148
+                font.pixelSize: 86
                 color: wDrop.accentColor
             }
 
@@ -119,7 +119,7 @@ DropdownBase {
                 Row {
                     spacing: 4
                     Text {
-                        text: "\uf2c9"
+                        text: ""
                         font.family: fontFamily
                         font.styleName: "Solid"
                         font.pixelSize: 13
@@ -137,7 +137,7 @@ DropdownBase {
                 Row {
                     spacing: 4
                     Text {
-                        text: "\uf043"
+                        text: ""
                         font.family: fontFamily
                         font.styleName: "Solid"
                         font.pixelSize: 13
@@ -155,7 +155,7 @@ DropdownBase {
                 Row {
                     spacing: 4
                     Text {
-                        text: "\uf72e"
+                        text: ""
                         font.family: fontFamily
                         font.styleName: "Solid"
                         font.pixelSize: 13
@@ -196,7 +196,7 @@ DropdownBase {
                         text: ""
                         font.family: fontFamily
                         font.styleName: "Solid"
-                        font.pixelSize: 60
+                        font.pixelSize: 26
                         color: "#f5a623"
                         anchors.verticalCenter: parent.verticalCenter
                     }
@@ -222,7 +222,7 @@ DropdownBase {
                         text: ""
                         font.family: fontFamily
                         font.styleName: "Solid"
-                        font.pixelSize: 60
+                        font.pixelSize: 26
                         color: "#e07b39"
                         anchors.verticalCenter: parent.verticalCenter
                     }

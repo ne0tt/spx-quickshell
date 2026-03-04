@@ -28,11 +28,11 @@ Rectangle {
         repeat: false
         onTriggered: vpnModule._stableVisible = false
     }
-    property int vpnBoxWidth: 110
+    property int vpnBoxWidth: 150
     property string fontFamily: config.fontFamily
     property int    fontSize:   11
-    property int    iconSize:   14
-    property int    fontWeight: Font.Bold
+    property int    iconSize:   16
+    property int    fontWeight: Font.Normal
 
     property bool   isActive:   false
     property color  accentColor: "#2decec"
@@ -83,7 +83,7 @@ Rectangle {
                 pixelSize: fontSize
                 weight: fontWeight
             }
-            text: vpnModule.showVpnIp ? vpnModule.vpnIp : "VPN CONNECTED"
+            text: vpnModule.showVpnIp ? vpnModule.vpnIp : " VPN CONNECTED"
             opacity: 1.0
             Behavior on color { ColorAnimation { duration: 160 } }
         }

@@ -9,7 +9,7 @@ Rectangle {
 
     property string fontFamily:      config.fontFamily
     property int    fontSize:        11
-    property int    iconSize:        24
+    property int    iconSize:        16
     property int    fontWeight:      Font.Bold
 
     property bool   isActive:        false

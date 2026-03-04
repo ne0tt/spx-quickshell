@@ -8,5 +8,5 @@ import QtQuick
 QtObject {
     // Font used everywhere in the bar and all dropdowns.
     // Change this one line to restyle the entire shell.
-    property string fontFamily: "JetBrainsMonoNF-Regular"
+    property string fontFamily: "Hack Nerd Font"
 }

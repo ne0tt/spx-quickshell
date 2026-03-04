@@ -9,7 +9,7 @@ Item {
     id: root
 
     property string fontFamily: config.fontFamily
-    property int    iconSize:   20
+    property int    iconSize:   16
 
     property bool   isActive:    false
     property color  accentColor: "white"

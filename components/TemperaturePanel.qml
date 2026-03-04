@@ -8,8 +8,8 @@ Item {
 
     property string fontFamily: config.fontFamily
     property int    fontSize:   11
-    property int    iconSize:   20
-    property int    fontWeight: Font.Bold
+    property int    iconSize:   16
+    property int    fontWeight: Font.Normal
 
     property bool   isActive:   false
     property color  accentColor: "white"

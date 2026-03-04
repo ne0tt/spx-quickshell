@@ -99,8 +99,8 @@ ShellRoot {
         // --------------------------------------------------------
 
         property string fontFamily: config.fontFamily
-        property int fontSize: 11
-        property int fontWeight: Font.Bold
+        property int fontSize: 12
+        property int fontWeight: Font.Regular
 
         // Semi-transparent primary colour used for dim/inactive states
         readonly property color dimPrimary: Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.4)
@@ -228,7 +228,7 @@ ShellRoot {
                     // ---------------- App Launcher Button ----------------
                     Rectangle {
                         id: launcherButton
-                        width: 70
+                        width: 75
                         height: 24
                         radius: 7
                         color: colors.col_background
@@ -236,10 +236,11 @@ ShellRoot {
                         border.width: 1
 
                         Text {
-                            anchors.centerIn: parent
-                            text: ""
+                               anchors.centerIn: parent
+                               anchors.verticalCenterOffset: 1
+                            text: ""
                             font.family: root.fontFamily
-                            font.pixelSize: 32
+                            font.pixelSize: 17
                             font.weight: Font.Bold
                             color: appLauncher.isOpen || launcherBtnArea.containsMouse ? colors.col_source_color : colors.col_primary
                             Behavior on color {
@@ -288,15 +289,16 @@ ShellRoot {
                         accentColor: colors.col_source_color
                         backgroundColor: colors.col_background
                         fontFamily: root.fontFamily
-                        fontSize: 13
-                        fontWeight: root.fontWeight
+                        fontSize: 15
+                        fontWeight: root.Regular
                     }
                 }
 
                 // CENTER SECTION – WORKSPACES
                 WorkspacesPanel {
                     id: workspaceContainer
-                    anchors.centerIn: parent
+                        anchors.centerIn: parent
+                        anchors.verticalCenterOffset: 1
                 }
 
                 // ##################################################
@@ -319,7 +321,8 @@ ShellRoot {
                         accentColor: colors.col_primary
                         activeColor: colors.col_source_color
                         hoverColor:  colors.col_source_color
-                        anchors.verticalCenter: parent.verticalCenter
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.verticalCenterOffset: 1
                         onClicked: function (clickX) {
                             vlanDropdown.panelX = Math.max(0, clickX - vlanDropdown.panelWidth / 2 - 16);
                             if (vlanDropdown.isOpen) {
@@ -342,7 +345,8 @@ ShellRoot {
                         activeColor:     colors.col_source_color
                         hoverColor:      colors.col_source_color
                         backgroundColor: colors.col_background
-                        anchors.verticalCenter: parent.verticalCenter
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.verticalCenterOffset: 1
                         onClicked: function (clickX) {
                             networkDropdown.panelX = Math.max(0, clickX - networkDropdown.panelWidth / 2 - 16);
                             if (networkDropdown.isOpen) {
@@ -378,6 +382,7 @@ ShellRoot {
                     Row {
                         spacing: 10
                         anchors.verticalCenter: parent.verticalCenter
+                            anchors.verticalCenterOffset: 1
                         height: parent.height
 
                         // BLUETOOTH TOGGLE
@@ -473,7 +478,7 @@ ShellRoot {
                     ClockPanel {
                         id: clockWidget
                         fontFamily: root.fontFamily
-                        fontSize: 13
+                        fontSize: 12
                         fontBold: true
                         textColor: calendarPanel.isOpen ? colors.col_source_color : colors.col_primary
                         backgroundColor: colors.col_background

@@ -99,7 +99,7 @@ Item {
                 anchors.centerIn: parent
                 text: card.cardIcon
                 font.family: card.fontFamily
-                font.pixelSize: 26
+                font.pixelSize: 19
                 color: card.isActive
                     ? card.accentColor
                     : Qt.rgba(card.dimColor.r, card.dimColor.g, card.dimColor.b, 0.40)
@@ -124,7 +124,7 @@ Item {
             Text {
                 visible: card.subtitle !== ""
                 text:    card.subtitle
-                font.pixelSize: 10
+                font.pixelSize: 12
                 color: card.isActive
                     ? Qt.rgba(card.accentColor.r, card.accentColor.g, card.accentColor.b, 0.85)
                     : Qt.rgba(card.dimColor.r,    card.dimColor.g,    card.dimColor.b,    0.30)
