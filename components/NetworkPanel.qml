@@ -33,7 +33,7 @@ Item {
     // ── Pill background ──────────────────────────────────────
     Rectangle {
         id: pill
-        width:        pillRow.implicitWidth + 20
+        width:        pillRow.implicitWidth + 30
         height:       24
         radius:       7
         color:        root.backgroundColor

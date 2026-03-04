@@ -15,7 +15,7 @@ DropdownBase {
     panelFullHeight: 416
     panelWidth:      620
     panelTitle:      "Wallpaper"
-    panelIcon:       "󰠉"
+    panelIcon:       "󰸉"
     headerHeight:    34
 
     // Request keyboard focus from the compositor while the panel is open
