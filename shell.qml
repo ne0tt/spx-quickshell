@@ -374,45 +374,24 @@ ShellRoot {
                     }
 
                     // ETHERNET IP
-                    Rectangle {
-                        id: ethernetPanel
-                        width: 120
-                        height: 24
-                        radius: 7
-                        color: colors.col_background
-                        border.color: "black"
-                        border.width: 1
-                        visible: networkDropdown.infoIp !== "—" && networkDropdown.infoIp !== ""
+                    NetworkPanel {
+                        id: networkPanel
+                        fontFamily:      root.fontFamily
+                        fontSize:        root.fontSize
+                        fontWeight:      root.fontWeight
+                        ip:              networkDropdown.infoIp
+                        isActive:        networkDropdown.isOpen
+                        accentColor:     colors.col_primary
+                        activeColor:     colors.col_source_color
+                        hoverColor:      colors.col_source_color
+                        backgroundColor: colors.col_background
                         anchors.verticalCenter: parent.verticalCenter
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "  " + networkDropdown.infoIp
-                            font.family: root.fontFamily
-                            font.pixelSize: root.fontSize
-                            font.weight: root.fontWeight
-                            color: networkDropdown.isOpen || ethernetBtnArea.containsMouse ? colors.col_source_color : colors.col_primary
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: 160
-                                }
-                            }
-                        }
-
-                        MouseArea {
-                            id: ethernetBtnArea
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            hoverEnabled: true
-                            onClicked: {
-                                var pos = ethernetPanel.mapToItem(null, 0, 0);
-                                var globalX = pos.x + ethernetPanel.width / 2;
-                                networkDropdown.panelX = Math.max(0, globalX - networkDropdown.panelWidth / 2 - 16);
-                                if (networkDropdown.isOpen) {
-                                    networkDropdown.closePanel();
-                                } else {
-                                    root.switchPanel(() => networkDropdown.openPanel());
-                                }
+                        onClicked: function (clickX) {
+                            networkDropdown.panelX = Math.max(0, clickX - networkDropdown.panelWidth / 2 - 16);
+                            if (networkDropdown.isOpen) {
+                                networkDropdown.closePanel();
+                            } else {
+                                root.switchPanel(() => networkDropdown.openPanel());
                             }
                         }
                     }
