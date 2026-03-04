@@ -4,12 +4,14 @@ A highly customized Wayland status bar and system interface built with [Quickshe
 
 ## Discalaimer
 
-This was created out of a fun learning project - Inspiration taken from end_4, Moctalia etc - Love them drawer animations.
-This is no way to be taken as a "this is how to do a thing..." it is purely "this is how I have done a thing"
+This was created out of a fun learning project - Inspiration taken from end_4, Noctalia etc - Love them drawer animations!
+This is in no way to be taken as a "this is how to do a thing..." it is purely "this is how I have done a thing..."
 Much of the code was initially fleshed out using Claude AI.
 
 I'm putting this out there in the hope it may inspire or help people like me that like the lok of quickshell but wanted to rtry an build something from the ground up rather than using someone elses dots.
+
 Feel free to use however you want but it will be some what unsupported.
+
 I will continue to update as I learn more about quickshell etc.
 Feel free to let me know if I am doing anything horribly wrong or anything can be improved.
 
