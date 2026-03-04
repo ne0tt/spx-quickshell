@@ -33,16 +33,16 @@ QtObject {
 
     // ── Helpers ────────────────────────────────────────────
     function _codeToIcon(c) {
-        if (c === 0)  return "\uf185"
-        if (c <= 2)   return "\uf6c4"
-        if (c === 3)  return "\uf0c2"
-        if (c <= 48)  return "\uf75f"
-        if (c <= 55)  return "\uf740"
-        if (c <= 65)  return "\uf73d"
-        if (c <= 77)  return "\uf2dc"
-        if (c <= 82)  return "\uf740"
-        if (c <= 86)  return "\uf2dc"
-        return "\uf0e7"
+        if (c === 0)  return "󰖙"
+        if (c <= 2)   return "󰖙"
+        if (c === 3)  return "󰖕"
+        if (c <= 48)  return "󰖐"
+        if (c <= 55)  return "󰖖"
+        if (c <= 65)  return "󰖗"
+        if (c <= 77)  return "󰖘"
+        if (c <= 82)  return "󰖖"
+        if (c <= 86)  return "󰖘"
+        return "󰖙"
     }
 
     function _codeToDesc(c) {

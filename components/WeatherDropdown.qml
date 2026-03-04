@@ -68,7 +68,7 @@ DropdownBase {
                 id: bigIcon
                 anchors {
                     left: parent.left
-                    leftMargin: 10
+                    leftMargin: 20
                     top: parent.top
                     topMargin: 10
                 }

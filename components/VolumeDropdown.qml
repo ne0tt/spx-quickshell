@@ -2,6 +2,7 @@ import Quickshell
 import Quickshell.Io
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Effects
 
 // ============================================================
 // VOLUME DROPDOWN — extends DropdownBase (no boilerplate duplication)
@@ -10,10 +11,11 @@ DropdownBase {
     id: volDrop
     reloadableId: "volumeDropdown"
 
-    implicitHeight:  480
-    panelFullHeight: 376
+    implicitHeight:  396
+    panelFullHeight: 292
     panelWidth:      260
-    panelTitle:      "Volume"
+    panelTitle:      "Master volume"
+    panelTitleRight: volDrop.muted ? "󰖁  Muted" : volDrop.volume + "%"
     panelIcon:       "󰕾"
     headerHeight:    34
 
@@ -225,44 +227,14 @@ DropdownBase {
     // --------------------------------------------------------
     Item {
         x: 16 + 14
-        y: 16 + volDrop.headerHeight + 12
+        y: 16 + volDrop.headerHeight + 6
         width:  volDrop.panelWidth - 28
-        height: 100
+        height: 48
 
-        Row {
-            id: topRow
-            width: parent.width
-            height: 36
-            spacing: 10
-
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: volDrop.muted ? "󰝟" : (volDrop.volume > 50 ? "󰕾" : (volDrop.volume > 0 ? "󰖀" : "󰕿"))
-                font.family: fontFamily
-                font.pixelSize: 22
-                color: volDrop.muted ? volDrop.dimColor : volDrop.accentColor
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                    if (volDrop.volumeData) volDrop.volumeData.toggleMute()
-                    }
-                }
-            }
-
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: volDrop.muted ? "Muted" : volDrop.volume + "%"
-                color: volDrop.muted ? volDrop.dimColor : volDrop.textColor
-                font.pixelSize: 16
-                font.bold: true
-            }
-        }
 
         // Volume slider
         Item {
-            y: topRow.height + 8
+            y: 8
             width: parent.width
             height: 40
 
@@ -319,7 +291,7 @@ DropdownBase {
     // ────────────────────────────────────────────────────────
     Rectangle {
         x: 30
-        y: 162 + 8
+        y: 104 + 8
         width:  volDrop.panelWidth - 28
         height: 1
         color: Qt.rgba(volDrop.dimColor.r, volDrop.dimColor.g, volDrop.dimColor.b, 0.2)
@@ -327,9 +299,9 @@ DropdownBase {
 
     Item {
         x: 16 + 14
-        y: 162 + 8 + 14
+        y: 104 + 8 + 14
         width:  volDrop.panelWidth - 28
-        height: 214
+        height: 216
 
         // Header
         Row {
@@ -370,21 +342,37 @@ DropdownBase {
             // Album art square
             Rectangle {
                 id: artBox
-                width: 72
-                height: 72
-                radius: 8
+                width: 74
+                height: 74
+                radius: 10
                 color: Qt.rgba(volDrop.dimColor.r, volDrop.dimColor.g, volDrop.dimColor.b, 0.15)
-                clip: true
+
+                // Hidden rounded mask — layer.enabled forces it to render even when invisible
+                Rectangle {
+                    id: artImageMask
+                    anchors.fill: parent
+                    anchors.margins: 2
+                    radius: artBox.radius - 1
+                    color: "white"
+                    layer.enabled: true
+                    visible: false
+                }
 
                 Image {
                     id: artImage
                     anchors.fill: parent
+                    anchors.margins: 2
                     source: volDrop.mediaArtUrl
                     fillMode: Image.PreserveAspectCrop
                     smooth: true
                     cache: false
                     asynchronous: true
                     visible: volDrop.mediaArtUrl !== "" && status === Image.Ready
+                    layer.enabled: true
+                    layer.effect: MultiEffect {
+                        maskEnabled: true
+                        maskSource: artImageMask
+                    }
                 }
 
                 // Placeholder icon when no art available
@@ -395,6 +383,15 @@ DropdownBase {
                     font.pixelSize: 28
                     color: Qt.rgba(volDrop.accentColor.r, volDrop.accentColor.g, volDrop.accentColor.b, 0.4)
                     visible: artImage.status !== Image.Ready || volDrop.mediaArtUrl === ""
+                }
+
+                // Border overlay — rendered last so it sits on top of the image
+                Rectangle {
+                    anchors.fill: parent
+                    radius: artBox.radius
+                    color: "transparent"
+                    border.width: 1.5
+                    border.color: accentColor
                 }
             }
 

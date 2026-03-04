@@ -83,6 +83,7 @@ PanelWindow {
     // Defaults to 0 so existing subclasses are unaffected.
     property int    headerHeight:      0
     property string panelTitle:        ""
+    property string panelTitleRight:   ""  // optional right-aligned label in the header row
     property string panelIcon:         ""  // nerd-font / unicode glyph shown left of title
     property alias  headerContent: _panelHeader.data
 
@@ -360,7 +361,7 @@ PanelWindow {
                 id: _headerTitle
                 anchors.left: _headerIcon.visible ? _headerIcon.right : parent.left
                 anchors.leftMargin: 10
-                anchors.right: parent.right
+                anchors.right: _headerTitleRight.visible ? _headerTitleRight.left : parent.right
                 anchors.rightMargin: 10
                 anchors.verticalCenter: parent.verticalCenter
                 text: _base.panelTitle
@@ -369,6 +370,18 @@ PanelWindow {
                 font.weight: Font.Medium
                 elide: Text.ElideRight
                 visible: _base.panelTitle !== ""
+            }
+
+            Text {
+                id: _headerTitleRight
+                anchors.right: parent.right
+                anchors.rightMargin: 15
+                anchors.verticalCenter: parent.verticalCenter
+                text: _base.panelTitleRight
+                color: _base.textColor
+                font.pixelSize: 18
+                font.weight: Font.Medium
+                visible: _base.panelTitleRight !== ""
             }
         }
 
