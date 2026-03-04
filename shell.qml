@@ -334,41 +334,20 @@ ShellRoot {
                     }
 
                     // VLAN BUTTON — opens / closes VlanDropdown
-                    Rectangle {
+                    VlanPanel {
                         id: vlanButton
-                        width: 32
-                        height: 24
-                        radius: 7
-                        color: "transparent"
-                        border.color: "transparent"
-                        border.width: 0
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "󰲝"
-                            font.family: root.fontFamily
-                            font.pixelSize: 22
-                            color: vlanDropdown.isOpen || vlanBtnArea.containsMouse ? colors.col_source_color : colors.col_primary
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: 160
-                                }
-                            }
-                        }
-
-                        MouseArea {
-                            id: vlanBtnArea
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            hoverEnabled: true
-                            onClicked: {
-                                var pos = vlanButton.mapToItem(null, 0, 0);
-                                vlanDropdown.panelX = Math.max(0, pos.x + vlanButton.width / 2 - vlanDropdown.panelWidth / 2 - 16);
-                                if (vlanDropdown.isOpen) {
-                                    vlanDropdown.closePanel();
-                                } else {
-                                    root.switchPanel(() => vlanDropdown.openPanel());
-                                }
+                        fontFamily:  root.fontFamily
+                        isActive:    vlanDropdown.isOpen
+                        accentColor: colors.col_primary
+                        activeColor: colors.col_source_color
+                        hoverColor:  colors.col_source_color
+                        anchors.verticalCenter: parent.verticalCenter
+                        onClicked: function (clickX) {
+                            vlanDropdown.panelX = Math.max(0, clickX - vlanDropdown.panelWidth / 2 - 16);
+                            if (vlanDropdown.isOpen) {
+                                vlanDropdown.closePanel();
+                            } else {
+                                root.switchPanel(() => vlanDropdown.openPanel());
                             }
                         }
                     }

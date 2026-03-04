@@ -21,7 +21,7 @@ Item {
 
     signal clicked(real clickX)
 
-    width:  iconSize + 4
+    width:  20
     height: 24
 
     Text {

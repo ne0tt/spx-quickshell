@@ -4,7 +4,7 @@ import QtQuick
 
 Item {
     id: root
-    width: 40
+    width: 50
     height: 24
 
     // ============================================================
@@ -12,7 +12,7 @@ Item {
     // ============================================================
     property string fontFamily: config.fontFamily
     property int    fontSize:   11
-    property int    iconSize:   20
+    property int    iconSize:   25
     property int    fontWeight: Font.Bold
 
     property bool   isActive:   false

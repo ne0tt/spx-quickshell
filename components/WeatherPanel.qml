@@ -9,7 +9,7 @@ Rectangle {
 
     property string fontFamily:      config.fontFamily
     property int    fontSize:        11
-    property int    iconSize:        21
+    property int    iconSize:        24
     property int    fontWeight:      Font.Bold
 
     property bool   isActive:        false
@@ -26,7 +26,7 @@ Rectangle {
 
     signal clicked(real clickX)
 
-    width:  40
+    width:  60
     height: 24
     radius: 7
     color:  backgroundColor
