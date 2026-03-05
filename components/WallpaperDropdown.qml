@@ -19,7 +19,7 @@ DropdownBase {
     headerHeight:    34
 
     // Request keyboard focus from the compositor while the panel is open
-    WlrLayershell.keyboardFocus: panelVisible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: panelVisible ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
     // --------------------------------------------------------
     // STATE

@@ -237,7 +237,11 @@ PanelWindow {
 
     // ─── Drop shadow (sibling so blur escapes _wrapper clip) ─
     Item {
+        id: _shadowItem
         visible: _wrapper.visible
+        // Fade with the hex bar so MultiEffect has time to initialize
+        // before the shadow is visible — prevents the 1-frame black flash.
+        opacity: _hexBar.opacity
         x: _wrapper.x
         y: _wrapper.y
         z: _base.panelZ - 1

@@ -21,8 +21,7 @@ import QtQuick.Effects
 // ============================================================
 PanelWindow {
     id: overlay
-
-    anchors.top:   true
+    reloadableId: "workspaceGlowOverlay"
     anchors.left:  true
     anchors.right: true
     implicitHeight: 80        // same as the main bar window

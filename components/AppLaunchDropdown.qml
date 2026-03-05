@@ -24,8 +24,7 @@ DropdownBase {
     reloadableId: "appLaunchDropdown"
 
     // Keyboard focus while open ─────────────────────────────
-    // Gives the TextInput exclusive keyboard access so typing
-    // works without clicking first.
+    // Exclusive so typing works immediately without clicking the search field first.
     WlrLayershell.keyboardFocus: _drop.isOpen
                                  ? WlrKeyboardFocus.Exclusive
                                  : WlrKeyboardFocus.None

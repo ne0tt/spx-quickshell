@@ -43,8 +43,7 @@ DropdownBase {
     property QtObject btData: null
     readonly property bool btPowered: btData ? btData.btPowered : false
 
-    // Non-queryable states — tracked locally; defaults assume enabled.
-    // Reset to defaults on shell reload (intentional: no persistent state needed).
+    // Non-queryable states — persisted to settings.json between restarts.
     property bool animations:       true
     property bool blur:             true
     // false = dropdown launcher centred in bar; true = floating rofi-style launcher
@@ -54,6 +53,85 @@ DropdownBase {
     property bool _nightLightBusy: false
     property bool _dndBusy:        false
     property bool _idleBusy:       false
+
+    // ── State persistence ─────────────────────────────────
+    // File: <quickshell config dir>/settings.json
+    // Only animations / blur / launcherFloating are saved;
+    // the other toggles are read from the system on every open.
+    readonly property url    _stateUrl:  Qt.resolvedUrl("../settings.json")
+    readonly property string _statePath: _stateUrl.toString().replace("file://", "")
+    property bool _loaded: false  // guard: don't save during initial load
+
+    // Load state on startup
+    Component.onCompleted: _loadProc.running = true
+
+    // Save whenever a persistent value changes (after initial load)
+    onAnimationsChanged:       { if (_loaded) _save() }
+    onBlurChanged:             { if (_loaded) _save() }
+    onLauncherFloatingChanged: { if (_loaded) _save() }
+
+    // Read the JSON file; apply values, then apply hyprctl for non-default states
+    Process {
+        id: _loadProc
+        running: false
+        command: ["cat", settingsDrop._statePath]
+        stdout: SplitParser {
+            onRead: data => {
+                try {
+                    var s = JSON.parse(data)
+                    if (s.animations       !== undefined) settingsDrop.animations       = s.animations
+                    if (s.blur             !== undefined) settingsDrop.blur             = s.blur
+                    if (s.launcherFloating !== undefined) settingsDrop.launcherFloating = s.launcherFloating
+                } catch (e) {}
+                // Re-apply hyprctl for any non-default state that survived a reload
+                if (!settingsDrop.animations) { animationsProc.target = false; animationsProc.running = true }
+                if (!settingsDrop.blur)       { blurProc.target = false;       blurProc.running = true }
+            }
+        }
+        // Always save after load: creates the file on first run and writes back on reload.
+        onExited: (code, status) => {
+            settingsDrop._loaded = true
+            _save()
+        }
+    }
+
+    // Write compact JSON imperatively — JSON is computed fresh inside _save()
+    // and stored in jsonToWrite so there are no binding-evaluation timing issues.
+    property bool   _pendingSave: false
+    property string _latestJson:  ""
+
+    function _save() {
+        // Compute eagerly right now — avoids stale-binding "one step behind" bug
+        var json = JSON.stringify({
+            animations:       settingsDrop.animations,
+            blur:             settingsDrop.blur,
+            launcherFloating: settingsDrop.launcherFloating
+        })
+        if (_saveProc.running) {
+            _pendingSave = true
+            _latestJson  = json   // keep newest value for the follow-up write
+        } else {
+            _saveProc.jsonToWrite = json
+            _saveProc.running = true
+        }
+    }
+
+    Process {
+        id: _saveProc
+        running: false
+        property string jsonToWrite: ""
+        command: ["python3", "-c",
+            "import sys; open(sys.argv[1],'w').write(sys.argv[2])",
+            settingsDrop._statePath,
+            jsonToWrite]
+        onExited: {
+            if (settingsDrop._pendingSave) {
+                settingsDrop._pendingSave = false
+                _saveProc.jsonToWrite = settingsDrop._latestJson
+                _saveProc.running = true
+            }
+        }
+    }
 
     // Refresh queryable states whenever the panel opens
     onAboutToOpen: {

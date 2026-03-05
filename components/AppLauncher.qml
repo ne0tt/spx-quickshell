@@ -18,8 +18,7 @@ import QtQuick.Controls
 // ============================================================
 PanelWindow {
     id: launcher
-
-    // ─── Screen / window geometry ────────────────────────
+    reloadableId: "appLauncher"
     anchors.top:   true
     anchors.left:  true
     anchors.right: true
@@ -27,8 +26,7 @@ PanelWindow {
     exclusiveZone: 0
     color: "transparent"
 
-    // Grab keyboard exclusively while open, release when closed.
-    // WlrLayershell.keyboardFocus is set via the attached object for Exclusive mode.
+    // Grab keyboard exclusively while open so typing works immediately.
     WlrLayershell.keyboardFocus: _panel.visible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
     // When open: mask fills the whole window so click-outside is catchable.

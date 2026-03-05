@@ -550,6 +550,55 @@ ShellRoot {
     }
 
 
+    // ── Dropdown scrim ────────────────────────────────────────────
+    // Full-screen transparent catch-all on WlrLayer.Overlay.
+    // Declared BEFORE all dropdown PanelWindows so the compositor
+    // stacks it below them while still intercepting out-of-panel clicks.
+    // The mask shrinks to 0×0 when nothing is open, so it is fully
+    // click-through at rest and never eats normal desktop input.
+    PanelWindow {
+        id: _dropdownScrim
+        reloadableId: "dropdownScrim"
+        screen: root.screen
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+        anchors.top: true
+        anchors.left: true
+        anchors.right: true
+        implicitHeight: screen ? screen.height : 1080
+        exclusiveZone: 0
+        color: "transparent"
+
+        // Reactive: becomes true the moment any dropdown opens.
+        // QML resolves the IDs lazily, so forward refs (calendarPanel etc.) are fine.
+        readonly property bool anyOpen:
+            (typeof calendarPanel    !== "undefined" && calendarPanel.isOpen)    ||
+            (typeof volumeDropdown   !== "undefined" && volumeDropdown.isOpen)   ||
+            (typeof vlanDropdown     !== "undefined" && vlanDropdown.isOpen)     ||
+            (typeof powerProfileDropdown !== "undefined" && powerProfileDropdown.isOpen) ||
+            (typeof networkDropdown  !== "undefined" && networkDropdown.isOpen)  ||
+            (typeof vpnDropdown      !== "undefined" && vpnDropdown.isOpen)      ||
+            (typeof bluetoothDropdown !== "undefined" && bluetoothDropdown.isOpen) ||
+            (typeof wpDropdown       !== "undefined" && wpDropdown.isOpen)       ||
+            (typeof weatherDropdown  !== "undefined" && weatherDropdown.isOpen)  ||
+            (typeof settingsDropdown !== "undefined" && settingsDropdown.isOpen) ||
+            (typeof appLaunchDropdown !== "undefined" && appLaunchDropdown.isOpen) ||
+            (typeof appLauncher      !== "undefined" && appLauncher.isOpen)
+
+        mask: Region { item: _scrimMask }
+        Item {
+            id: _scrimMask
+            x: 0; y: 0
+            width:  _dropdownScrim.anyOpen ? _dropdownScrim.width  : 0
+            height: _dropdownScrim.anyOpen ? _dropdownScrim.height : 0
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: root.closeAllDropdowns()
+        }
+    }
+
     // CalendarPanel — drops down from the clock
     CalendarPanel {
         id: calendarPanel

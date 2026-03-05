@@ -32,8 +32,7 @@ import QtQuick.Effects
 // ============================================================
 PanelWindow {
     id: _overlay
-
-    // ── z-order: Overlay > Top (main bar) > Bottom > Background ──
+    reloadableId: "overlayPanel"
     WlrLayershell.layer: WlrLayer.Overlay
 
     // Never grab keyboard focus — the overlay is non-interactive by default.
