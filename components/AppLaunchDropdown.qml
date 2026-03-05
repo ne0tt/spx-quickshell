@@ -53,7 +53,12 @@ DropdownBase {
         }
         return base
     }
-    implicitHeight: panelFullHeight + 16 + footerHeight + 8
+    // Fixed maximum so the Wayland window never resizes when results appear —
+    // the panel expands downward purely via the inner _wrapper animation while
+    // the search box stays perfectly still.
+    // max panelFullHeight = padTop(8) + searchBox(44) + padBot(8) + divider(8) + maxList(190) + padBot(8) = 266
+    // max total           = 266 + ears(16) + footerHeight(28) + pad(8) = 318
+    implicitHeight: 320
 
     // ── App state ────────────────────────────────────────────
     property var  _appData:  []
