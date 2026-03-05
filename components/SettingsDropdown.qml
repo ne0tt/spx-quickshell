@@ -7,7 +7,6 @@ import QtQuick
 //
 // Toggles provided:
 //   • Night Light    — wlsunset warm colour temperature
-//   • Do Not Disturb — dunst notification pause
 //   • Animations     — Hyprland motion effects  (hyprctl keyword)
 //   • Blur           — compositor blur          (hyprctl keyword)
 //   • Idle Inhibit   — prevent screen sleep     (systemd-inhibit)
@@ -21,7 +20,7 @@ DropdownBase {
 
     // Row geometry — bump _rowCount when adding/removing toggle rows.
     // panelFullHeight is derived so implicitHeight stays correct automatically.
-    readonly property int _rowCount:  7
+    readonly property int _rowCount:  6
     readonly property int _rowH:      48   // SettingsToggleRow height
     readonly property int _gap:       8    // Column spacing
     readonly property int _padTop:    8    // top padding inside content area
@@ -36,7 +35,6 @@ DropdownBase {
 
     // ── Queryable toggle states ───────────────────────────────
     property bool nightLight:  false   // reflected from pgrep on open
-    property bool dnd:         false   // reflected from dunstctl on open
     property bool idleInhibit: false   // reflected from pgrep on open
 
     // Shared bluetooth state — injected from shell.qml (BluetoothState singleton)
@@ -51,7 +49,6 @@ DropdownBase {
 
     // Busy guards — prevent double-clicks during command execution
     property bool _nightLightBusy: false
-    property bool _dndBusy:        false
     property bool _idleBusy:       false
 
     // ── State persistence ─────────────────────────────────
@@ -136,7 +133,6 @@ DropdownBase {
     // Refresh queryable states whenever the panel opens
     onAboutToOpen: {
         nightLightCheck.running = true
-        dndCheck.running        = true
         idleCheck.running       = true
         if (settingsDrop.btData) settingsDrop.btData.refresh()
     }
@@ -187,35 +183,6 @@ DropdownBase {
         } else {
             nightLightEnable.running = true
         }
-    }
-
-    // ═══════════════════════════════════════════════════════
-    // DO NOT DISTURB — dunstctl
-    // ═══════════════════════════════════════════════════════
-
-    Process {
-        id: dndCheck
-        running: false
-        command: ["dunstctl", "is-paused"]
-        stdout: SplitParser {
-            onRead: data => {
-                settingsDrop.dnd = data.trim() === "true"
-                settingsDrop._dndBusy = false
-            }
-        }
-    }
-
-    Process {
-        id: dndToggle
-        running: false
-        command: ["dunstctl", "set-paused", "toggle"]
-        onExited: dndCheck.running = true
-    }
-
-    function toggleDnd() {
-        if (settingsDrop._dndBusy) return
-        settingsDrop._dndBusy = true
-        dndToggle.running = true
     }
 
     // ═══════════════════════════════════════════════════════
@@ -325,19 +292,6 @@ DropdownBase {
             textColor:   settingsDrop.textColor
             dimColor:    settingsDrop.dimColor
             onToggled:   settingsDrop.toggleNightLight()
-        }
-
-        SettingsToggleRow {
-            width:       parent.width
-            cardIcon:    "󰂛"
-            label:       "Do Not Disturb"
-            subtitle:    "Pause notifications"
-            checked:     settingsDrop.dnd
-            isBusy:      settingsDrop._dndBusy
-            accentColor: settingsDrop.accentColor
-            textColor:   settingsDrop.textColor
-            dimColor:    settingsDrop.dimColor
-            onToggled:   settingsDrop.toggleDnd()
         }
 
         SettingsToggleRow {
