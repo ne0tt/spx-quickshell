@@ -9,7 +9,6 @@ import QtQuick
 //   • Night Light    — wlsunset warm colour temperature
 //   • Animations     — Hyprland motion effects  (hyprctl keyword)
 //   • Blur           — compositor blur          (hyprctl keyword)
-//   • Idle Inhibit   — prevent screen sleep     (systemd-inhibit)
 //
 // Night Light defaults (wlsunset): -l 50 -L 14 -t 3500 -T 6500
 //   Adjust latitude (-l) and longitude (-L) to your location.
@@ -20,7 +19,7 @@ DropdownBase {
 
     // Row geometry — bump _rowCount when adding/removing toggle rows.
     // panelFullHeight is derived so implicitHeight stays correct automatically.
-    readonly property int _rowCount:  6
+    readonly property int _rowCount:  5
     readonly property int _rowH:      48   // SettingsToggleRow height
     readonly property int _gap:       8    // Column spacing
     readonly property int _padTop:    8    // top padding inside content area
@@ -37,7 +36,6 @@ DropdownBase {
 
     // ── Queryable toggle states ───────────────────────────────
     property bool nightLight:  false   // reflected from pgrep on open
-    property bool idleInhibit: false   // reflected from pgrep on open
 
     // Shared bluetooth state — injected from shell.qml (BluetoothState singleton)
     property QtObject btData: null
@@ -51,7 +49,6 @@ DropdownBase {
 
     // Busy guards — prevent double-clicks during command execution
     property bool _nightLightBusy: false
-    property bool _idleBusy:       false
 
     // Bar monitor list expand/collapse state
     property bool _monExpanded: false
@@ -146,7 +143,6 @@ DropdownBase {
     // Refresh queryable states whenever the panel opens
     onAboutToOpen: {
         nightLightCheck.running = true
-        idleCheck.running       = true
         if (settingsDrop.btData) settingsDrop.btData.refresh()
     }
 
@@ -235,48 +231,6 @@ DropdownBase {
     }
 
     // ═══════════════════════════════════════════════════════
-    // IDLE INHIBIT — systemd-inhibit
-    // ═══════════════════════════════════════════════════════
-
-    Process {
-        id: idleCheck
-        running: false
-        command: ["sh", "-c",
-            "pgrep -f 'systemd-inhibit.*sleep' > /dev/null && echo 1 || echo 0"]
-        stdout: SplitParser {
-            onRead: data => {
-                settingsDrop.idleInhibit = data.trim() === "1"
-                settingsDrop._idleBusy   = false
-            }
-        }
-    }
-
-    Process {
-        id: idleEnable
-        running: false
-        command: ["sh", "-c",
-            "systemd-inhibit --what=idle --who=Quickshell --why='Idle inhibit' sleep infinity &"]
-        onExited: idleCheck.running = true
-    }
-
-    Process {
-        id: idleDisable
-        running: false
-        command: ["sh", "-c", "pkill -f 'systemd-inhibit.*sleep'"]
-        onExited: idleCheck.running = true
-    }
-
-    function toggleIdleInhibit() {
-        if (settingsDrop._idleBusy) return
-        settingsDrop._idleBusy = true
-        if (settingsDrop.idleInhibit) {
-            idleDisable.running = true
-        } else {
-            idleEnable.running = true
-        }
-    }
-
-    // ═══════════════════════════════════════════════════════
     // BLUETOOTH POWER — delegated to BluetoothState
     // ═══════════════════════════════════════════════════════
 
@@ -329,19 +283,6 @@ DropdownBase {
             textColor:   settingsDrop.textColor
             dimColor:    settingsDrop.dimColor
             onToggled:   settingsDrop.toggleBlur()
-        }
-
-        SettingsToggleRow {
-            width:       parent.width
-            cardIcon:    "󰤄"
-            label:       "Idle Inhibit"
-            subtitle:    "Prevent screen sleep"
-            checked:     settingsDrop.idleInhibit
-            isBusy:      settingsDrop._idleBusy
-            accentColor: settingsDrop.accentColor
-            textColor:   settingsDrop.textColor
-            dimColor:    settingsDrop.dimColor
-            onToggled:   settingsDrop.toggleIdleInhibit()
         }
 
         SettingsToggleRow {
