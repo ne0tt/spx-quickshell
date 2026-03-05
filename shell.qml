@@ -643,6 +643,7 @@ ShellRoot {
     BluetoothDropdown {
         id: bluetoothDropdown
         screen: root.screen
+        btData: bluetoothState
     }
 
     // WallpaperDropdown — drops down from the wallpaper button
@@ -679,8 +680,9 @@ ShellRoot {
 
     // WorkspaceGlowOverlay — declared last so it renders above all other surfaces.
 
-    //WorkspaceGlowOverlay {
-    //    screen: root.screen
-    //}
+    WorkspaceGlowOverlay {
+        screen: root.screen
+        visible: appLaunchDropdown.isOpen
+    }
 
 }

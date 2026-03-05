@@ -89,11 +89,11 @@ Item {
             source: glowSource
             // Padding well beyond blurMax so blur feathers to zero before the edge
             anchors.centerIn: glowSource
-            width: glowSource.width + 15
+            width: glowSource.width + 10
             height: glowSource.height
             blurEnabled: true
-            blur: 0.9
-            blurMax: 45
+            blur: 0.6
+            blurMax: 55
             brightness: 0.3
             shadowEnabled: false
         }

@@ -24,12 +24,18 @@ DropdownBase {
     implicitHeight:  400
 
     // ── State ────────────────────────────────────────────────
-    property bool btPowered:    false
+    // Injected from shell.qml — BluetoothState is the single source of truth
+    property QtObject btData: null
+
+    readonly property bool btPowered: btData ? btData.btPowered : false
     property var  pairedDevices: []
     property var  _devBuf:       []
 
-    // Force panel to resize whenever BT power state changes
-    onBtPoweredChanged: { if (btDrop.isOpen) btDrop.resizePanel() }
+    // Resize panel and refresh device list whenever power state changes
+    onBtPoweredChanged: {
+        if (btDrop.isOpen) btDrop.resizePanel()
+        if (btDrop.btPowered) { btDrop._devBuf = []; statusProc.running = true }
+    }
 
     // Pre-load on startup so state is ready before first open
     Component.onCompleted: { btDrop._devBuf = []; statusProc.running = true }
@@ -42,22 +48,6 @@ DropdownBase {
         }
     }
 
-    // ── bluetoothctl monitor — debounced refresh ──────────────
-    Process {
-        running: true
-        command: ["bluetoothctl", "monitor"]
-        stdout: SplitParser {
-            onRead: data => btDebounce.restart()
-        }
-    }
-
-    Timer {
-        id: btDebounce
-        interval: 800
-        repeat: false
-        onTriggered: { btDrop._devBuf = []; statusProc.running = true }
-    }
-
     // ── Functions ────────────────────────────────────────────
     function _refresh() {
         btDrop._devBuf = []
@@ -65,8 +55,7 @@ DropdownBase {
     }
 
     function togglePower() {
-        powerProc.command = ["bluetoothctl", "power", btDrop.btPowered ? "off" : "on"]
-        powerProc.running = true
+        if (btData) btData.togglePower()
     }
 
     function connectDevice(addr) {
@@ -80,12 +69,11 @@ DropdownBase {
     }
 
     // ── Processes ────────────────────────────────────────────
-    // Poll power state and all paired devices in one script
+    // Enumerate paired devices only — power state comes from btData
     Process {
         id: statusProc
         running: false
         command: ["bash", "-c",
-            "echo STATUS:$(bluetoothctl show | awk '/Powered:/{print $2; exit}'); " +
             "bluetoothctl devices Paired | while read _ addr rest; do " +
             "  info=$(bluetoothctl info \"$addr\"); " +
             "  name=$(echo \"$info\" | awk -F': ' '/^\\tName:/{print $2; exit}'); " +
@@ -96,9 +84,7 @@ DropdownBase {
         stdout: SplitParser {
             onRead: data => {
                 var line = data.trim()
-                if (line.startsWith("STATUS:")) {
-                    btDrop.btPowered = line.substring(7).trim() === "yes"
-                } else if (line.startsWith("DEVICE:")) {
+                if (line.startsWith("DEVICE:")) {
                     var parts = line.substring(7).split("|")
                     if (parts.length >= 3) {
                         btDrop._devBuf.push({
@@ -112,14 +98,6 @@ DropdownBase {
         }
 
         onExited: btDrop.pairedDevices = btDrop._devBuf.slice()
-    }
-
-    // Toggle power
-    Process {
-        id: powerProc
-        running: false
-        command: []
-        onRunningChanged: if (!running) { command = []; Qt.callLater(btDrop._refresh) }
     }
 
     // Connect / disconnect a device

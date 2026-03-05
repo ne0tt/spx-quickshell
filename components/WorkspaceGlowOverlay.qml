@@ -79,7 +79,7 @@ PanelWindow {
         visible: overlay.focusedLocalIndex >= 0
 
         // Extra padding so blur feathers to zero before the item edge
-        readonly property int _pad: 30
+        readonly property int _pad: 10
 
         width:  overlay._wsItemW + _pad * 2
         height: overlay._wsItemH + _pad * 2
