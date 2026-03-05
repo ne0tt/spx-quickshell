@@ -385,13 +385,51 @@ DropdownBase {
                     visible: artImage.status !== Image.Ready || volDrop.mediaArtUrl === ""
                 }
 
-                // Border overlay — rendered last so it sits on top of the image
-                Rectangle {
+                // Rotating gradient border overlay
+                property real _artAngle: 0
+                Timer {
+                    id: __artAngleTimer
+                    running: volDrop.mediaAvailable
+                    interval: 40    // ~20 fps — throttled to reduce CPU load
+                    repeat: true
+                    onTriggered: parent._artAngle -= Math.PI * 2 / 48
+                }
+
+                Canvas {
+                    id: _artBorderCanvas
                     anchors.fill: parent
-                    radius: artBox.radius
-                    color: "transparent"
-                    border.width: 1.5
-                    border.color: accentColor
+
+                    property real angle: parent._artAngle
+                    onAngleChanged: { if (opacity > 0) requestPaint() }
+
+                    onPaint: {
+                        var ctx = getContext("2d")
+                        ctx.clearRect(0, 0, width, height)
+                        var bw = 2; var r = artBox.radius
+                        var x = bw/2; var y = bw/2
+                        var w = width - bw; var h = height - bw
+                        var cx = width/2; var cy = height/2
+                        var grad = ctx.createConicalGradient(cx, cy, angle)
+                        var sc = volDrop.accentColor
+                        var c1 = Qt.rgba(sc.r, sc.g, sc.b, 1.0).toString()
+                        grad.addColorStop(0,    c1)        // source_color half
+                        grad.addColorStop(0.5,  "#C47FD5") // purple half — chasing
+                        grad.addColorStop(1.0,  c1)        // wraps back seamlessly
+                        ctx.strokeStyle = grad
+                        ctx.lineWidth   = bw
+                        ctx.beginPath()
+                        ctx.moveTo(x+r, y)
+                        ctx.lineTo(x+w-r, y)
+                        ctx.arcTo(x+w, y,   x+w, y+r,   r)
+                        ctx.lineTo(x+w, y+h-r)
+                        ctx.arcTo(x+w, y+h, x+w-r, y+h, r)
+                        ctx.lineTo(x+r, y+h)
+                        ctx.arcTo(x, y+h,   x, y+h-r,   r)
+                        ctx.lineTo(x, y+r)
+                        ctx.arcTo(x, y,     x+r, y,     r)
+                        ctx.closePath()
+                        ctx.stroke()
+                    }
                 }
             }
 

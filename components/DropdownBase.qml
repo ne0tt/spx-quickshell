@@ -66,6 +66,8 @@ PanelWindow {
     // Theme defaults mirror shell.qml's colors object — override per-instance
     // only when a dropdown genuinely differs from the shell theme.
     property int barHeight: 16
+    property int openDuration: 480   // roll-up animation speed (ms)
+    property int closeDuration: 220  // roll-down animation speed (ms)
     property string fontFamily: config.fontFamily
     property color panelColor: colors.col_main
     property int panelFullHeight: 200
@@ -141,7 +143,7 @@ PanelWindow {
         property: "height"
         from: 0
         to: 16 + _base.headerHeight + _base.panelFullHeight + _base.footerHeight
-        duration: 280
+        duration: _base.openDuration
         easing.type: Easing.OutCubic
         onFinished: {
             _hexBar.trigger()
@@ -160,7 +162,7 @@ PanelWindow {
         target: _hexBar
         property: "opacity"
         from: 0; to: 1
-        duration: 280
+        duration: _base.openDuration
         easing.type: Easing.OutCubic
     }
 
@@ -218,7 +220,7 @@ PanelWindow {
         target: _wrapper
         property: "height"
         to: 0
-        duration: 220
+        duration: _base.closeDuration
         easing.type: Easing.InCubic
         onFinished: _wrapper.visible = false
     }

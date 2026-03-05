@@ -90,7 +90,7 @@ DropdownBase {
             var app = _drop._appData[i]
             if (app.name.toLowerCase().indexOf(q) !== -1)
                 filteredApps.append(app)
-            if (filteredApps.count >= 100) break
+            if (filteredApps.count >= 25) break
         }
         appList.currentIndex = filteredApps.count > 0 ? 0 : -1
     }
@@ -177,23 +177,87 @@ DropdownBase {
 
     // ── Search box ───────────────────────────────────────────
     Item {
-        x: 16 + 10
+        anchors.horizontalCenter: parent.horizontalCenter
         y: 16 + _drop._padTop
-        width:  _drop.panelWidth - 20
-        height: 44
+        width:  370
+        height: 40
 
+        // ── Rotating gradient border (Hyprland-style) ──────────────
+        // A conical gradient sweeps clockwise using col_source_color
+        // and #C47FD5, drawn onto a Canvas each animation tick.
+        property real _borderAngle: 0
+        Timer {
+            id: __borderAngleTimer
+            running: searchField.activeFocus
+            interval: 40    // ~20 fps — throttled to reduce CPU load
+            repeat: true
+            onTriggered: parent._borderAngle -= Math.PI * 2 / 48
+        }
+
+        // Dim static border shown when unfocused
         Rectangle {
             anchors.fill: parent
             radius: 8
-            color: Qt.rgba(colors.col_background.r, colors.col_background.g, colors.col_background.b, 1.0)
-            border.color: searchField.activeFocus
-                          ? colors.col_source_color
-                          : Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.25)
-            border.width: 1
-            Behavior on border.color { ColorAnimation { duration: 150 } }
+            color: colors.col_background
         }
 
-        // Search icon
+        // Unfocused border overlay
+        Rectangle {
+            anchors.fill: parent
+            radius: 8
+            color: "transparent"
+            border.color: Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.25)
+            border.width: 1
+            visible: !searchField.activeFocus
+        }
+
+        // Rotating gradient border overlay — fades in on focus
+        Canvas {
+            id: _searchBorderCanvas
+            anchors.fill: parent
+            opacity: searchField.activeFocus ? 1 : 0
+            Behavior on opacity { NumberAnimation { duration: 200 } }
+
+            property real angle: parent._borderAngle
+            onAngleChanged: { if (opacity > 0) requestPaint() }
+
+            onPaint: {
+                var ctx = getContext("2d")
+                ctx.clearRect(0, 0, width, height)
+                var bw = 2
+                var r  = 8
+                var x  = bw / 2; var y = bw / 2
+                var w  = width - bw; var h = height - bw
+                var cx = width / 2;  var cy = height / 2
+
+                // Conical gradient sweeping clockwise from current angle
+                var grad = ctx.createConicalGradient(cx, cy, angle)
+                var sc = colors.col_source_color
+                var c1 = Qt.rgba(sc.r, sc.g, sc.b, 1.0).toString()
+                grad.addColorStop(0,    c1)        // source_color half
+                grad.addColorStop(0.5,  "#C47FD5") // purple half — chasing
+                grad.addColorStop(1.0,  c1)        // wraps back seamlessly
+
+                ctx.strokeStyle = grad
+                ctx.lineWidth   = bw
+
+                // Rounded-rect path (manual arcTo for compatibility)
+                ctx.beginPath()
+                ctx.moveTo(x + r, y)
+                ctx.lineTo(x + w - r, y)
+                ctx.arcTo(x + w, y,     x + w, y + r,     r)
+                ctx.lineTo(x + w, y + h - r)
+                ctx.arcTo(x + w, y + h, x + w - r, y + h, r)
+                ctx.lineTo(x + r, y + h)
+                ctx.arcTo(x, y + h,     x, y + h - r,     r)
+                ctx.lineTo(x, y + r)
+                ctx.arcTo(x, y,         x + r, y,         r)
+                ctx.closePath()
+                ctx.stroke()
+            }
+        }
+
+        // Search icon — tracks gradient lead color via angle
         Text {
             id: _searchIcon
             anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter }
@@ -203,7 +267,7 @@ DropdownBase {
             color: searchField.activeFocus
                    ? colors.col_source_color
                    : Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.8)
-            Behavior on color { ColorAnimation { duration: 150 } }
+            Behavior on color { ColorAnimation { duration: 200 } }
         }
 
         // Placeholder
