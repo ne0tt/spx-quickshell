@@ -14,12 +14,12 @@ DropdownBase {
     panelTitle:      "Bluetooth"
     panelIcon:       "󰂯"
     headerHeight:    34
-    // Off: just header + toggle, footer handles bottom
-    // On:  size to fit devices (divider 1 + flickable offset 9 + N*52), capped at 330
+    // Off: nothing in content area (toggle lives in header)
+    // On:  fit device list; 8 px top pad + 9 px flicker offset + N×52 cards, capped at 268
     panelFullHeight: {
-        if (!btDrop.btPowered) return 74
-        if (btDrop.pairedDevices.length === 0) return 116
-        return Math.min(296, 90 + btDrop.pairedDevices.length * 52)
+        if (!btDrop.btPowered) return 0
+        if (btDrop.pairedDevices.length === 0) return 60
+        return Math.min(268, 17 + btDrop.pairedDevices.length * 52)
     }
     implicitHeight:  400
 
@@ -132,52 +132,37 @@ DropdownBase {
 
     // ── UI ───────────────────────────────────────────────────
 
-    // Power toggle row
-    Item {
-        x: 30; y: 62
-        width: btDrop.panelWidth - 28
-        height: 44
+    // Mini power toggle pill — sits in the header row, right-aligned
+    Rectangle {
+        x: 16 + btDrop.panelWidth - 14 - 34
+        y: 16 + Math.floor((btDrop.headerHeight - 18) / 2)
+        z: 10
+        width: 34; height: 18; radius: 9
+        color: btDrop.btPowered
+               ? btDrop.accentColor
+               : Qt.rgba(btDrop.dimColor.r, btDrop.dimColor.g, btDrop.dimColor.b, 0.3)
+        Behavior on color { ColorAnimation { duration: 160 } }
 
         Rectangle {
-            id: toggleTrack
-            width: 48; height: 26; radius: 13
+            width: 12; height: 12; radius: 6
             anchors.verticalCenter: parent.verticalCenter
-            color: btDrop.btPowered
-                   ? btDrop.accentColor
-                   : Qt.rgba(btDrop.dimColor.r, btDrop.dimColor.g, btDrop.dimColor.b, 0.3)
-            Behavior on color { ColorAnimation { duration: 160 } }
-
-            Rectangle {
-                width: 20; height: 20; radius: 10
-                anchors.verticalCenter: parent.verticalCenter
-                x: btDrop.btPowered ? parent.width - width - 3 : 3
-                color: "white"
-                Behavior on x { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-            }
-
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: btDrop.togglePower()
-            }
+            x: btDrop.btPowered ? parent.width - width - 3 : 3
+            color: "white"
+            Behavior on x { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
         }
 
-        Text {
-            anchors { left: toggleTrack.right; leftMargin: 12; verticalCenter: parent.verticalCenter }
-            text: btDrop.btPowered ? "On" : "Off"
-            color: btDrop.btPowered ? btDrop.textColor : btDrop.dimColor
-            font.pixelSize: 14
-            font.bold: true
-            Behavior on color { ColorAnimation { duration: 160 } }
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: btDrop.togglePower()
         }
     }
 
     // Paired device list (shown only when powered and devices exist)
     Item {
-        x: 30; y: 114
+        x: 30; y: 16 + btDrop.headerHeight + 8
         width: btDrop.panelWidth - 28
-        // Available height = panelFullHeight - y position (clamped so never negative)
-        height: Math.max(0, btDrop.panelFullHeight - 80)
+        height: Math.max(0, btDrop.panelFullHeight - 8)
         visible: btDrop.btPowered
         clip: true
 
@@ -284,12 +269,6 @@ DropdownBase {
                                            ? btDrop.disconnectDevice(modelData.address)
                                            : btDrop.connectDevice(modelData.address)
                             }
-                        }
-
-                        Rectangle {
-                            anchors.bottom: parent.bottom
-                            width: parent.width; height: 1
-                            color: Qt.rgba(btDrop.dimColor.r, btDrop.dimColor.g, btDrop.dimColor.b, 0.08)
                         }
                     }
                 }

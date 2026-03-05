@@ -57,11 +57,20 @@ ShellRoot {
         // Register in hyprland.conf:
         //   bind = SUPER, Space, global, quickshell:toggleAppLauncher
         onPressed: {
-            if (appLauncher.isOpen) {
-                appLauncher.closeLauncher();
+            if (settingsDropdown.launcherFloating) {
+                if (appLauncher.isOpen) {
+                    appLauncher.closeLauncher();
+                } else {
+                    appLauncher.screen = root.focusedScreen;
+                    root.switchPanel(() => appLauncher.openLauncher());
+                }
             } else {
-                appLauncher.screen = root.focusedScreen;
-                root.switchPanel(() => appLauncher.openLauncher());
+                if (appLaunchDropdown.isOpen) {
+                    appLaunchDropdown.closePanel();
+                } else {
+                    appLaunchDropdown.panelX = Math.max(0, (root.screen.width / 2) - (appLaunchDropdown.panelWidth / 2) - 16);
+                    root.switchPanel(() => appLaunchDropdown.openPanel());
+                }
             }
         }
     }
@@ -112,19 +121,21 @@ ShellRoot {
         function closeAllDropdowns() {
             const dropdowns = [
                 calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown,
-                networkDropdown, vpnDropdown, bluetoothDropdown, wpDropdown, weatherDropdown
+                networkDropdown, vpnDropdown, bluetoothDropdown, wpDropdown, weatherDropdown,
+                settingsDropdown
             ];
             for (const p of dropdowns) {
                 if (p.isOpen) p.closePanel();
             }
             if (appLauncher.isOpen) appLauncher.closeLauncher();
+            if (appLaunchDropdown.isOpen) appLaunchDropdown.closePanel();
         }
 
         // Returns true if any panel/dropdown is currently open
         function isAnyPanelOpen() {
             return [calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown,
                     networkDropdown, vpnDropdown, bluetoothDropdown, wpDropdown,
-                    weatherDropdown, appLauncher].some(p => p.isOpen);
+                    weatherDropdown, settingsDropdown, appLauncher, appLaunchDropdown].some(p => p.isOpen);
         }
 
         // Close all open panels, then open the requested one after animation
@@ -152,7 +163,8 @@ ShellRoot {
         }
 
         // ========================================================
-        // BAR SHADOW — blurred black rect, same shape as bar
+        // BAR GLOW — colored outer glow, same shape as bar,
+        // mimics Hyprland's window outer shadow/glow.
         // Must be a sibling of the container, NOT inside it,
         // so the blur can expand freely past the margins.
         // ========================================================
@@ -161,20 +173,21 @@ ShellRoot {
                 top: parent.top
                 left: parent.left
                 right: parent.right
-                topMargin: 15
-                leftMargin: 15
-                rightMargin: 15
+                topMargin: 16
+                leftMargin: 14
+                rightMargin: 14
             }
-            height: 40
-            radius: 13
+            height: 38
+            radius: 12
             color: "#000000"
 
             z: 0
             layer.enabled: true
             layer.effect: MultiEffect {
                 blurEnabled: true
-                blur: 2
-                blurMax: 12
+                blur: 0.8
+                blurMax: 32
+                brightness: 0.05
             }
         }
 
@@ -200,7 +213,8 @@ ShellRoot {
                 anchors.fill: parent
                 radius: 10
                 // Qt.rgba keeps children fully opaque — unlike `opacity` which cascades
-                color: Qt.rgba(colors.col_main.r, colors.col_main.g, colors.col_main.b, 1.0)
+                color: colors.col_main
+                opacity: 1
 
                 // Close any open dropdown when the bare bar is clicked
                 MouseArea {
@@ -242,7 +256,8 @@ ShellRoot {
                             font.family: root.fontFamily
                             font.pixelSize: 17
                             font.weight: Font.Bold
-                            color: appLauncher.isOpen || launcherBtnArea.containsMouse ? colors.col_source_color : colors.col_primary
+                            color: appLaunchDropdown.isOpen || appLauncher.isOpen || launcherBtnArea.containsMouse
+                                   ? colors.col_source_color : colors.col_primary
                             Behavior on color {
                                 ColorAnimation {
                                     duration: 160
@@ -256,12 +271,21 @@ ShellRoot {
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
                             onClicked: {
-                                if (appLauncher.isOpen) {
-                                    appLauncher.closeLauncher();
+                                if (settingsDropdown.launcherFloating) {
+                                    if (appLauncher.isOpen) {
+                                        appLauncher.closeLauncher();
+                                    } else {
+                                        root.closeAllDropdowns();
+                                        appLauncher.screen = root.focusedScreen;
+                                        appLauncher.openLauncher();
+                                    }
                                 } else {
-                                    root.closeAllDropdowns();
-                                    appLauncher.screen = root.focusedScreen;
-                                    appLauncher.openLauncher();
+                                    if (appLaunchDropdown.isOpen) {
+                                        appLaunchDropdown.closePanel();
+                                    } else {
+                                        appLaunchDropdown.panelX = Math.max(0, (root.screen.width / 2) - (appLaunchDropdown.panelWidth / 2) - 16);
+                                        root.switchPanel(() => appLaunchDropdown.openPanel());
+                                    }
                                 }
                             }
                         }
@@ -389,7 +413,7 @@ ShellRoot {
                         BluetoothPanel {
                             id: btPanel
                             fontFamily: root.fontFamily
-                            btPowered: bluetoothDropdown.btPowered
+                            btPowered: bluetoothState.btPowered
                             isActive:  bluetoothDropdown.isOpen
                             accentColor: colors.col_primary
                             activeColor: colors.col_source_color
@@ -474,6 +498,25 @@ ShellRoot {
 
                     // SYSTEM TRAY (Solaar, Remmina, etc.)
                     SystemTrayPanel {}
+
+                    // SETTINGS BUTTON
+                    SettingsPanel {
+                        id: settingsButton
+                        fontFamily:  root.fontFamily
+                        isActive:    settingsDropdown.isOpen
+                        accentColor: colors.col_primary
+                        activeColor: colors.col_source_color
+                        hoverColor:  colors.col_source_color
+                        anchors.verticalCenterOffset: 1
+                        onClicked: function (clickX) {
+                            settingsDropdown.panelX = Math.max(0, clickX - settingsDropdown.panelWidth / 2 - 16);
+                            if (settingsDropdown.isOpen) {
+                                settingsDropdown.closePanel();
+                            } else {
+                                root.switchPanel(() => settingsDropdown.openPanel());
+                            }
+                        }
+                    }
 
                     ClockPanel {
                         id: clockWidget
@@ -566,9 +609,33 @@ ShellRoot {
         id: volumeState
     }
 
+    // Shared bluetooth state
+    BluetoothState {
+        id: bluetoothState
+    }
+
+    // SettingsDropdown — drops down from the settings gear icon
+    SettingsDropdown {
+        id: settingsDropdown
+        screen: root.screen
+        btData: bluetoothState
+    }
+
     // AppLauncher — centred rofi-style launcher (Super+Space or launcher button)
     AppLauncher {
         id: appLauncher
         screen: root.screen
     }
+
+    // AppLaunchDropdown — centred under the workspace switcher
+    AppLaunchDropdown {
+        id: appLaunchDropdown
+        screen: root.screen
+    }
+
+    // WorkspaceGlowOverlay — declared last so it renders above all other surfaces.
+    WorkspaceGlowOverlay {
+        screen: root.screen
+    }
+
 }

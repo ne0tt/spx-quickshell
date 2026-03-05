@@ -1,4 +1,5 @@
 import Quickshell
+import Quickshell.Wayland
 import QtQuick
 import QtQuick.Effects
 
@@ -53,6 +54,9 @@ PanelWindow {
     anchors.right: true
     exclusiveZone: 0
     color: "transparent"
+
+    // Sit above the Top-layer main bar so dropdowns always render over it
+    WlrLayershell.layer: WlrLayer.Overlay
 
     mask: Region {
         item: _wrapper

@@ -253,7 +253,7 @@ PanelWindow {
                 border.color: searchField.activeFocus
                               ? colors.col_source_color
                               : Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.25)
-                border.width: 1.5
+                border.width: 1
                 Behavior on border.color { ColorAnimation { duration: 150 } }
             }
 
@@ -261,12 +261,12 @@ PanelWindow {
             Text {
                 id: _searchIcon
                 anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter }
-                text: "\uf002"
+                text: ""
                 font.family: launcher.fontFamily
                 font.pixelSize: 16
                 color: searchField.activeFocus
                        ? colors.col_source_color
-                       : Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.5)
+                       : Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.8)
                 Behavior on color { ColorAnimation { duration: 150 } }
             }
 
@@ -275,7 +275,7 @@ PanelWindow {
                 anchors { left: _searchIcon.right; leftMargin: 8; right: parent.right; rightMargin: 10; verticalCenter: parent.verticalCenter }
                 visible: searchField.text.length === 0
                 text: "Search applications…"
-                color: Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.3)
+                color: Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.2)
                 font.pixelSize: 15
                 font.family: launcher.fontFamily
             }
