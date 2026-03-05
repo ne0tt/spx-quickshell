@@ -634,8 +634,9 @@ ShellRoot {
     }
 
     // WorkspaceGlowOverlay — declared last so it renders above all other surfaces.
+    
     WorkspaceGlowOverlay {
         screen: root.screen
     }
-
+    
 }

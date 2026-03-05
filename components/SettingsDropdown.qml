@@ -29,7 +29,7 @@ DropdownBase {
 
     panelFullHeight: _padTop + _rowCount * _rowH + (_rowCount - 1) * _gap + _padBottom
     implicitHeight:  panelFullHeight + headerHeight + 52   // 16 ears + footerHeight + buffer
-    panelWidth:      270
+    panelWidth:      310
     panelTitle:      "Quick Settings"
     panelIcon:       "󰒓"
     headerHeight:    34

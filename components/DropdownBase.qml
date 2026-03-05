@@ -70,7 +70,7 @@ PanelWindow {
     property color panelColor: colors.col_main
     property int panelFullHeight: 200
     property int panelWidth: 260
-    property int panelZ: 99997
+    property int panelZ: 2000  // above the main bar (1000) but below the workspace glow (3000)
     property real panelX: 0
     property bool isOpen: _wrapper.visible
     property color borderColor: "black"

@@ -71,7 +71,7 @@ Item {
         id: activeGlow
         width: 50
         height: 20
-        z: 1000
+        z: 1
 
         // Reactive bindings to always follow the active workspace
         visible: focusedLocalIndex >= 0
