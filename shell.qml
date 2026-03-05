@@ -26,10 +26,26 @@ ShellRoot {
     }
 
     // ============================================================
+    // SHARED STATE — single poll/fetch sources shared across bar & dropdowns
+    // ============================================================
+    WeatherState {
+        id: weatherState
+    }
+
+    VolumeState {
+        id: volumeState
+    }
+
+    BluetoothState {
+        id: bluetoothState
+    }
+
+    // ============================================================
     // KEYBINDS — GLOBAL KEYBOARD SHORTCUTS
     // Register in hyprland.conf:
     //   bind = , escape,       global, quickshell:closeAllDropdowns
     //   bind = SUPER CTRL, W,  global, quickshell:toggleWallpaperDropdown
+    //   bind = SUPER, Space,   global, quickshell:toggleAppLauncher
     // ============================================================
     GlobalShortcut {
         name: "closeAllDropdowns"
@@ -54,8 +70,6 @@ ShellRoot {
     GlobalShortcut {
         name: "toggleAppLauncher"
         description: "Open/close the app launcher"
-        // Register in hyprland.conf:
-        //   bind = SUPER, Space, global, quickshell:toggleAppLauncher
         onPressed: {
             if (settingsDropdown.launcherFloating) {
                 if (appLauncher.isOpen) {
@@ -125,29 +139,28 @@ ShellRoot {
         // Cached focused screen lookup (avoids repeated array searches)
         readonly property var focusedScreen: Quickshell.screens.find(s => s.name === Hyprland.focusedMonitor?.name) ?? root.screen
 
+        // State for sequenced panel switching (used by switchPanel)
+        property var pendingOpen: null
+
         // Close every open dropdown/drawer in one call
         function closeAllDropdowns() {
-            const dropdowns = [
-                calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown,
-                networkDropdown, vpnDropdown, bluetoothDropdown, wpDropdown, weatherDropdown,
-                settingsDropdown
-            ];
+            const dropdowns = [calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown, networkDropdown, vpnDropdown, bluetoothDropdown, wpDropdown, weatherDropdown, settingsDropdown];
             for (const p of dropdowns) {
-                if (p.isOpen) p.closePanel();
+                if (p.isOpen)
+                    p.closePanel();
             }
-            if (appLauncher.isOpen) appLauncher.closeLauncher();
-            if (appLaunchDropdown.isOpen) appLaunchDropdown.closePanel();
+            if (appLauncher.isOpen)
+                appLauncher.closeLauncher();
+            if (appLaunchDropdown.isOpen)
+                appLaunchDropdown.closePanel();
         }
 
         // Returns true if any panel/dropdown is currently open
         function isAnyPanelOpen() {
-            return [calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown,
-                    networkDropdown, vpnDropdown, bluetoothDropdown, wpDropdown,
-                    weatherDropdown, settingsDropdown, appLauncher, appLaunchDropdown].some(p => p.isOpen);
+            return [calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown, networkDropdown, vpnDropdown, bluetoothDropdown, wpDropdown, weatherDropdown, settingsDropdown, appLauncher, appLaunchDropdown].some(p => p.isOpen);
         }
 
         // Close all open panels, then open the requested one after animation
-        property var pendingOpen: null
         Timer {
             id: openAfterClose
             interval: 300   // just after the 220 ms close animation
@@ -258,14 +271,13 @@ ShellRoot {
                         border.width: 1
 
                         Text {
-                               anchors.centerIn: parent
-                               anchors.verticalCenterOffset: 1
+                            anchors.centerIn: parent
+                            anchors.verticalCenterOffset: 1
                             text: ""
                             font.family: root.fontFamily
                             font.pixelSize: 17
                             font.weight: Font.Bold
-                            color: appLaunchDropdown.isOpen || appLauncher.isOpen || launcherBtnArea.containsMouse
-                                   ? colors.col_source_color : colors.col_primary
+                            color: appLaunchDropdown.isOpen || appLauncher.isOpen || launcherBtnArea.containsMouse ? colors.col_source_color : colors.col_primary
                             Behavior on color {
                                 ColorAnimation {
                                     duration: 160
@@ -302,11 +314,11 @@ ShellRoot {
                     // ---------------- Wallpaper Button ----------------
                     WallpaperPanel {
                         id: wallpaperButton
-                        fontFamily:  root.fontFamily
-                        isActive:    wpDropdown.isOpen
+                        fontFamily: root.fontFamily
+                        isActive: wpDropdown.isOpen
                         accentColor: colors.col_primary
                         activeColor: colors.col_source_color
-                        hoverColor:  colors.col_source_color
+                        hoverColor: colors.col_source_color
                         onClicked: function (clickX) {
                             wpDropdown.panelX = clickX - wpDropdown.panelWidth / 2 - 16 + 250;
                             if (wpDropdown.isOpen) {
@@ -329,8 +341,8 @@ ShellRoot {
                 // CENTER SECTION – WORKSPACES
                 WorkspacesPanel {
                     id: workspaceContainer
-                        anchors.centerIn: parent
-                        anchors.verticalCenterOffset: 1
+                    anchors.centerIn: parent
+                    anchors.verticalCenterOffset: 1
                 }
 
                 // ##################################################
@@ -348,13 +360,13 @@ ShellRoot {
                     // VLAN BUTTON — opens / closes VlanDropdown
                     VlanPanel {
                         id: vlanButton
-                        fontFamily:  root.fontFamily
-                        isActive:    vlanDropdown.isOpen
+                        fontFamily: root.fontFamily
+                        isActive: vlanDropdown.isOpen
                         accentColor: colors.col_primary
                         activeColor: colors.col_source_color
-                        hoverColor:  colors.col_source_color
-                            anchors.verticalCenter: parent.verticalCenter
-                            anchors.verticalCenterOffset: 1
+                        hoverColor: colors.col_source_color
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.verticalCenterOffset: 1
                         onClicked: function (clickX) {
                             vlanDropdown.panelX = Math.max(0, clickX - vlanDropdown.panelWidth / 2 - 16);
                             if (vlanDropdown.isOpen) {
@@ -368,17 +380,17 @@ ShellRoot {
                     // ETHERNET IP
                     NetworkPanel {
                         id: networkPanel
-                        fontFamily:      root.fontFamily
-                        fontSize:        root.fontSize
-                        fontWeight:      root.fontWeight
-                        ip:              networkDropdown.infoIp
-                        isActive:        networkDropdown.isOpen
-                        accentColor:     colors.col_primary
-                        activeColor:     colors.col_source_color
-                        hoverColor:      colors.col_source_color
+                        fontFamily: root.fontFamily
+                        fontSize: root.fontSize
+                        fontWeight: root.fontWeight
+                        ip: networkDropdown.infoIp
+                        isActive: networkDropdown.isOpen
+                        accentColor: colors.col_primary
+                        activeColor: colors.col_source_color
+                        hoverColor: colors.col_source_color
                         backgroundColor: colors.col_background
-                            anchors.verticalCenter: parent.verticalCenter
-                            anchors.verticalCenterOffset: 1
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.verticalCenterOffset: 1
                         onClicked: function (clickX) {
                             networkDropdown.panelX = Math.max(0, clickX - networkDropdown.panelWidth / 2 - 16);
                             if (networkDropdown.isOpen) {
@@ -414,7 +426,7 @@ ShellRoot {
                     Row {
                         spacing: 10
                         anchors.verticalCenter: parent.verticalCenter
-                            anchors.verticalCenterOffset: 1
+                        anchors.verticalCenterOffset: 1
                         height: parent.height
 
                         // BLUETOOTH TOGGLE
@@ -422,17 +434,17 @@ ShellRoot {
                             id: btPanel
                             fontFamily: root.fontFamily
                             btPowered: bluetoothState.btPowered
-                            isActive:  bluetoothDropdown.isOpen
+                            isActive: bluetoothDropdown.isOpen
                             accentColor: colors.col_primary
                             activeColor: colors.col_source_color
-                            hoverColor:  colors.col_source_color
+                            hoverColor: colors.col_source_color
                             dimColor: root.dimPrimary
                             onClicked: function (clickX) {
-                                bluetoothDropdown.panelX = Math.max(0, clickX - bluetoothDropdown.panelWidth / 2 - 16)
+                                bluetoothDropdown.panelX = Math.max(0, clickX - bluetoothDropdown.panelWidth / 2 - 16);
                                 if (bluetoothDropdown.isOpen) {
-                                    bluetoothDropdown.closePanel()
+                                    bluetoothDropdown.closePanel();
                                 } else {
-                                    root.switchPanel(() => bluetoothDropdown.openPanel())
+                                    root.switchPanel(() => bluetoothDropdown.openPanel());
                                 }
                             }
                         }
@@ -510,11 +522,11 @@ ShellRoot {
                     // SETTINGS BUTTON
                     SettingsPanel {
                         id: settingsButton
-                        fontFamily:  root.fontFamily
-                        isActive:    settingsDropdown.isOpen
+                        fontFamily: root.fontFamily
+                        isActive: settingsDropdown.isOpen
                         accentColor: colors.col_primary
                         activeColor: colors.col_source_color
-                        hoverColor:  colors.col_source_color
+                        hoverColor: colors.col_source_color
                         anchors.verticalCenterOffset: 1
                         onClicked: function (clickX) {
                             settingsDropdown.panelX = Math.max(0, clickX - settingsDropdown.panelWidth / 2 - 16);
@@ -549,7 +561,6 @@ ShellRoot {
         }
     }
 
-
     // ── Dropdown scrim ────────────────────────────────────────────
     // Full-screen transparent catch-all on WlrLayer.Overlay.
     // Declared BEFORE all dropdown PanelWindows so the compositor
@@ -571,25 +582,16 @@ ShellRoot {
 
         // Reactive: becomes true the moment any dropdown opens.
         // QML resolves the IDs lazily, so forward refs (calendarPanel etc.) are fine.
-        readonly property bool anyOpen:
-            (typeof calendarPanel    !== "undefined" && calendarPanel.isOpen)    ||
-            (typeof volumeDropdown   !== "undefined" && volumeDropdown.isOpen)   ||
-            (typeof vlanDropdown     !== "undefined" && vlanDropdown.isOpen)     ||
-            (typeof powerProfileDropdown !== "undefined" && powerProfileDropdown.isOpen) ||
-            (typeof networkDropdown  !== "undefined" && networkDropdown.isOpen)  ||
-            (typeof vpnDropdown      !== "undefined" && vpnDropdown.isOpen)      ||
-            (typeof bluetoothDropdown !== "undefined" && bluetoothDropdown.isOpen) ||
-            (typeof wpDropdown       !== "undefined" && wpDropdown.isOpen)       ||
-            (typeof weatherDropdown  !== "undefined" && weatherDropdown.isOpen)  ||
-            (typeof settingsDropdown !== "undefined" && settingsDropdown.isOpen) ||
-            (typeof appLaunchDropdown !== "undefined" && appLaunchDropdown.isOpen) ||
-            (typeof appLauncher      !== "undefined" && appLauncher.isOpen)
+        readonly property bool anyOpen: (typeof calendarPanel !== "undefined" && calendarPanel.isOpen) || (typeof volumeDropdown !== "undefined" && volumeDropdown.isOpen) || (typeof vlanDropdown !== "undefined" && vlanDropdown.isOpen) || (typeof powerProfileDropdown !== "undefined" && powerProfileDropdown.isOpen) || (typeof networkDropdown !== "undefined" && networkDropdown.isOpen) || (typeof vpnDropdown !== "undefined" && vpnDropdown.isOpen) || (typeof bluetoothDropdown !== "undefined" && bluetoothDropdown.isOpen) || (typeof wpDropdown !== "undefined" && wpDropdown.isOpen) || (typeof weatherDropdown !== "undefined" && weatherDropdown.isOpen) || (typeof settingsDropdown !== "undefined" && settingsDropdown.isOpen) || (typeof appLaunchDropdown !== "undefined" && appLaunchDropdown.isOpen) || (typeof appLauncher !== "undefined" && appLauncher.isOpen)
 
-        mask: Region { item: _scrimMask }
+        mask: Region {
+            item: _scrimMask
+        }
         Item {
             id: _scrimMask
-            x: 0; y: 0
-            width:  _dropdownScrim.anyOpen ? _dropdownScrim.width  : 0
+            x: 0
+            y: 0
+            width: _dropdownScrim.anyOpen ? _dropdownScrim.width : 0
             height: _dropdownScrim.anyOpen ? _dropdownScrim.height : 0
         }
 
@@ -656,21 +658,6 @@ ShellRoot {
         weatherData: weatherState
     }
 
-    // Shared weather state — single fetch source for WeatherPanel + WeatherDropdown
-    WeatherState {
-        id: weatherState
-    }
-
-    // Shared volume state — single source for VolumePanel + VolumeDropdown
-    VolumeState {
-        id: volumeState
-    }
-
-    // Shared bluetooth state
-    BluetoothState {
-        id: bluetoothState
-    }
-
     // SettingsDropdown — drops down from the settings gear icon
     SettingsDropdown {
         id: settingsDropdown
@@ -691,9 +678,9 @@ ShellRoot {
     }
 
     // WorkspaceGlowOverlay — declared last so it renders above all other surfaces.
-    
+
     //WorkspaceGlowOverlay {
     //    screen: root.screen
     //}
-    
+
 }
