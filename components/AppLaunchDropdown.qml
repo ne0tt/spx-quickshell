@@ -30,7 +30,7 @@ DropdownBase {
                                  : WlrKeyboardFocus.None
 
     // ── Geometry ────────────────────────────────────────────
-    panelZ:       99999   // above all other dropdowns and the main bar
+    panelZ:       1   // above all other dropdowns and the main bar
     panelWidth:   400
     headerHeight: 0    // no shared title row; search box is the top element
 

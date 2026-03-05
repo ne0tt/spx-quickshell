@@ -22,9 +22,10 @@ import QtQuick.Effects
 PanelWindow {
     id: overlay
     reloadableId: "workspaceGlowOverlay"
+    anchors.top:   true
     anchors.left:  true
     anchors.right: true
-    implicitHeight: 80        // same as the main bar window
+    implicitHeight: 50        // same as the main bar window
     exclusiveZone:  0
     color: "transparent"
 
@@ -37,7 +38,7 @@ PanelWindow {
     mask: Region {}
 
     // ── Bar geometry constants (must mirror shell.qml) ──────
-    readonly property int _barTopMargin: -32    // container topMargin (mirrors shell.qml topMargin: 18)
+    readonly property int _barTopMargin: -32     // container topMargin (mirrors shell.qml topMargin: 18)
     readonly property int _barHeight:    32    // container height
     readonly property int _wsItemW:      50
     readonly property int _wsItemH:      20
