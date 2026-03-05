@@ -52,14 +52,19 @@ PanelWindow {
     anchors.top: true
     anchors.left: true
     anchors.right: true
+    anchors.bottom: _wrapper.visible
     exclusiveZone: 0
     color: "transparent"
 
     // Sit above the Top-layer main bar so dropdowns always render over it
     WlrLayershell.layer: WlrLayer.Overlay
 
+    // When a panel is open the mask must cover the full window so the
+    // click-outside MouseArea can receive events anywhere on screen.
+    // When closed, restrict to _wrapper (height 0) so nothing is blocked.
+    Item { id: _windowMask; anchors.fill: parent }
     mask: Region {
-        item: _wrapper
+        item: _wrapper.visible ? _windowMask : _wrapper
     }
 
     // ─── Configurable props ───────────────────────────────
@@ -229,7 +234,7 @@ PanelWindow {
     MouseArea {
         anchors.fill: parent
         z: _base.panelZ - 1
-        visible: false   // click-outside-to-close disabled
+        visible: _wrapper.visible
         propagateComposedEvents: true
         onClicked: {
             if (!_wrapper.containsMouse)
