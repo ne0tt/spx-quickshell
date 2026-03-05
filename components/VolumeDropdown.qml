@@ -134,9 +134,19 @@ DropdownBase {
                         if (ytId) artUrl = "https://img.youtube.com/vi/" + ytId[1] + "/hqdefault.jpg"
                     }
 
-                    volDrop.mediaArtUrl    = artUrl
                     volDrop.mediaIsBrowser = pageUrl.startsWith("http://") || pageUrl.startsWith("https://")
                     volDrop.mediaAvailable = volDrop.mediaStatus !== "Stopped" && volDrop.mediaTitle !== ""
+
+                    if (volDrop.mediaAvailable) {
+                        volDrop.mediaArtUrl = artUrl
+                    } else {
+                        // Media is stopped — clear stale metadata so old track info isn't shown
+                        volDrop.mediaTitle     = "No media playing"
+                        volDrop.mediaArtist    = ""
+                        volDrop.mediaArtUrl    = ""
+                        volDrop.mediaIsBrowser = false
+                        volDrop.mediaSinkId    = -1
+                    }
                     // Trigger volume read now that mediaIsBrowser is known
                     Qt.callLater(() => { if (!volDrop._mediaVolPending) refreshMediaVol() })
                 } else {
@@ -389,7 +399,7 @@ DropdownBase {
                 property real _artAngle: 0
                 Timer {
                     id: __artAngleTimer
-                    running: volDrop.mediaAvailable
+                    running: volDrop.mediaAvailable && volDrop.isOpen
                     interval: 40    // ~20 fps — throttled to reduce CPU load
                     repeat: true
                     onTriggered: parent._artAngle -= Math.PI * 2 / 48
