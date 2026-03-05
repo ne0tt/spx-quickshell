@@ -229,7 +229,7 @@ PanelWindow {
     MouseArea {
         anchors.fill: parent
         z: _base.panelZ - 1
-        visible: _wrapper.visible
+        visible: false   // click-outside-to-close disabled
         propagateComposedEvents: true
         onClicked: {
             if (!_wrapper.containsMouse)

@@ -6,7 +6,7 @@ Item {
     id: workspacesPanel
 
     // The Hyprland output name for the monitor this bar lives on
-    property string monitorName: "DP-1"
+    property string monitorName: config.barMonitor
 
     // Workspaces that belong to this monitor, sorted by id
     readonly property var monitorWorkspaces: {

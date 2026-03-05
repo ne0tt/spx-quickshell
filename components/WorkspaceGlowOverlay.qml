@@ -45,7 +45,7 @@ PanelWindow {
     readonly property int _wsGap:        5
 
     // ── Workspace state ──────────────────────────────────────
-    property string monitorName: "DP-1"
+    property string monitorName: config.barMonitor
 
     readonly property var monitorWorkspaces: {
         var mon = Hyprland.monitors.values.find(m => m.name === overlay.monitorName)

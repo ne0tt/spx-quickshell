@@ -115,7 +115,7 @@ ShellRoot {
     PanelWindow {
         id: root
         reloadableId: "mainBar"
-        screen: Quickshell.screens.find(s => s.name === "DP-1")
+        screen: Quickshell.screens.find(s => s.name === config.barMonitor) ?? Quickshell.screens[0]
 
         anchors.top: true
         anchors.left: true
@@ -343,6 +343,7 @@ ShellRoot {
                     id: workspaceContainer
                     anchors.centerIn: parent
                     anchors.verticalCenterOffset: 1
+                    monitorName: config.barMonitor
                 }
 
                 // ##################################################
@@ -589,14 +590,17 @@ ShellRoot {
         }
         Item {
             id: _scrimMask
-            x: 0
-            y: 0
-            width: _dropdownScrim.anyOpen ? _dropdownScrim.width : 0
-            height: _dropdownScrim.anyOpen ? _dropdownScrim.height : 0
+            x: 0; y: 0
+            // Always 0×0 — keeps the scrim permanently click-through at the Wayland
+            // input-region level so it never intercepts events destined for dropdowns.
+            // Click-outside-to-close is handled elsewhere when re-enabled.
+            width: 0
+            height: 0
         }
 
         MouseArea {
             anchors.fill: parent
+            enabled: false   // click-outside-to-close disabled
             onClicked: root.closeAllDropdowns()
         }
     }
@@ -682,6 +686,7 @@ ShellRoot {
 
     WorkspaceGlowOverlay {
         screen: root.screen
+        monitorName: config.barMonitor
         visible: appLaunchDropdown.isOpen
     }
 
