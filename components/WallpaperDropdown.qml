@@ -18,8 +18,9 @@ DropdownBase {
     panelIcon:       "󰸉"
     headerHeight:    34
 
-    // Request keyboard focus from the compositor while the panel is open
-    WlrLayershell.keyboardFocus: panelVisible ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+    // Exclusively grab keyboard input while the panel is open so arrow-key
+    // navigation works without the user needing to mouse over the window first.
+    WlrLayershell.keyboardFocus: panelVisible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
     // --------------------------------------------------------
     // STATE
@@ -66,7 +67,7 @@ DropdownBase {
             var idx = wpDrop.images.indexOf(wpDrop.currentWallpaper)
             wpDrop.focusedIndex = idx >= 0 ? idx : 0
             startOpenAnim()
-            Qt.callLater(function() { flickArea.forceActiveFocus() })
+            _focusTimer.restart()
         }
     }
 
@@ -80,7 +81,17 @@ DropdownBase {
         stdout: SplitParser {
             onRead: data => {
                 var s = data.trim()
-                if (s) wpDrop.currentWallpaper = s
+                if (s) {
+                    wpDrop.currentWallpaper = s
+                    // currentProc may finish after findProc — sync focusedIndex
+                    if (wpDrop.images.length > 0) {
+                        var idx = wpDrop.images.indexOf(s)
+                        if (idx >= 0) {
+                            wpDrop.focusedIndex = idx
+                            Qt.callLater(function() { wpDrop.ensureFocusedVisible() })
+                        }
+                    }
+                }
             }
         }
     }
@@ -130,6 +141,18 @@ DropdownBase {
             flickArea.contentY = itemY
         else if (itemBot > flickArea.contentY + flickArea.height)
             flickArea.contentY = itemBot - flickArea.height
+    }
+
+    // Wait for the Wayland compositor to grant keyboard focus to the surface
+    // before asking Qt to focus the Flickable — Qt.callLater fires too early.
+    Timer {
+        id: _focusTimer
+        interval: 80
+        repeat: false
+        onTriggered: {
+            flickArea.forceActiveFocus()
+            wpDrop.ensureFocusedVisible()
+        }
     }
 
         // ── Scrollable thumbnail grid ─────────────────────
