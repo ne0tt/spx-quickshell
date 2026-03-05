@@ -87,6 +87,14 @@ ShellRoot {
         }
     }
 
+    // Close all dropdowns when the active workspace changes
+    Connections {
+        target: Hyprland
+        function onFocusedWorkspaceChanged() {
+            root.closeAllDropdowns();
+        }
+    }
+
     // ============================================================
     // TOP PANEL WINDOW
     // ============================================================
@@ -635,8 +643,8 @@ ShellRoot {
 
     // WorkspaceGlowOverlay — declared last so it renders above all other surfaces.
     
-    WorkspaceGlowOverlay {
-        screen: root.screen
-    }
+    //WorkspaceGlowOverlay {
+    //    screen: root.screen
+    //}
     
 }
