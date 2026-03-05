@@ -202,7 +202,6 @@ ShellRoot {
             radius: 12
             color: "#000000"
 
-            z: 0
             layer.enabled: true
             layer.effect: MultiEffect {
                 blurEnabled: true
