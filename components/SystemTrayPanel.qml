@@ -248,8 +248,7 @@ Item {
 
                 // ------------------------------------------------
                 // MOUSE INTERACTION
-                // Left-click  → activate (show/hide app window)
-                // Right-click → context menu
+                // Left-click  → activate (show/hide context menu)
                 // ------------------------------------------------
                 MouseArea {
                     id: area
