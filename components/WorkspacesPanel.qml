@@ -146,7 +146,7 @@ Item {
             height: glowSource.height
             blurEnabled: true
             blur: 0.6
-            blurMax: 32
+            blurMax: 64
             brightness: 0.3
             shadowEnabled: false
         }
