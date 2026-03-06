@@ -17,54 +17,109 @@ Item {
             .sort((a, b) => a.id - b.id)
     }
 
-    readonly property int wsCount: monitorWorkspaces.length > 0 ? monitorWorkspaces.length : 1
+    // Tracks the highest workspace id ever seen on this monitor.
+    // This prevents dots from disappearing when Hyprland removes empty
+    // workspaces from its list as you scroll through them.
+    property int _highWaterMark: 1
 
-    // Index of the focused workspace within this monitor's list (-1 if not on this monitor)
+    onMonitorWorkspacesChanged: {
+        for (var i = 0; i < monitorWorkspaces.length; i++) {
+            if (monitorWorkspaces[i].id > _highWaterMark)
+                _highWaterMark = monitorWorkspaces[i].id
+        }
+    }
+
+    Component.onCompleted: {
+        for (var i = 0; i < monitorWorkspaces.length; i++) {
+            if (monitorWorkspaces[i].id > _highWaterMark)
+                _highWaterMark = monitorWorkspaces[i].id
+        }
+        var fws = Hyprland.focusedWorkspace
+        if (fws) {
+            var mon = Hyprland.monitors.values.find(m => m.name === monitorName)
+            if (mon && fws.monitor === mon && fws.id > _highWaterMark)
+                _highWaterMark = fws.id
+        }
+    }
+
+    // Bump the high water mark whenever focus moves to a higher workspace on this monitor.
+    // The focused workspace is always present in Hyprland's workspace list, so we can
+    // safely read its monitor association here.
+    Connections {
+        target: Hyprland
+        function onFocusedWorkspaceChanged() {
+            var fws = Hyprland.focusedWorkspace
+            if (!fws) return
+            var mon = Hyprland.monitors.values.find(m => m.name === workspacesPanel.monitorName)
+            if (!mon) return
+            if (fws.monitor === mon && fws.id > workspacesPanel._highWaterMark)
+                workspacesPanel._highWaterMark = fws.id
+        }
+    }
+
+    // Stable dot list: always 1 through _highWaterMark.
+    // Unlike monitorWorkspaces this never shrinks, so dots remain visible
+    // even after Hyprland destroys the empty workspace on navigation.
+    readonly property var displayWorkspaceIds: {
+        var ids = []
+        for (var i = 1; i <= _highWaterMark; i++) ids.push(i)
+        return ids
+    }
+
+    readonly property int wsCount: _highWaterMark
+
+    // Index of the focused workspace within the display list (-1 if not on this monitor).
+    // Uses the live workspace list to verify monitor affinity, falling back to -1 for
+    // workspaces focused on other monitors.
     readonly property int focusedLocalIndex: {
         var fid = Hyprland.focusedWorkspace?.id ?? -1
-        return monitorWorkspaces.findIndex(ws => ws.id === fid)
+        if (fid < 1) return -1
+        var mon = Hyprland.monitors.values.find(m => m.name === monitorName)
+        if (!mon) return -1
+        var fws = Hyprland.workspaces.values.find(ws => ws.id === fid)
+        if (!fws || fws.monitor !== mon) return -1
+        return displayWorkspaceIds.indexOf(fid)
     }
 
     width: wsCount * 50 + (wsCount - 1) * 5
     height: 20
 
-    // Inactive workspace rectangles
+    // Workspace dot rectangles
     Repeater {
-    id: wsRepeater
-    model: wsCount
+        id: wsRepeater
+        model: displayWorkspaceIds
 
-    Item {
-        width: 50
-        height: 20
-        x: index * (width + 5)
+        Item {
+            width: 50
+            height: 20
+            x: index * (width + 5)
 
-        readonly property int wsId: monitorWorkspaces[index] ? monitorWorkspaces[index].id : -1
+            readonly property int wsId: modelData
 
-        Rectangle {
-            id: wsRect
-            anchors.fill: parent
-            radius: 8
-            border.color: "black"
-            border.width: 1
-            color: Hyprland.focusedWorkspace?.id === parent.wsId
-                   ? colors.col_source_color
-                   : colors.col_background
+            Rectangle {
+                id: wsRect
+                anchors.fill: parent
+                radius: 8
+                border.color: "black"
+                border.width: 1
+                color: Hyprland.focusedWorkspace?.id === parent.wsId
+                       ? colors.col_source_color
+                       : colors.col_background
 
-            // Animate color changes smoothly
-            Behavior on color {
-                ColorAnimation {
-                    duration: 350  // fade duration in ms
-                    easing.type: Easing.InOutQuad
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 350
+                        easing.type: Easing.InOutQuad
+                    }
                 }
             }
-        }
 
-        MouseArea {
-            anchors.fill: parent
-            onClicked: Hyprland.dispatch("workspace " + parent.wsId)
+            MouseArea {
+                anchors.fill: parent
+                onClicked: Hyprland.dispatch("workspace " + parent.wsId)
+            }
         }
     }
-}
 
     // Active workspace glow always on top
     Item {
@@ -73,27 +128,25 @@ Item {
         height: 20
         z: 1
 
-        // Reactive bindings to always follow the active workspace
         visible: focusedLocalIndex >= 0
         x: focusedLocalIndex >= 0 ? focusedLocalIndex * (50 + 5) : 0
 
         Rectangle {
             id: glowSource
             anchors.fill: parent
-            radius: height / 2  // true pill / capsule shape
+            radius: height / 2
             color: colors.col_source_color
             visible: true
         }
 
         MultiEffect {
             source: glowSource
-            // Padding well beyond blurMax so blur feathers to zero before the edge
             anchors.centerIn: glowSource
             width: glowSource.width + 10
             height: glowSource.height
             blurEnabled: true
             blur: 0.6
-            blurMax: 55
+            blurMax: 32
             brightness: 0.3
             shadowEnabled: false
         }
