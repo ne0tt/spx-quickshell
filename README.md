@@ -30,39 +30,51 @@ All interactive elements feature smooth animations, hover effects, and dropdown 
 
 ```
 /home/sispx/dotfiles/.config/quickshell/
-├── shell.qml              # Main entry point & top panel layout
-├── Colors.qml             # Theme color palette (auto-updated by matugen)
-├── Config.qml             # Global configuration (fonts, etc.)
-├── components/            # Reusable UI components
-│   ├── AppLauncher.qml    # Rofi-style centered application launcher
-│   ├── DropdownBase.qml   # Base template for all dropdown panels
-│   ├── DropdownTopFlare.qml # Top decorative "ears" for dropdowns
-│   ├── FlaredArcCanvas.qml  # Custom shape painter for dropdowns
-│   ├── HexSweepPanel.qml    # Animated hexagonal grid effect
-│   ├── WorkspacesPanel.qml  # Hyprland workspace switcher
-│   ├── BluetoothPanel.qml   # Bluetooth toggle button
-│   ├── BluetoothDropdown.qml # Bluetooth device management
-│   ├── CalendarPanel.qml     # Calendar dropdown
-│   ├── ChatShortcut.qml      # Quick chat access (if enabled)
-│   ├── ClockPanel.qml        # Time/date display
-│   ├── NetworkDropdown.qml   # Network connection details
-│   ├── PowerProfilePanel.qml # Power profile indicator
+├── shell.qml                    # Main entry point & top panel layout
+├── Colors.qml                   # Theme color palette (auto-updated by matugen)
+├── Config.qml                   # Global configuration (fonts, bar monitor, etc.)
+├── components/                  # Reusable UI components
+│   ├── AppLaunchDropdown.qml    # Bar-embedded app search dropdown
+│   ├── AppLauncher.qml          # Rofi-style centered application launcher
+│   ├── BluetoothDropdown.qml    # Bluetooth device management panel
+│   ├── BluetoothPanel.qml       # Bluetooth toggle button in bar
+│   ├── BluetoothState.qml       # Shared Bluetooth power state manager
+│   ├── CalendarPanel.qml        # Calendar dropdown
+│   ├── ChatShortcut.qml         # Quick chat access button (if enabled)
+│   ├── ClockPanel.qml           # Time/date display in bar
+│   ├── DropdownBase.qml         # Base template for all dropdown panels
+│   ├── DropdownTopFlare.qml     # Top decorative "ears" for dropdowns
+│   ├── FlaredArcCanvas.qml      # Custom shape painter for dropdown frames
+│   ├── HexSweepPanel.qml        # Animated hexagonal grid effect (dropdown footer)
+│   ├── NetworkAdminDropdown.qml # Full NetworkManager admin panel
+│   ├── NetworkDropdown.qml      # Ethernet connection details dropdown
+│   ├── NetworkPanel.qml         # Ethernet IP indicator in bar
+│   ├── OverlayPanel.qml         # Centered floating overlay base (non-bar-anchored)
 │   ├── PowerProfileDropdown.qml # Power profile selector
-│   ├── SelectableCard.qml    # Reusable card widget
-│   ├── SystemTrayPanel.qml   # System tray area
-│   ├── TemperaturePanel.qml  # CPU temperature monitor
-│   ├── VlanDropdown.qml      # VLAN network management
-│   ├── VolumePanel.qml       # Volume indicator
-│   ├── VolumeDropdown.qml    # Volume & microphone controls
-│   ├── VolumeState.qml       # Shared volume state manager
-│   ├── VPNDropdown.qml       # VPN connection controls
-│   ├── VPNModule.qml         # VPN status indicator
-│   ├── WallpaperDropdown.qml # Wallpaper picker
-│   ├── WeatherPanel.qml      # Weather indicator
-│   ├── WeatherDropdown.qml   # Detailed weather forecast
-│   ├── WeatherState.qml      # Shared weather data fetcher
-│   └── YayUpdatePanel.qml    # Arch package update indicator
-└── README.md              # This file
+│   ├── PowerProfilePanel.qml    # Power profile icon indicator in bar
+│   ├── SelectableCard.qml       # Reusable selectable card widget
+│   ├── SettingsDropdown.qml     # Quick settings dropdown (toggles, monitor, launcher mode)
+│   ├── SettingsPanel.qml        # Settings gear icon button in bar
+│   ├── SettingsToggleRow.qml    # Reusable icon + label + toggle switch row
+│   ├── SystemTrayPanel.qml      # SNI system tray area
+│   ├── TemperaturePanel.qml     # CPU temperature monitor
+│   ├── TrayMenu.qml             # Right-click context menu for tray icons
+│   ├── VlanDropdown.qml         # VLAN network management panel
+│   ├── VlanPanel.qml            # VLAN icon button in bar
+│   ├── VolumeDropdown.qml       # Volume slider & media controls
+│   ├── VolumePanel.qml          # Volume icon + percentage in bar
+│   ├── VolumeState.qml          # Shared volume state (PipeWire reactive)
+│   ├── VPNDropdown.qml          # VPN connection controls
+│   ├── VPNModule.qml            # VPN IP status pill in bar
+│   ├── WallpaperDropdown.qml    # Wallpaper picker panel
+│   ├── WallpaperPanel.qml       # Wallpaper picker icon button in bar
+│   ├── WeatherDropdown.qml      # Detailed weather forecast panel
+│   ├── WeatherPanel.qml         # Current weather indicator in bar
+│   ├── WeatherState.qml         # Shared weather data fetcher (hourly poll)
+│   ├── WorkspaceGlowOverlay.qml # Fullscreen overlay: glow follows active workspace
+│   ├── WorkspacesPanel.qml      # Hyprland workspace switcher
+│   └── YayUpdatePanel.qml       # Arch package update count indicator
+└── README.md                    # This file
 ```
 
 ---
@@ -76,7 +88,8 @@ The main entry point that orchestrates the entire panel. Key responsibilities:
 - Implements panel switching logic (closes one dropdown before opening another)
 - Arranges left/center/right sections of the bar
 - Instantiates all dropdown panels and shared state managers
-- Provides `closeAllDropdowns()` and `switchPanel()` utilities
+- Provides `closeAllDropdowns()`, `isAnyPanelOpen()`, and `switchPanel()` utilities
+- `dropdowns` property is a single registry list used by both close and open-check functions — add a new dropdown here and both functions automatically handle it
 
 **Global Shortcuts**:
 - `quickshell:closeAllDropdowns` - Close all open panels (bind to ESC)
@@ -144,17 +157,25 @@ Animated hexagonal grid effect for dropdown footers:
 
 #### `WorkspacesPanel.qml`
 Displays Hyprland workspaces for the current monitor:
-- Auto-detects workspaces belonging to monitor `"DP-1"` (configurable)
+- Monitor bound via `monitorName` property (defaults to `config.barMonitor`)
+- Filters Hyprland workspace list to only show workspaces on that monitor
 - Highlights active workspace with `col_source_color`
 - 50px width per workspace, 5px spacing
 
 #### `AppLauncher.qml`
-Rofi-style fullscreen application launcher:
-- Spawns `foot` terminal with interactive app search
-- Filters `.desktop` files via `grep` and `sed`
-- Supports fuzzy filtering as you type
+Rofi-style fullscreen application launcher (toggled via `SUPER+Space` or settings):
+- Uses Quickshell's built-in `DesktopEntries` API — no subprocess or `.desktop` file parsing
+- Ranked search: exact name match → starts-with → contains → generic name → keywords
 - Exclusive keyboard focus when open
 - Dark overlay background with blur effect
+- Reworked thanks to Steel on Discord ;)
+
+#### `AppLaunchDropdown.qml`
+Bar-anchored inline app search dropdown (alternative to the floating launcher):
+- Same `DesktopEntries`-powered ranked search as `AppLauncher`
+- Animated rotating border on the search field
+- Results list capped at 190px height, scrollable
+- Toggle mode controlled by `SettingsDropdown` (`launcherFloating` property)
 
 #### `WeatherState.qml` & `WeatherPanel.qml`
 **WeatherState** fetches weather data once on startup, then hourly:
@@ -165,9 +186,11 @@ Rofi-style fullscreen application launcher:
 **WeatherPanel** displays current conditions in the bar with hover effects.
 
 #### `VolumeState.qml` & `VolumePanel.qml`
-**VolumeState** manages PulseAudio/PipeWire volume:
-- Tracks default sink volume & mute status
-- Provides unified state for panel and dropdown
+**VolumeState** manages volume reactively via `Quickshell.Services.Pipewire`:
+- Binds directly to `Pipewire.defaultAudioSink.audio` — no polling needed
+- `volume` (0–100 int) and `muted` (bool) update automatically on PipeWire change signals
+- Mutations (`toggleMute()`, `volumeUp()`, `volumeDown()`, `setVolume(v)`) write directly to the PipeWire node
+- No external processes or timers required
 
 **VolumePanel** shows volume icon and percentage with interactive hover.
 
@@ -186,6 +209,13 @@ Displays CPU temperature:
 **Panel**: Shows current power profile icon (performance/balanced/power-saver)
 **Dropdown**: Allows switching between profiles using system power-profiles-daemon
 
+#### `BluetoothState.qml`
+Shared Bluetooth power state singleton:
+- Runs `bluetoothctl monitor` as a long-lived process to receive live power events
+- `btPowered` bool updates reactively via debounced output parsing
+- `powerOn()` / `powerOff()` / `togglePower()` — uses `rfkill` and `bluetoothctl`
+- Shared between `BluetoothPanel`, `BluetoothDropdown`, and `SettingsDropdown`
+
 #### `BluetoothPanel.qml` & `BluetoothDropdown.qml`
 **Panel**: Bluetooth toggle button with dimmed state when off
 **Dropdown**: Device pairing, connection management, and controls
@@ -194,15 +224,68 @@ Displays CPU temperature:
 **Module**: Shows VPN connection status
 **Dropdown**: Connect/disconnect VPN profiles
 
-#### `NetworkDropdown.qml` & `VlanDropdown.qml`
-**NetworkDropdown**: Ethernet connection details (IP, MAC, status)
-**VlanDropdown**: VLAN network configuration
+#### `NetworkPanel.qml`
+Ethernet IP pill widget in the bar:
+- Displays current IP address with a network icon
+- Pill background uses `colors.col_background`; highlights on hover/active
+
+#### `NetworkDropdown.qml` & `NetworkAdminDropdown.qml`
+**NetworkDropdown**: Lightweight ethernet status view (IP, MAC, interface info) via `nmcli`
+**NetworkAdminDropdown**: Full NetworkManager admin panel with three views:
+- **connections** — list all saved connections; activate, deactivate, delete
+- **edit** — edit IP method (DHCP/static), IP, gateway, DNS for a selected connection
+- **wifi** — scan for nearby networks and connect with password prompt
+
+#### `VlanPanel.qml` & `VlanDropdown.qml`
+**VlanPanel**: VLAN icon button in the bar (shows active state)
+**VlanDropdown**: Lists VLANs and their active status; runs `nmcli monitor` while open for live updates
+
+#### `OverlayPanel.qml`
+Centered floating overlay base (distinct from `DropdownBase` which anchors to the bar):
+- Appears at screen center by default; `panelX`/`panelY` are configurable
+- Fade + scale animation (180ms open, 140ms close)
+- `default property alias content` — place child items directly inside it
+- Public API: `show()`, `hide()`, `toggle()`, `isOpen`
+
+#### `SettingsPanel.qml`
+Settings gear icon button in the bar (opens `SettingsDropdown`).
+
+#### `SettingsDropdown.qml`
+Quick settings panel with persistent state saved to `settings.json`:
+- **Night Light** toggle (via `wl-gammarelay` or equivalent)
+- **Bluetooth** toggle (reads/writes `BluetoothState`)
+- **Animations** toggle — disables HexSweepPanel and transition effects
+- **Blur** toggle — controls compositor blur hint
+- **Launcher mode** — switches between floating `AppLauncher` and bar-anchored `AppLaunchDropdown`
+- **Monitor selector** — choose which monitor the bar appears on; written to `settings.json` and reloaded
+- State persisted via `settings.json` using a debounced write process
+
+#### `SettingsToggleRow.qml`
+Reusable row widget for settings entries:
+- Icon circle + label + optional subtitle + animated toggle pill
+- `isBusy` property shows a spinner while an action is in progress
+- Used exclusively inside `SettingsDropdown`
 
 #### `SystemTrayPanel.qml`
-Standard system tray for applications like:
+SNI system tray (`Quickshell.Services.SystemTray`) for applications like:
 - Solaar (Logitech devices)
 - Remmina (remote desktop)
 - Other tray-compatible apps
+
+#### `TrayMenu.qml`
+Right-click context menu for system tray icons, extending `DropdownBase`:
+- `openAt(handle, x)` receives the SNI `menuHandle` and bar X position
+- Renders `SystemTrayItem.menu` entries as a scrollable column
+- Highlights hovered item with a semi-transparent `col_source_color` background
+
+#### `WallpaperPanel.qml`
+Wallpaper picker icon button in the bar (opens `WallpaperDropdown`).
+
+#### `WorkspaceGlowOverlay.qml`
+Fullscreen `PanelWindow` overlay that draws a glow under the active workspace indicator:
+- Mirrors `WorkspacesPanel` geometry (50px cell width, 5px gap) to align precisely
+- Glow item animates horizontally to follow the focused workspace
+- Separate window layer so the glow renders behind bar content but above wallpaper
 
 #### `ClockPanel.qml` & `CalendarPanel.qml`
 **ClockPanel**: Displays current time/date
@@ -320,7 +403,7 @@ pkill quickshell && quickshell &
 **Optional**:
 - `matugen` - Auto-generate colors from wallpaper
 - `yay` - AUR helper for update notifications
-- `pulseaudio` or `pipewire` - Audio control
+- `pipewire` - Audio control (used natively via `Quickshell.Services.Pipewire`)
 - `power-profiles-daemon` - Power profile switching
 - `bluez` - Bluetooth support
 - `networkmanager` - Network management
@@ -332,7 +415,7 @@ pkill quickshell && quickshell &
 
 ### Architecture Strengths
 1. **Excellent Separation of Concerns**: The `DropdownBase.qml` abstraction eliminates code duplication across 9+ dropdown panels.
-2. **Shared State Pattern**: `WeatherState.qml` and `VolumeState.qml` avoid redundant API calls by providing centralized state management.
+2. **Shared State Pattern**: `WeatherState.qml` and `VolumeState.qml` provide centralized state management. `VolumeState` uses `Quickshell.Services.Pipewire` for zero-overhead reactive binding to the default audio sink.
 3. **Consistent Design Language**: All panels use the same flared-arc shape and animation timings (220ms), creating visual cohesion.
 4. **Performance Optimization**: The `focusedScreen` cached property reduces repeated array lookups.
 5. **Smart Panel Management**: `switchPanel()` logic prevents animation conflicts by waiting for close transitions before opening new panels.
@@ -424,10 +507,10 @@ Create a test harness for:
 - Some magic numbers (e.g., `pos.x + wallpaperButton.width / 2 - wpDropdown.panelWidth / 2 - 16 + 250`)
   - Extract these positioning calculations into named functions
 - Repeated dropdown positioning logic could be abstracted into a helper
-- The `closeAllDropdowns()` array could be auto-populated via a registry pattern
+- ~~The `closeAllDropdowns()` array could be auto-populated via a registry pattern~~ (resolved: `dropdowns` property is now the single registry)
 
 ### Security Considerations
-- The app launcher uses `grep` and `sed` on `.desktop` files - validate paths to prevent injection
+- The app launcher uses Quickshell's `DesktopEntries` API — no shell process or path handling, so injection risk is eliminated
 - Weather data fetching may expose API keys in process listings - use environment variables
 - VPN/network dropdowns may expose sensitive info - consider privacy mode toggle
 
@@ -453,4 +536,4 @@ This configuration is part of the SiSPX dotfiles collection. Built with [Quicksh
 
 ---
 
-**Last Updated**: March 4, 2026
+**Last Updated**: March 6, 2026
