@@ -21,9 +21,12 @@ Rectangle {
 
     signal clicked(real clickX)
 
-    property int updateInterval: 900000 // ms (15 minutes)
+    property int updateInterval: config.updateCheckInterval
     property int yayUpdateCount: 0
     property bool yayUpdateAvailable: false
+    // Set to true when the update-check process exits with a non-zero code so
+    // the panel can surface a visual hint that something went wrong.
+    property bool _error: false
 
     width: 55
     height: 24
@@ -92,6 +95,10 @@ Rectangle {
                 yayUpdatePanel.yayUpdateAvailable = yayUpdatePanel.yayUpdateCount > 0;
             }
         }
+        onExited: (exitCode, status) => {
+            // wc -l always exits 0; a non-zero code means the shell wrapper failed.
+            yayUpdatePanel._error = (exitCode !== 0)
+        }
     }
     Timer {
         interval: updateInterval
@@ -117,7 +124,7 @@ Rectangle {
     // Opens a terminal, runs yay -Syu, then re-checks the count
     Process {
         id: runUpgrade
-        command: ["kitty", "--hold", "sh", "-c", "yay -Syu"]
+        command: [config.terminal, "--hold", "sh", "-c", "yay -Syu"]
         onRunningChanged: if (!running) yayUpdateProc.running = true
     }
 }

@@ -20,10 +20,13 @@ QtObject {
     property string wSunset:   ""
     property var    wForecast:    []
     property bool   wLoading:     true
+    // Non-empty when the last fetch failed; cleared on the next successful fetch.
+    property string wError:       ""
     property var    _forecastBuf: []   // accumulates during parse; assigned once in onExited
 
     function refresh() {
         wLoading      = true;
+        wError        = "";
         wForecast     = [];
         _forecastBuf  = [];
         wSunrise      = "";
@@ -135,10 +138,21 @@ QtObject {
             }
         }
 
-        onExited: {
+        onExited: (exitCode, status) => {
             _state.wForecast    = _state._forecastBuf.slice()
             _state._forecastBuf = []
             _state.wLoading     = false
+            // exitCode 0 = success; any other code means curl/jq failed (no network,
+            // API error, etc.).  Surface a human-readable error so the WeatherPanel
+            // can show a fallback instead of stale or empty data.
+            if (exitCode !== 0) {
+                _state.wError = "Weather fetch failed (exit " + exitCode + ")"
+                _state.wIcon  = "󰖑"
+                _state.wDesc  = "Unavailable"
+                _state.wTemp  = ""
+            } else {
+                _state.wError = ""
+            }
         }
     }
 

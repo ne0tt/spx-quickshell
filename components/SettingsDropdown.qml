@@ -148,11 +148,9 @@ DropdownBase {
 
     // ═══════════════════════════════════════════════════════
     // NIGHT LIGHT — hyprshade
-    // Shader name must match a file in ~/.config/hypr/shaders/.
-    // Default: "blue-light-filter" (ships with hyprshade).
+    // Shader name is read from config.nightLightShader (default: "blue-light-filter-50").
+    // The file must exist in ~/.config/hypr/shaders/.  Change it in Config.qml.
     // ═══════════════════════════════════════════════════════
-
-    readonly property string _nlShader: "blue-light-filter-50"
 
     // Check whether a screen shader is currently active via hyprctl.
     // When no shader is set the option value contains "EMPTY"; any other
@@ -173,7 +171,7 @@ DropdownBase {
     Process {
         id: nightLightEnable
         running: false
-        command: ["hyprshade", "on", settingsDrop._nlShader]
+        command: ["hyprshade", "on", config.nightLightShader]
         onExited: nightLightCheck.running = true
     }
 

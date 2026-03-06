@@ -21,8 +21,49 @@ Item {
 
     signal clicked(real clickX)
 
-    property string sensorPath: "/sys/class/hwmon/hwmon2/temp1_input"
+    // Resolved at startup by scanning /sys/class/hwmon for a CPU temp sensor.
+    // Falls back to the first temp1_input found if no "coretemp"/"k10temp" label
+    // is present, and to an empty string (panel hidden) if nothing is found.
+    property string sensorPath: ""
     property string temperature: "--°C"
+
+    // ============================================================
+    // SENSOR AUTO-DETECT — find the right hwmon entry on startup.
+    // Prefers coretemp (Intel) -> k10temp (AMD) -> first temp1_input.
+    // ============================================================
+    Process {
+        id: _sensorDetect
+        // Print "name:path" pairs so we can pick the best one.
+        command: ["sh", "-c",
+            "for d in /sys/class/hwmon/hwmon*; do " +
+            "  name=$(cat \"$d/name\" 2>/dev/null); " +
+            "  [ -f \"$d/temp1_input\" ] && echo \"$name:$d/temp1_input\"; " +
+            "done"]
+        stdout: SplitParser {
+            // Collect candidates: prefer coretemp (Intel) or k10temp (AMD).
+            property string _best:     ""
+            property string _fallback: ""
+            onRead: data => {
+                var line = data.trim()
+                if (line === "") return
+                var sep  = line.indexOf(":")
+                if (sep < 0) return
+                var name = line.substring(0, sep)
+                var path = line.substring(sep + 1)
+                if (_best === "" && (name === "coretemp" || name === "k10temp"))
+                    _best = path
+                else if (_fallback === "")
+                    _fallback = path
+            }
+        }
+        onExited: {
+            var best = _sensorDetect.stdout._best !== ""
+                       ? _sensorDetect.stdout._best
+                       : _sensorDetect.stdout._fallback
+            root.sensorPath = best
+            if (best !== "") tempFile.reload()
+        }
+    }
 
     // ============================================================
     // FILEVIEW — reads sysfs directly, no fork/exec overhead
@@ -43,9 +84,9 @@ Item {
     // ============================================================
     Timer {
         interval: 5000
-        running: true
+        running: root.sensorPath !== ""
         repeat: true
-        triggeredOnStart: true
+        triggeredOnStart: false
         onTriggered: tempFile.reload()
     }
 
@@ -59,7 +100,7 @@ Item {
 
         Text {
             anchors.verticalCenter: parent.verticalCenter
-            text: ""
+            text: ""
             color: root.isActive ? root.activeColor : root._hovered ? root.hoverColor : root.accentColor
             font.family: root.fontFamily
             font.styleName: "Solid"
@@ -89,4 +130,6 @@ Item {
             root.clicked(pos.x + root.width / 2)
         }
     }
+
+    Component.onCompleted: _sensorDetect.running = true
 }
