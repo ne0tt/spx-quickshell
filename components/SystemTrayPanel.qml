@@ -51,7 +51,8 @@ Item {
         "flameshot": "Screenshot",
         "steam": "Steam",
         "docker": "Docker",
-        "virtualbox": "VirtualBox"
+        "virtualbox": "VirtualBox",
+        "obs": "OBS"
     })
     
     property var nerdFontIcons: ({
@@ -68,6 +69,7 @@ Item {
         "pulseaudio": "\ufc58",
         "spotify": "\uf1bc",                 // Spotify
         "rhythmbox": "\uf025",               // Music note
+        "obs": "󰃽",                         // OBS
         
         // Communication
         "slack": "\uf198",                   // Slack
