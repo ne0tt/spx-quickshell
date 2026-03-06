@@ -260,16 +260,18 @@ Item {
 
                     onClicked: mouse => {
                         if (mouse.button === Qt.LeftButton) {
-                            trayDelegate.modelData.activate();
-                        } else if (mouse.button === Qt.RightButton) {
                             if (root.menuWindow && trayDelegate.modelData.menu) {
-                                // mapToItem(null) gives coords relative to the PanelWindow root
-                                // which is the same screen-local space as DropdownBase panelX
-                                var localPos = trayDelegate.mapToItem(null, 0, 0);
-                                root.menuWindow.openAt(trayDelegate.modelData.menu, localPos.x);
+                                if (root.menuWindow.isOpen) {
+                                    root.menuWindow.closePanel();
+                                } else {
+                                    var localPos = trayDelegate.mapToItem(null, 0, 0);
+                                    root.menuWindow.openAt(trayDelegate.modelData.menu, localPos.x);
+                                }
                             } else {
-                                trayDelegate.modelData.secondaryActivate();
+                                trayDelegate.modelData.activate();
                             }
+                        } else if (mouse.button === Qt.RightButton) {
+                            trayDelegate.modelData.secondaryActivate();
                         }
                     }
                 }
