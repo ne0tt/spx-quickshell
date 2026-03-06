@@ -8,7 +8,7 @@ This was created out of a fun learning project - Inspiration taken from end_4, N
 This is in no way to be taken as a "this is how to do a thing..." it is purely "this is how I have done a thing..."
 Much of the code was initially fleshed out using Claude AI.
 
-I'm putting this out there in the hope it may inspire or help people like me that like the lok of quickshell but wanted to rtry an build something from the ground up rather than using someone elses dots.
+I'm putting this out there in the hope it may inspire or help people like me that like the look of quickshell but wanted to try and build something from the ground up rather than using someone else's dots.
 
 Feel free to use however you want but it will be some what unsupported.
 
