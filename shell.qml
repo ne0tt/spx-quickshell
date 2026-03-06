@@ -1,3 +1,5 @@
+//@ pragma UseQApplication
+
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
@@ -144,7 +146,7 @@ ShellRoot {
 
         // Close every open dropdown/drawer in one call
         function closeAllDropdowns() {
-            const dropdowns = [calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown, networkDropdown, vpnDropdown, bluetoothDropdown, wpDropdown, weatherDropdown, settingsDropdown];
+            const dropdowns = [calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown, networkDropdown, vpnDropdown, bluetoothDropdown, wpDropdown, weatherDropdown, settingsDropdown, trayMenu];
             for (const p of dropdowns) {
                 if (p.isOpen)
                     p.closePanel();
@@ -157,7 +159,7 @@ ShellRoot {
 
         // Returns true if any panel/dropdown is currently open
         function isAnyPanelOpen() {
-            return [calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown, networkDropdown, vpnDropdown, bluetoothDropdown, wpDropdown, weatherDropdown, settingsDropdown, appLauncher, appLaunchDropdown].some(p => p.isOpen);
+            return [calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown, networkDropdown, vpnDropdown, bluetoothDropdown, wpDropdown, weatherDropdown, settingsDropdown, appLauncher, appLaunchDropdown, trayMenu].some(p => p.isOpen);
         }
 
         // Close all open panels, then open the requested one after animation
@@ -390,7 +392,7 @@ ShellRoot {
                         hoverColor: colors.col_source_color
                         backgroundColor: colors.col_background
                         anchors.verticalCenter: parent.verticalCenter
-                        anchors.verticalCenterOffset: 1
+                        anchors.verticalCenterOffset: 0
                         onClicked: function (clickX) {
                             networkDropdown.panelX = Math.max(0, clickX - networkDropdown.panelWidth / 2 - 16);
                             if (networkDropdown.isOpen) {
@@ -516,9 +518,6 @@ ShellRoot {
                         }
                     }
 
-                    // SYSTEM TRAY (Solaar, Remmina, etc.)
-                    SystemTrayPanel {}
-
                     // SETTINGS BUTTON
                     SettingsPanel {
                         id: settingsButton
@@ -527,7 +526,8 @@ ShellRoot {
                         accentColor: colors.col_primary
                         activeColor: colors.col_source_color
                         hoverColor: colors.col_source_color
-                        anchors.verticalCenterOffset: 1
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.verticalCenterOffset: 0
                         onClicked: function (clickX) {
                             settingsDropdown.panelX = Math.max(0, clickX - settingsDropdown.panelWidth / 2 - 16);
                             if (settingsDropdown.isOpen) {
@@ -537,6 +537,15 @@ ShellRoot {
                             }
                         }
                     }
+
+                    // SYSTEM TRAY (Solaar, Remmina, etc.)
+                    SystemTrayPanel {
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.verticalCenterOffset: 1
+                        accentColor: colors.col_primary
+                        hoverColor: colors.col_source_color
+                        menuWindow: trayMenu
+                    }                    
 
                     ClockPanel {
                         id: clockWidget
@@ -679,6 +688,14 @@ ShellRoot {
     AppLaunchDropdown {
         id: appLaunchDropdown
         screen: root.screen
+    }
+
+    // TrayMenu — custom themed context menu for system tray icons
+    TrayMenu {
+        id: trayMenu
+        screen: root.screen
+        // Close all other open dropdowns whenever the tray context menu opens
+        onAboutToOpen: root.closeAllDropdowns()
     }
 
     // WorkspaceGlowOverlay — declared last so it renders above all other surfaces.

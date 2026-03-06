@@ -10,17 +10,155 @@ import QtQuick.Controls
 Item {
     id: root
 
-    implicitWidth: trayRow.implicitWidth > 0 ? trayRow.implicitWidth : 0
+    implicitWidth: trayRow.implicitWidth > 0 ? trayRow.implicitWidth + 12 : 0
     implicitHeight: 24
     visible: trayRow.visibleChildren.length > 0 || SystemTray.items.count > 0
+
+    property string fontFamily: config.fontFamily
+    property int    iconSize:   15  // Match other panel icons
+    property color  accentColor: "white"
+    property color  hoverColor:  "white"
+    property var    menuWindow:  null  // set to TrayMenu instance from shell.qml
+
+    // ============================================================
+    // NERD FONT ICON MAPPING
+    // Map application IDs to nerd font icons
+    // ============================================================
+    property var friendlyNames: ({
+        "chrome_status_icon": "Discord",
+        "nm-applet": "Network Manager",
+        "networkmanager": "Network Manager",
+        "blueman": "Bluetooth",
+        "solaar": "Logitech",
+        "pavucontrol": "Volume Control",
+        "pulseaudio": "PulseAudio",
+        "spotify": "Spotify",
+        "slack": "Slack",
+        "discord": "Discord",
+        "telegram": "Telegram",
+        "signal": "Signal",
+        "zoom": "Zoom",
+        "teams": "Teams",
+        "dropbox": "Dropbox",
+        "nextcloud": "Nextcloud",
+        "syncthing": "Syncthing",
+        "remmina": "Remote Desktop",
+        "clipman": "Clipboard",
+        "keepassxc": "KeePassXC",
+        "1password": "1Password",
+        "bitwarden": "Bitwarden",
+        "pamac": "Package Manager",
+        "flameshot": "Screenshot",
+        "steam": "Steam",
+        "docker": "Docker",
+        "virtualbox": "VirtualBox"
+    })
+    
+    property var nerdFontIcons: ({
+        // Network & Connectivity
+        "nm-applet": "\uf1eb",              // Network
+        "networkmanager": "\uf1eb",
+        "network-manager": "\uf1eb",
+        "blueman": "\uf293",                 // Bluetooth
+        "bluetooth": "\uf293",
+        "solaar": "󰍽",                  // Logitech (mouse/keyboard)
+        
+        // Audio & Media
+        "pavucontrol": "\ufc58",             // Volume
+        "pulseaudio": "\ufc58",
+        "spotify": "\uf1bc",                 // Spotify
+        "rhythmbox": "\uf025",               // Music note
+        
+        // Communication
+        "slack": "\uf198",                   // Slack
+        "discord": "\uf392",                 // Discord 
+        "discordcanary": "\uf392",           // Discord Canary
+        "discord-canary": "\uf392",          // Discord Canary
+        "discordptb": "\uf392",              // Discord PTB
+        "discord-ptb": "\uf392",             // Discord PTB
+        "chrome_status_icon": "\uf392",      // Discord (Electron apps)
+        "telegram": "\uf2c6",                // Telegram
+        "signal": "\uf4ac",                  // Chat
+        "zoom": "\uf03d",                    // Video
+        "teams": "\uf4f8",                   // Teams
+        
+        // Cloud Storage
+        "dropbox": "\uf16b",                 // Dropbox
+        "google-drive": "\uebc3",            // Google Drive
+        "nextcloud": "\uf0c2",               // Cloud
+        "syncthing": "\uf0c2",
+        
+        // System Tools
+        "remmina": "󰢹",                 // Remote desktop
+        "clipman": "\uf0ea",                 // Clipboard
+        "keepassxc": "\uf023",               // Lock (password manager)
+        "1password": "\uf023",
+        "bitwarden": "\uf023",
+        
+        // Updates & Package Managers
+        "pamac": "\uf4b7",                   // Package
+        "yay": "\uf187",                     // Archive
+        "update-manager": "\uf21e",          // Download
+        
+        // Power & Battery
+        "upower": "\uf240",                  // Battery
+        "battery": "\uf240",
+        "redshift": "\uf185",                // Sun/moon
+        
+        // Misc
+        "flameshot": "\ue21e",               // Screenshot
+        "steam": "\uf1b6",                   // Steam
+        "docker": "\uf308",                  // Docker
+        "virtualbox": "\uf6a6"               // VM
+    })
+
+    // Function to get nerd font icon for an app
+    function getNerdFontIcon(item) {
+        if (!item) return null
+        
+        // Try matching against item ID (preferred)
+        var id = item.id ? item.id.toLowerCase() : ""
+        
+        // Debug: log the ID and title to help identify apps
+        // console.log("Tray item - ID:", item.id, "Title:", item.title)
+        
+        if (id && nerdFontIcons[id]) {
+            return nerdFontIcons[id]
+        }
+        
+        // Try matching against title
+        var title = item.title ? item.title.toLowerCase() : ""
+        
+        // Try partial matching for both ID and title
+        for (var key in nerdFontIcons) {
+            if (id && id.includes(key)) {
+                return nerdFontIcons[key]
+            }
+            if (title && title.includes(key)) {
+                return nerdFontIcons[key]
+            }
+        }
+        
+        return null
+    }
 
     // ============================================================
     // TRAY ROW
     // ============================================================
-    Row {
-        id: trayRow
+    Rectangle {
+        id: trayBg
         anchors.verticalCenter: parent.verticalCenter
-        spacing: 4
+        width: trayRow.implicitWidth + 12
+        height: 24
+        radius: 7
+        color: colors.col_background
+        border.color: "black"
+        border.width: 1
+
+        Row {
+            id: trayRow
+            anchors.centerIn: parent
+            spacing: 4
 
         Repeater {
             model: SystemTray.items
@@ -32,44 +170,84 @@ Item {
                 width: 24
                 height: 24
 
-                // ------------------------------------------------
-                // BACKGROUND (hover highlight)
-                // ------------------------------------------------
-                Rectangle {
-                    id: bg
-                    anchors.fill: parent
-                    radius: 5
-                    color: area.containsMouse ? Qt.rgba(1, 1, 1, 0.12) : "transparent"
+                property string nerdIcon: root.getNerdFontIcon(modelData)
+                property bool useNerdFont: nerdIcon !== null && nerdIcon !== ""
+                
+                // Get tooltip text with fallbacks
+                function getTooltipText() {
+                    var tt = modelData.tooltip
+                    var title = modelData.title || ""
+                    
+                    if (tt) {
+                        var ttTitle = tt.title || ""
+                        var ttDesc = tt.description || ""
+                        
+                        if (ttTitle && ttDesc) {
+                            return ttTitle + "\n" + ttDesc
+                        } else if (ttTitle) {
+                            return ttTitle
+                        } else if (ttDesc) {
+                            return ttDesc
+                        }
+                    }
+                    
+                    // Check if title is available
+                    if (title) return title
+                    
+                    // Try to find a friendly name for recognized apps
+                    var id = modelData.id ? modelData.id.toLowerCase() : ""
+                    if (id) {
+                        // Check for exact match
+                        if (root.friendlyNames[id]) {
+                            return root.friendlyNames[id]
+                        }
+                        
+                        // Check for partial match
+                        for (var key in root.friendlyNames) {
+                            if (id.includes(key)) {
+                                return root.friendlyNames[key]
+                            }
+                        }
+                    }
+                    
+                    // Final fallback to ID or generic name
+                    return modelData.id || "System Tray Item"
+                }
 
+                // ------------------------------------------------
+                // NERD FONT ICON (if available)
+                // ------------------------------------------------
+                Text {
+                    anchors.centerIn: parent
+                    visible: trayDelegate.useNerdFont
+                    text: trayDelegate.nerdIcon
+                    font.family: root.fontFamily
+                    font.pixelSize: root.iconSize
+                    color: area.containsMouse ? root.hoverColor : root.accentColor
+                    
                     Behavior on color {
                         ColorAnimation { duration: 120 }
                     }
                 }
 
                 // ------------------------------------------------
-                // TRAY ICON
+                // TRAY ICON (fallback)
                 // ------------------------------------------------
                 Image {
                     anchors.centerIn: parent
+                    visible: !trayDelegate.useNerdFont
                     source: trayDelegate.modelData.icon
-                    width: 18
-                    height: 18
+                    width: root.iconSize
+                    height: root.iconSize
                     smooth: true
                     mipmap: true
                     fillMode: Image.PreserveAspectFit
-
-                    // Tooltip
-                    ToolTip.visible: area.containsMouse
-                    ToolTip.delay: 600
-                    ToolTip.text: trayDelegate.modelData.tooltip.title !== ""
-                        ? trayDelegate.modelData.tooltip.title
-                        : trayDelegate.modelData.title
                 }
 
                 // ------------------------------------------------
                 // MOUSE INTERACTION
                 // Left-click  → activate (show/hide app window)
-                // Right-click → native app menu
+                // Right-click → context menu
                 // ------------------------------------------------
                 MouseArea {
                     id: area
@@ -82,29 +260,19 @@ Item {
                         if (mouse.button === Qt.LeftButton) {
                             trayDelegate.modelData.activate();
                         } else if (mouse.button === Qt.RightButton) {
-                            if (trayDelegate.modelData.menu) {
-                                // Map the icon's bottom-left corner to global screen coords
-                                var gpos = trayDelegate.mapToGlobal(0, trayDelegate.height);
-                                nativeMenuAnchor.anchor.rect.x = gpos.x;
-                                nativeMenuAnchor.anchor.rect.y = gpos.y;
-                                nativeMenuAnchor.anchor.rect.width  = trayDelegate.width;
-                                nativeMenuAnchor.anchor.rect.height = 0;
-                                nativeMenuAnchor.open();
+                            if (root.menuWindow && trayDelegate.modelData.menu) {
+                                // mapToItem(null) gives coords relative to the PanelWindow root
+                                // which is the same screen-local space as DropdownBase panelX
+                                var localPos = trayDelegate.mapToItem(null, 0, 0);
+                                root.menuWindow.openAt(trayDelegate.modelData.menu, localPos.x);
                             } else {
-                                // Fallback: ask the app to show its own context menu
                                 trayDelegate.modelData.secondaryActivate();
                             }
                         }
                     }
                 }
-
-                // Native DBus menu (Remmina connections, Solaar devices, etc.)
-                QsMenuAnchor {
-                    id: nativeMenuAnchor
-                    menu: trayDelegate.modelData.menu
-                    anchor.edges: Edges.Bottom
-                }
             }
         }
+    }
     }
 }
