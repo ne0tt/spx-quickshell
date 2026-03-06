@@ -1,69 +1,34 @@
 import QtQuick
-import Quickshell.Io
+import Quickshell.Services.Pipewire
 
-// ============================================================
-// VOLUME STATE — single source of truth for VolumePanel and
-// VolumeDropdown. Polls pamixer every 5 s in the background;
-// call refresh() to force an immediate re-read.
-// ============================================================
+/*
+    VOLUME STATE — reactive binding to the PipeWire default sink.
+    No polling, no pamixer processes. PipeWire signals update
+    volume and muted automatically whenever any client (keyboard
+    shortcut, pavucontrol, etc.) changes the sink state.
+*/
+
 QtObject {
     id: _state
 
-    // ── Public state ──────────────────────────────────────
-    property int  volume: 0
-    property bool muted:  false
+    // Keep the default sink node alive and bound.
+    
+    property var _tracker: PwObjectTracker {
+        objects: Pipewire.defaultAudioSink ? [Pipewire.defaultAudioSink] : []
+    }
+
+    // The live default audio sink; null until PipeWire is ready.
+    readonly property var sink: Pipewire.defaultAudioSink
+
+    // ── Public state (0–100 int + bool) ───────────────────
+    // Derived reactively from sink.audio — no manual sync needed.
+    readonly property int  volume: sink?.audio ? Math.round(sink.audio.volume * 100) : 0
+    readonly property bool muted:  sink?.audio?.muted ?? false
 
     // ── Public API ────────────────────────────────────────
-    function refresh()       { _fetchProc.running = true }
-    function toggleMute()    { _muteProc.running  = true }
-    function volumeUp()      { _upProc.running    = true }
-    function volumeDown()    { _downProc.running  = true }
-    function setVolume(v)    {
-        _setVolProc.command = ["sh", "-c", "pamixer --set-volume " + String(v) + "; pamixer --get-volume; pamixer --get-mute"]
-        _setVolProc.running = true
-    }
-
-    // ── Shared output parser — reused by fetch + all mutations ──
-    function _parse(s) {
-        var v = parseInt(s)
-        if (!isNaN(v)) _state.volume = v
-        else           _state.muted  = (s === "true")
-    }
-
-    // ── Fetch process (background poll) ──────────────────
-    property var _fetchProc: Process {
-        command: ["sh", "-c", "pamixer --get-volume; pamixer --get-mute"]
-        stdout: SplitParser { onRead: data => _state._parse(data.trim()) }
-    }
-
-    // ── Mutation processes — each applies the change and reads state
-    //    back in a single fork, eliminating the follow-up refresh() call.
-    property var _muteProc: Process {
-        command: ["sh", "-c", "pamixer --toggle-mute; pamixer --get-volume; pamixer --get-mute"]
-        stdout: SplitParser { onRead: data => _state._parse(data.trim()) }
-    }
-
-    property var _upProc: Process {
-        command: ["sh", "-c", "pamixer -i 5; pamixer --get-volume; pamixer --get-mute"]
-        stdout: SplitParser { onRead: data => _state._parse(data.trim()) }
-    }
-
-    property var _downProc: Process {
-        command: ["sh", "-c", "pamixer -d 5; pamixer --get-volume; pamixer --get-mute"]
-        stdout: SplitParser { onRead: data => _state._parse(data.trim()) }
-    }
-
-    property var _setVolProc: Process {
-        command: ["sh", "-c", "echo"]
-        stdout: SplitParser { onRead: data => _state._parse(data.trim()) }
-    }
-
-    // ── Background poll — keeps panel in sync with system ─
-    property var _timer: Timer {
-        interval: 5000
-        running: true
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: _state.refresh()
-    }
+    function refresh()    {}   // no-op: state is always up to date
+    function toggleMute() { if (sink?.audio) sink.audio.muted = !sink.audio.muted }
+    function volumeUp()   { if (sink?.audio) sink.audio.volume = Math.min(1.0, sink.audio.volume + 0.05) }
+    function volumeDown() { if (sink?.audio) sink.audio.volume = Math.max(0.0, sink.audio.volume - 0.05) }
+    function setVolume(v) { if (sink?.audio) sink.audio.volume = Math.max(0.0, Math.min(1.0, v / 100)) }
 }

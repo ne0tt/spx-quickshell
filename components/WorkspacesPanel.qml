@@ -17,56 +17,10 @@ Item {
             .sort((a, b) => a.id - b.id)
     }
 
-    // Tracks the highest workspace id ever seen on this monitor.
-    // This prevents dots from disappearing when Hyprland removes empty
-    // workspaces from its list as you scroll through them.
-    property int _highWaterMark: 1
-
-    onMonitorWorkspacesChanged: {
-        for (var i = 0; i < monitorWorkspaces.length; i++) {
-            if (monitorWorkspaces[i].id > _highWaterMark)
-                _highWaterMark = monitorWorkspaces[i].id
-        }
-    }
-
-    Component.onCompleted: {
-        for (var i = 0; i < monitorWorkspaces.length; i++) {
-            if (monitorWorkspaces[i].id > _highWaterMark)
-                _highWaterMark = monitorWorkspaces[i].id
-        }
-        var fws = Hyprland.focusedWorkspace
-        if (fws) {
-            var mon = Hyprland.monitors.values.find(m => m.name === monitorName)
-            if (mon && fws.monitor === mon && fws.id > _highWaterMark)
-                _highWaterMark = fws.id
-        }
-    }
-
-    // Bump the high water mark whenever focus moves to a higher workspace on this monitor.
-    // The focused workspace is always present in Hyprland's workspace list, so we can
-    // safely read its monitor association here.
-    Connections {
-        target: Hyprland
-        function onFocusedWorkspaceChanged() {
-            var fws = Hyprland.focusedWorkspace
-            if (!fws) return
-            var mon = Hyprland.monitors.values.find(m => m.name === workspacesPanel.monitorName)
-            if (!mon) return
-            if (fws.monitor === mon && fws.id > workspacesPanel._highWaterMark)
-                workspacesPanel._highWaterMark = fws.id
-        }
-    }
-
-    // Stable dot list: always 1 through _highWaterMark.
-    // Unlike monitorWorkspaces this never shrinks, so dots remain visible
-    // even after Hyprland destroys the empty workspace on navigation.
-    readonly property var displayWorkspaceIds: {
-        var ids = []
-        for (var i = 1; i <= _highWaterMark; i++) ids.push(i)
-        return ids
-    }
-
-    readonly property int wsCount: _highWaterMark
+    // Live dot list: exactly the workspaces currently on this monitor, sorted by id.
+    // Derived directly from monitorWorkspaces so the count is always accurate.
+    readonly property var displayWorkspaceIds: monitorWorkspaces.map(ws => ws.id)
+    readonly property int wsCount: monitorWorkspaces.length
 
     // Index of the focused workspace within the display list (-1 if not on this monitor).
     // Uses the live workspace list to verify monitor affinity, falling back to -1 for
