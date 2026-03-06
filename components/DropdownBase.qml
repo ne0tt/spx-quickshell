@@ -132,7 +132,7 @@ PanelWindow {
         _closeAnim.stop();
         _openAnim.stop();
         _hexBar.opacity      = 0;  // reset before first frame so no stale opacity flashes
-        _contentArea.opacity = 0;  // content fades in partway through the expansion
+        _contentArea.opacity = 0;  // content + header fade in partway through the expansion
         _contentFadeOut.stop();
         _contentFadeDelay.restart();  // fires ~160 ms in, overlaps the tail of _openAnim
         _hexFadeIn.restart();
@@ -360,6 +360,7 @@ PanelWindow {
             height: _base.headerHeight
             visible: _base.headerHeight > 0
             clip: true
+            opacity: _contentArea.opacity
 
             // Icon glyph — shown when panelIcon is set
             Text {

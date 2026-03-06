@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 
 Rectangle {
     id: clockPanel
@@ -7,7 +8,7 @@ Rectangle {
     // CONFIGURABLE PROPERTIES
     // ========================================================
     property string fontFamily: config.fontFamily
-    property int fontSize: 1
+    property int fontSize: 13
     property bool fontBold: false
     property color textColor: "white"
     property color backgroundColor: "#2c2c2c"
@@ -15,7 +16,7 @@ Rectangle {
 
     signal clicked(real clickX, real clickY)
 
-    width: 200
+    width: 175
     height: 24
     radius: 7
     color: backgroundColor
@@ -34,24 +35,20 @@ Rectangle {
     // ========================================================
     // CLOCK TEXT
     // ========================================================
-    property var currentDate: new Date()
+    SystemClock {
+        id: clock
+        precision: SystemClock.Seconds
+    }
 
     Text {
         id: clockText
         anchors.verticalCenter: parent.verticalCenter
-                            anchors.verticalCenterOffset: 1
+        anchors.verticalCenterOffset: 0
         anchors.centerIn: parent
         color: textColor
         font.family: fontFamily
         font.pixelSize: fontSize
         font.bold: fontBold
-        text: Qt.formatDateTime(clockPanel.currentDate, "  dd/MM/yyyy   HH:mm:ss")
-
-        Timer {
-            interval: 1000
-            running: true
-            repeat: true
-            onTriggered: clockPanel.currentDate = new Date()
-        }
+        text: Qt.formatDateTime(clock.date, "dd/MM/yyyy   HH:mm:ss")
     }
 }

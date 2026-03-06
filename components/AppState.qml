@@ -30,13 +30,19 @@ Singleton {
     }
 
     readonly property var  audioSink: Pipewire.defaultAudioSink
-    readonly property int  volume:    audioSink?.audio ? Math.round(audioSink.audio.volume * 100) : 0
+    readonly property int  volume:    audioSink?.audio ? Math.min(100, Math.round(audioSink.audio.volume * 100)) : 0
     readonly property bool muted:     audioSink?.audio?.muted ?? false
 
     function toggleMute() { if (audioSink?.audio) audioSink.audio.muted = !audioSink.audio.muted }
     function volumeUp()   { if (audioSink?.audio) audioSink.audio.volume = Math.min(1.0, audioSink.audio.volume + 0.05) }
     function volumeDown() { if (audioSink?.audio) audioSink.audio.volume = Math.max(0.0, audioSink.audio.volume - 0.05) }
     function setVolume(v) { if (audioSink?.audio) audioSink.audio.volume = Math.max(0.0, Math.min(1.0, v / 100)) }
+
+    // My Hyprlabd keyboard binds
+    //bind = , XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ --limit 1.0
+    //bind = , XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
+    //bind = , XF86AudioMicMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
+    //bind = , XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
 
     // ══════════════════════════════════════════════════════════════
     // WEATHER — open-meteo hourly fetch, auto-detects location.
@@ -92,13 +98,6 @@ Singleton {
         return "Thunderstorm"
     }
 
-    function _msUntilNextHour() {
-        var now = new Date()
-        var ms  = (60 - now.getMinutes()) * 60000
-                  - now.getSeconds() * 1000
-                  - now.getMilliseconds()
-        return ms <= 0 ? 3600000 : ms
-    }
 
     property var _fetchProc: Process {
         running: false
@@ -174,15 +173,10 @@ Singleton {
         }
     }
 
-    property var _weatherTimer: Timer {
-        interval: 1000
-        running:  false
-        repeat:   false
-        onTriggered: {
-            appState.refresh()
-            interval = appState._msUntilNextHour()
-            restart()
-        }
+    SystemClock {
+        id: _weatherClock
+        precision: SystemClock.Hours
+        onHoursChanged: appState.refresh()
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -247,10 +241,8 @@ Singleton {
     // ══════════════════════════════════════════════════════════════
 
     Component.onCompleted: {
-        // Weather: fetch now, then arm the hourly timer
+        // Weather: fetch now; SystemClock handles hourly refreshes automatically
         refresh()
-        _weatherTimer.interval = _msUntilNextHour()
-        _weatherTimer.start()
         // Bluetooth: read initial power state
         _btCheckProc.running = true
     }
