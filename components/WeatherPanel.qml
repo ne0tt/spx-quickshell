@@ -2,7 +2,7 @@ import QtQuick
 
 // ============================================================
 // WEATHER PANEL — bar pill showing icon + temperature.
-// All data comes from WeatherState (shared with WeatherDropdown).
+// All data comes from AppState (shared with WeatherDropdown).
 // ============================================================
 Rectangle {
     id: root
@@ -21,8 +21,7 @@ Rectangle {
     property color  backgroundColor: "transparent"
     property color  borderColor:     "transparent"
 
-    // Injected from shell.qml — the shared WeatherState instance
-    property QtObject weatherData: null
+    // ── Shared state (AppState singleton) ──────────────────────
 
     signal clicked(real clickX)
 
@@ -40,8 +39,8 @@ Rectangle {
         spacing: 5
 
         Text {
-            visible: weatherData && weatherData.wIcon !== "" && weatherData.wIcon !== "…"
-            text:    weatherData ? weatherData.wIcon : ""
+            visible: AppState.wIcon !== "" && AppState.wIcon !== "…"
+            text:    AppState.wIcon
             color:   root.isActive ? root.activeColor : btnArea.containsMouse ? root.hoverColor : root.accentColor
             font.family:    root.fontFamily
             font.styleName: "Solid"
@@ -52,8 +51,8 @@ Rectangle {
 
         Text {
             text: {
-                if (!weatherData || weatherData.wLoading) return "…"
-                return weatherData.wTemp !== "" ? weatherData.wTemp : "…"
+                if (AppState.wLoading) return "…"
+                return AppState.wTemp !== "" ? AppState.wTemp : "…"
             }
             color: root.isActive ? root.activeColor : btnArea.containsMouse ? root.hoverColor : root.accentColor
             font.family:    root.fontFamily

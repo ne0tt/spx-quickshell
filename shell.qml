@@ -28,21 +28,6 @@ ShellRoot {
     }
 
     // ============================================================
-    // SHARED STATE — single poll/fetch sources shared across bar & dropdowns
-    // ============================================================
-    WeatherState {
-        id: weatherState
-    }
-
-    VolumeState {
-        id: volumeState
-    }
-
-    BluetoothState {
-        id: bluetoothState
-    }
-
-    // ============================================================
     // KEYBINDS — GLOBAL KEYBOARD SHORTCUTS
     // Register in hyprland.conf:
     //   bind = , escape,       global, quickshell:closeAllDropdowns
@@ -436,7 +421,7 @@ ShellRoot {
                         BluetoothPanel {
                             id: btPanel
                             fontFamily: root.fontFamily
-                            btPowered: bluetoothState.btPowered
+                            btPowered: AppState.btPowered
                             isActive: bluetoothDropdown.isOpen
                             accentColor: colors.col_primary
                             activeColor: colors.col_source_color
@@ -461,7 +446,6 @@ ShellRoot {
                             accentColor: colors.col_primary
                             activeColor: colors.col_source_color
                             hoverColor: colors.col_source_color
-                            volumeData: volumeState
                             onClicked: function (clickX) {
                                 volumeDropdown.panelX = clickX - volumeDropdown.panelWidth / 2 - 16;
                                 if (volumeDropdown.isOpen) {
@@ -507,7 +491,6 @@ ShellRoot {
                             accentColor: colors.col_primary
                             activeColor: colors.col_source_color
                             hoverColor: colors.col_source_color
-                            weatherData: weatherState
                             onClicked: function (clickX) {
                                 weatherDropdown.panelX = Math.max(0, clickX - weatherDropdown.panelWidth / 2 - 16);
                                 if (weatherDropdown.isOpen) {
@@ -624,7 +607,6 @@ ShellRoot {
     VolumeDropdown {
         id: volumeDropdown
         screen: root.screen
-        volumeData: volumeState
     }
 
     // VlanDropdown — drops down from the VLAN panel
@@ -656,7 +638,6 @@ ShellRoot {
     BluetoothDropdown {
         id: bluetoothDropdown
         screen: root.screen
-        btData: bluetoothState
     }
 
     // WallpaperDropdown — drops down from the wallpaper button
@@ -669,14 +650,12 @@ ShellRoot {
     WeatherDropdown {
         id: weatherDropdown
         screen: root.screen
-        weatherData: weatherState
     }
 
     // SettingsDropdown — drops down from the settings gear icon
     SettingsDropdown {
         id: settingsDropdown
         screen: root.screen
-        btData: bluetoothState
     }
 
     // AppLauncher — centred rofi-style launcher (Super+Space or launcher button)

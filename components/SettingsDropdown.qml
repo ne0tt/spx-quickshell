@@ -37,9 +37,8 @@ DropdownBase {
     // ── Queryable toggle states ───────────────────────────────
     property bool nightLight:  false   // reflected from pgrep on open
 
-    // Shared bluetooth state — injected from shell.qml (BluetoothState singleton)
-    property QtObject btData: null
-    readonly property bool btPowered: btData ? btData.btPowered : false
+    // Shared bluetooth state (AppState singleton)
+    readonly property bool btPowered: AppState.btPowered
 
     // Non-queryable states — persisted to settings.json between restarts.
     property bool animations:       true
@@ -143,7 +142,7 @@ DropdownBase {
     // Refresh queryable states whenever the panel opens
     onAboutToOpen: {
         nightLightCheck.running = true
-        if (settingsDrop.btData) settingsDrop.btData.refresh()
+        AppState._btCheckProc.running = true
     }
 
     // ═══════════════════════════════════════════════════════
@@ -231,12 +230,10 @@ DropdownBase {
     }
 
     // ═══════════════════════════════════════════════════════
-    // BLUETOOTH POWER — delegated to BluetoothState
+    // BLUETOOTH POWER — delegated to AppState
     // ═══════════════════════════════════════════════════════
 
-    function toggleBluetooth() {
-        if (settingsDrop.btData) settingsDrop.btData.togglePower()
-    }
+    function toggleBluetooth() { AppState.togglePower() }
 
     // ═══════════════════════════════════════════════════════
     // TOGGLE ROWS

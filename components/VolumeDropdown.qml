@@ -19,13 +19,11 @@ DropdownBase {
     panelIcon:       "󰕾"
     headerHeight:    34
 
-    // ── Shared state (from VolumeState singleton) ─────────────
-    property QtObject volumeData: null
-
+    // ── Shared state (AppState singleton) ──────────────────────
     // _dragVolume overrides volume display while the slider is being dragged
     property int _dragVolume: -1
-    readonly property int  volume: _dragVolume >= 0 ? _dragVolume : (volumeData ? volumeData.volume : 0)
-    readonly property bool muted:  volumeData ? volumeData.muted : false
+    readonly property int  volume: _dragVolume >= 0 ? _dragVolume : AppState.volume
+    readonly property bool muted:  AppState.muted
 
     // ── Media state ─────────────────────────────────────────
     property string mediaTitle: "No media playing"
@@ -42,7 +40,6 @@ DropdownBase {
 
     // Refresh on open
     onAboutToOpen: {
-        if (volDrop.volumeData) volDrop.volumeData.refresh()
         refreshMedia()
         refreshMediaVol()
     }
@@ -53,7 +50,6 @@ DropdownBase {
         running: volDrop.isOpen
         repeat: true
         onTriggered: {
-            if (volDrop.volumeData) volDrop.volumeData.refresh()
             refreshMedia()
             refreshMediaVol()
         }
@@ -286,12 +282,12 @@ DropdownBase {
                         mx / (parent.width - handle.width) * 100
                     )))
                     volDrop._dragVolume = newVol
-                    if (volDrop.volumeData) volDrop.volumeData.setVolume(newVol)
+                    AppState.setVolume(newVol)
                 }
 
                 onPressed:         mouse => setFromX(mouse.x)
                 onPositionChanged: mouse => { if (pressed) setFromX(mouse.x) }
-                onReleased: { volDrop._dragVolume = -1; Qt.callLater(() => { if (volDrop.volumeData) volDrop.volumeData.refresh() }) }
+                onReleased: volDrop._dragVolume = -1
             }
         }
     }

@@ -25,11 +25,9 @@ Item {
 
     signal clicked(real clickX)
 
-    // ── Shared state (from VolumeState singleton) ─────────────
-    property QtObject volumeData: null
-
-    readonly property int  volume: volumeData ? volumeData.volume : 0
-    readonly property bool muted:  volumeData ? volumeData.muted  : false
+    // ── Shared state (AppState singleton) ──────────────────────
+    readonly property int  volume: AppState.volume
+    readonly property bool muted:  AppState.muted
 
     // ============================================================
     // USER INTERACTION
@@ -48,9 +46,8 @@ Item {
         }
 
         onWheel: event => {
-            if (!volumeData) return
-            if (event.angleDelta.y > 0) volumeData.volumeUp()
-            else                        volumeData.volumeDown()
+            if (event.angleDelta.y > 0) AppState.volumeUp()
+            else                        AppState.volumeDown()
         }
     }
 

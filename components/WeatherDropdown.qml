@@ -10,19 +10,17 @@ DropdownBase {
     id: wDrop
     reloadableId: "weatherDropdown"
 
-    // ── Shared state (from WeatherState singleton) ─────────────
-    property QtObject weatherData: null
-
-    readonly property string wIcon:     weatherData ? weatherData.wIcon     : "\uf185"
-    readonly property string wDesc:     weatherData ? weatherData.wDesc     : ""
-    readonly property string wTemp:     weatherData ? weatherData.wTemp     : ""
-    readonly property string wFeels:    weatherData ? weatherData.wFeels    : ""
-    readonly property string wHumidity: weatherData ? weatherData.wHumidity : ""
-    readonly property string wWind:     weatherData ? weatherData.wWind     : ""
-    readonly property string wSunrise:  weatherData ? weatherData.wSunrise  : ""
-    readonly property string wSunset:   weatherData ? weatherData.wSunset   : ""
-    readonly property var    wForecast: weatherData ? weatherData.wForecast : []
-    readonly property bool   wLoading:  weatherData ? weatherData.wLoading  : true
+    // ── Shared state (AppState singleton) ──────────────────────
+    readonly property string wIcon:     AppState.wIcon
+    readonly property string wDesc:     AppState.wDesc
+    readonly property string wTemp:     AppState.wTemp
+    readonly property string wFeels:    AppState.wFeels
+    readonly property string wHumidity: AppState.wHumidity
+    readonly property string wWind:     AppState.wWind
+    readonly property string wSunrise:  AppState.wSunrise
+    readonly property string wSunset:   AppState.wSunset
+    readonly property var    wForecast: AppState.wForecast
+    readonly property bool   wLoading:  AppState.wLoading
 
     // ── Panel geometry ────────────────────────────────────────
     readonly property int _cardH: 52
@@ -34,7 +32,7 @@ DropdownBase {
     panelColor: colors.col_main
 
     // ── Refresh on open ───────────────────────────────────────────
-    onAboutToOpen: { if (wDrop.weatherData) wDrop.weatherData.refresh() }
+    onAboutToOpen: AppState.refresh()
 
 
     // ── UI ────────────────────────────────────────────────────

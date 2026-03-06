@@ -23,11 +23,8 @@ DropdownBase {
     }
     implicitHeight:  400
 
-    // ── State ────────────────────────────────────────────────
-    // Injected from shell.qml — BluetoothState is the single source of truth
-    property QtObject btData: null
-
-    readonly property bool btPowered: btData ? btData.btPowered : false
+    // ── State (AppState singleton) ───────────────────────────────
+    readonly property bool btPowered: AppState.btPowered
     property var  pairedDevices: []
     property var  _devBuf:       []
 
@@ -54,9 +51,7 @@ DropdownBase {
         statusProc.running = true
     }
 
-    function togglePower() {
-        if (btData) btData.togglePower()
-    }
+    function togglePower() { AppState.togglePower() }
 
     function connectDevice(addr) {
         deviceProc.command = ["bluetoothctl", "connect", addr]
@@ -69,7 +64,7 @@ DropdownBase {
     }
 
     // ── Processes ────────────────────────────────────────────
-    // Enumerate paired devices only — power state comes from btData
+    // Enumerate paired devices only — power state comes from AppState
     Process {
         id: statusProc
         running: false
