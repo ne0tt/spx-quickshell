@@ -8,7 +8,23 @@ import Quickshell.Hyprland
 import QtQuick
 import QtQuick.Effects
 
-import "components"
+import "state"
+import "base"
+import "modules/appLauncher"
+import "modules/bluetooth"
+import "modules/calendar"
+import "modules/clock"
+import "modules/network"
+import "modules/power"
+import "modules/settings"
+import "modules/systemTray"
+import "modules/vpn"
+import "modules/volume"
+import "modules/wallpaper"
+import "modules/weather"
+import "modules/workspaces"
+import "modules/yayUpdate"
+import "modules/chat"
 import "."
 
 ShellRoot {

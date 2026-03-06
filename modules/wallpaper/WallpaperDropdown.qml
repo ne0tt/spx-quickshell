@@ -2,6 +2,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import QtQuick
+import "../../base"
 // ============================================================
 // WALLPAPER DROPDOWN — scrollable thumbnail grid
 // Finds all images under ~/wallpaper/ recursively.

@@ -4,6 +4,7 @@
 
 import Quickshell
 import QtQuick
+import "../../base"
 
 DropdownBase {
     id: _drop

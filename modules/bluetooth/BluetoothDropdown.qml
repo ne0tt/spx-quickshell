@@ -2,6 +2,8 @@ import Quickshell
 import Quickshell.Io
 import QtQuick
 import QtQuick.Controls
+import "../../base"
+import "../../state"
 
 // ============================================================
 // BLUETOOTH DROPDOWN — power toggle + paired device list

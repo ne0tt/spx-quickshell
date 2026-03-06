@@ -1,6 +1,7 @@
 import Quickshell
 import Quickshell.Io
 import QtQuick
+import "../../base"
 
 // ============================================================
 // VLAN DROPDOWN — drops down like VolumeDropdown / CalendarPanel

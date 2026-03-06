@@ -1,4 +1,5 @@
 import QtQuick
+import "../../state"
 
 // ============================================================
 // WEATHER PANEL — bar pill showing icon + temperature.

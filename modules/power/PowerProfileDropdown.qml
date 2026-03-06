@@ -1,6 +1,7 @@
 import Quickshell
 import Quickshell.Io
 import QtQuick
+import "../../base"
 
 // ============================================================
 // POWER PROFILE DROPDOWN — drops down like VlanDropdown

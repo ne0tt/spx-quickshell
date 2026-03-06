@@ -2,6 +2,7 @@ import Quickshell
 import Quickshell.Wayland
 import QtQuick
 import QtQuick.Controls
+import "../../base"
 
 // ============================================================
 // APP LAUNCH DROPDOWN — inline app search panel that drops down

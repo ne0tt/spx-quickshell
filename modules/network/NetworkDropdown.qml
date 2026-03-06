@@ -1,6 +1,7 @@
 import Quickshell
 import Quickshell.Io
 import QtQuick
+import "../../base"
 
 // ============================================================
 // NETWORK DROPDOWN — drops down from the EthernetPanel IP pill

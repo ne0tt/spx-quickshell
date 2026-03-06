@@ -3,6 +3,8 @@ import Quickshell.Io
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Effects
+import "../../base"
+import "../../state"
 
 // ============================================================
 // VOLUME DROPDOWN — extends DropdownBase (no boilerplate duplication)

@@ -1,5 +1,7 @@
 import Quickshell
 import QtQuick
+import "../../base"
+import "../../state"
 
 // ============================================================
 // WEATHER DROPDOWN — extends DropdownBase.

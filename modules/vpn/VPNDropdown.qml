@@ -1,6 +1,7 @@
 import Quickshell
 import Quickshell.Io
 import QtQuick
+import "../../base"
 
 // ============================================================
 // VPN DROPDOWN — drops down from the VPN Module pill

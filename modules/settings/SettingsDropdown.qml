@@ -1,16 +1,18 @@
 import Quickshell
 import Quickshell.Io
 import QtQuick
+import "../../base"
+import "../../state"
 
 // ============================================================
 // SETTINGS DROPDOWN — quick system toggles accessible from the bar.
 //
 // Toggles provided:
-//   • Night Light    — wlsunset warm colour temperature
+//   • Night Light    — hyprshade shader toggle
 //   • Animations     — Hyprland motion effects  (hyprctl keyword)
 //   • Blur           — compositor blur          (hyprctl keyword)
 //
-// Night Light defaults (wlsunset): -l 50 -L 14 -t 3500 -T 6500
+// Night Light: toggles hyprshade on/off using the shader set in _nlShader.
 //   Adjust latitude (-l) and longitude (-L) to your location.
 // ============================================================
 DropdownBase {
@@ -53,10 +55,10 @@ DropdownBase {
     property bool _monExpanded: false
 
     // ── State persistence ─────────────────────────────────
-    // File: <quickshell config dir>/settings.json
+    // File: <quickshell config dir>/modules/settings/settings.json
     // Only animations / blur / launcherFloating are saved;
     // the other toggles are read from the system on every open.
-    readonly property url    _stateUrl:  Qt.resolvedUrl("../settings.json")
+    readonly property url    _stateUrl:  Qt.resolvedUrl("settings.json")
     readonly property string _statePath: _stateUrl.toString().replace("file://", "")
     property bool _loaded: false  // guard: don't save during initial load
 

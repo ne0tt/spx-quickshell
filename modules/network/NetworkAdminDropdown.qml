@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Io
 import QtQuick
 import QtQuick.Controls
+import "../../base"
 
 // ============================================================
 // NETWORK ADMIN DROPDOWN

@@ -1,6 +1,7 @@
 // components/VolumePanel.qml
 
 import QtQuick
+import "../../state"
 
 Item {
     id: root
