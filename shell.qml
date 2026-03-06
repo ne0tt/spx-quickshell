@@ -144,22 +144,23 @@ ShellRoot {
         // State for sequenced panel switching (used by switchPanel)
         property var pendingOpen: null
 
+        // Single source of truth for all panels that use closePanel()
+        // appLauncher is excluded here because it uses closeLauncher() instead
+        readonly property var dropdowns: [calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown, networkDropdown, vpnDropdown, bluetoothDropdown, wpDropdown, weatherDropdown, settingsDropdown, appLaunchDropdown, trayMenu]
+
         // Close every open dropdown/drawer in one call
         function closeAllDropdowns() {
-            const dropdowns = [calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown, networkDropdown, vpnDropdown, bluetoothDropdown, wpDropdown, weatherDropdown, settingsDropdown, trayMenu];
             for (const p of dropdowns) {
                 if (p.isOpen)
                     p.closePanel();
             }
             if (appLauncher.isOpen)
                 appLauncher.closeLauncher();
-            if (appLaunchDropdown.isOpen)
-                appLaunchDropdown.closePanel();
         }
 
         // Returns true if any panel/dropdown is currently open
         function isAnyPanelOpen() {
-            return [calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown, networkDropdown, vpnDropdown, bluetoothDropdown, wpDropdown, weatherDropdown, settingsDropdown, appLauncher, appLaunchDropdown, trayMenu].some(p => p.isOpen);
+            return dropdowns.some(p => p.isOpen) || appLauncher.isOpen;
         }
 
         // Close all open panels, then open the requested one after animation
