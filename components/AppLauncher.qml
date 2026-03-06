@@ -183,6 +183,13 @@ PanelWindow {
                 onTriggered: parent._borderAngle -= Math.PI * 2 / 48
             }
 
+            // Solid background fill
+            Rectangle {
+                anchors.fill: parent
+                radius: 8
+                color: colors.col_background
+            }
+
             // Dim static border shown when unfocused
             Rectangle {
                 anchors.fill: parent
