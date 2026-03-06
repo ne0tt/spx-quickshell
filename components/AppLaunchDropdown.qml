@@ -1,5 +1,4 @@
 import Quickshell
-import Quickshell.Io
 import Quickshell.Wayland
 import QtQuick
 import QtQuick.Controls
@@ -61,7 +60,6 @@ DropdownBase {
     implicitHeight: 320
 
     // ── App state ────────────────────────────────────────────
-    property var  _appData:  []
     property bool _hasQuery: false   // true when searchField has text
 
     // Clear search and refocus on every open ─────────────────
@@ -69,8 +67,6 @@ DropdownBase {
         filteredApps.clear()
         _drop._hasQuery = false
         Qt.callLater(() => { searchField.text = ""; searchField.forceActiveFocus() })
-        if (_drop._appData.length === 0 && !appListProc.running)
-            appListProc.running = true
     }
 
     // Clear on close ─────────────────────────────────────────
@@ -86,94 +82,45 @@ DropdownBase {
     }
 
     // ── Filtering ────────────────────────────────────────────
+    function _score(entry, q) {
+        var n = entry.name.toLowerCase()
+        if (n === q)               return 100
+        if (n.startsWith(q))       return 80
+        if (n.indexOf(q) !== -1)   return 60
+        if (String(entry.genericName).toLowerCase().indexOf(q) !== -1) return 40
+        if (String(entry.keywords).toLowerCase().indexOf(q)    !== -1) return 20
+        return 0
+    }
+
     function _filter(query) {
         filteredApps.clear()
         _drop._hasQuery = query.length > 0
         if (!query) { appList.currentIndex = -1; return }
         var q = query.toLowerCase()
-        for (var i = 0; i < _drop._appData.length; i++) {
-            var app = _drop._appData[i]
-            if (app.name.toLowerCase().indexOf(q) !== -1)
-                filteredApps.append(app)
-            if (filteredApps.count >= 25) break
+        var entries = DesktopEntries.applications.values
+        var scored = []
+        for (var i = 0; i < entries.length; i++) {
+            var entry = entries[i]
+            if (entry.noDisplay) continue
+            var s = _drop._score(entry, q)
+            if (s > 0) scored.push({ name: entry.name, desktopId: entry.id, _s: s })
         }
+        scored.sort(function(a, b) { return b._s - a._s })
+        var limit = Math.min(scored.length, 25)
+        for (var j = 0; j < limit; j++)
+            filteredApps.append({ name: scored[j].name, desktopId: scored[j].desktopId })
         appList.currentIndex = filteredApps.count > 0 ? 0 : -1
     }
 
     // ── Launching ────────────────────────────────────────────
-    function _launch(execStr) {
-        var pyScript =
-            "import subprocess,re,shlex,sys\n" +
-            "e=sys.argv[1]\n" +
-            "e=re.sub(r'%[fFuUdDnNickvmpe]','',e).strip()\n" +
-            "subprocess.Popen(shlex.split(e),\n" +
-            "    start_new_session=True,\n" +
-            "    close_fds=True,\n" +
-            "    stdin=subprocess.DEVNULL,\n" +
-            "    stdout=subprocess.DEVNULL,\n" +
-            "    stderr=subprocess.DEVNULL)\n"
-        launchProc.command = ["python3", "-c", pyScript, execStr]
-        launchProc.running = true
+    function _launch(id) {
+        var entry = DesktopEntries.byId(id)
+        if (entry) entry.execute()
         _drop.closePanel()
     }
 
     // ── Models ──────────────────────────────────────────────
     ListModel { id: filteredApps }
-
-    // ── Process: enumerate .desktop files ────────────────────
-    // Identical parser to AppLauncher — user entries shadow system ones.
-    Process {
-        id: appListProc
-        running: false
-        command: [
-            "python3", "-c",
-            "import os,glob\n" +
-            "p2=glob.glob(os.path.expanduser('~/.local/share/applications/*.desktop'))\n" +
-            "p1=glob.glob('/usr/share/applications/*.desktop')\n" +
-            "out=[]\n" +
-            "seen=set()\n" +
-            "for f in p2+p1:\n" +
-            "    n=nd=t=e=''\n" +
-            "    s=False\n" +
-            "    base=os.path.basename(f)\n" +
-            "    try:\n" +
-            "        for l in open(f,errors='ignore'):\n" +
-            "            l=l.rstrip()\n" +
-            "            if l=='[Desktop Entry]':s=True;continue\n" +
-            "            if l.startswith('[') and s:break\n" +
-            "            if not s:continue\n" +
-            "            k,_,v=l.partition('=')\n" +
-            "            if k=='Name' and not n:n=v\n" +
-            "            if k=='Exec' and not e:e=v\n" +
-            "            if k=='NoDisplay':nd=v.lower()\n" +
-            "            if k=='Hidden':nd=v.lower()\n" +
-            "            if k=='Type':t=v\n" +
-            "        if n and e and nd!='true' and t=='Application' and base not in seen:\n" +
-            "            seen.add(base)\n" +
-            "            out.append(n+'\\t'+f+'\\t'+e)\n" +
-            "    except:pass\n" +
-            "out.sort(key=lambda x:x.lower())\n" +
-            "print('\\n'.join(out))\n"
-        ]
-        stdout: SplitParser {
-            onRead: data => {
-                var parts = data.split("\t")
-                if (parts.length < 3) return
-                _drop._appData.push({ name: parts[0], path: parts[1], desktopId: parts[2] })
-            }
-        }
-        onRunningChanged: {
-            if (!running && _drop._appData.length > 0)
-                _drop._filter(searchField.text)
-        }
-    }
-
-    // ── Process: launch ──────────────────────────────────────
-    Process {
-        id: launchProc
-        command: []
-        onRunningChanged: if (!running) command = []
-    }
 
     // ═══════════════════════════════════════════════════════
     // CONTENT — search box + result list
@@ -350,7 +297,7 @@ DropdownBase {
         y: 16 + _drop._padTop + 44 + 8 + 8
         width:   _drop.panelWidth
         visible: _drop._hasQuery && filteredApps.count === 0
-        text: appListProc.running ? "Loading…" : "No apps matching \"" + searchField.text + "\""
+        text: "No apps matching \"" + searchField.text + "\""
         horizontalAlignment: Text.AlignHCenter
         color: Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.35)
         font.pixelSize: 13

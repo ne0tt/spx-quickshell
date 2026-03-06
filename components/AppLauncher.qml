@@ -1,5 +1,4 @@
 import Quickshell
-import Quickshell.Io
 import Quickshell.Wayland
 import QtQuick
 import QtQuick.Effects
@@ -47,8 +46,6 @@ PanelWindow {
     property string fontFamily: config.fontFamily
 
     // ─── Internal state ───────────────────────────────────
-    property var _appData: []   // backing array [{name, path, exec}]
-
     // ─── Open / close ────────────────────────────────────
     function openLauncher() {
         if (_panel.visible) return;
@@ -56,7 +53,7 @@ PanelWindow {
         _panel.scale   = 0.97;
         _panel.visible = true;
         _openAnim.start();
-        _maybeRefreshApps();
+        _filter(searchField.text);
         Qt.callLater(() => searchField.forceActiveFocus());
     }
 
@@ -66,12 +63,15 @@ PanelWindow {
         searchField.text = "";
     }
 
-    // ─── App fetching & filtering ────────────────────────
-    function _maybeRefreshApps() {
-        if (launcher._appData.length === 0 && !appListProc.running)
-            appListProc.running = true;
-        else
-            _filter(searchField.text);
+    // ─── Filtering ───────────────────────────────────────
+    function _score(entry, q) {
+        var n = entry.name.toLowerCase();
+        if (n === q)               return 100;
+        if (n.startsWith(q))       return 80;
+        if (n.indexOf(q) !== -1)   return 60;
+        if (String(entry.genericName).toLowerCase().indexOf(q) !== -1) return 40;
+        if (String(entry.keywords).toLowerCase().indexOf(q)    !== -1) return 20;
+        return 0;
     }
 
     function _filter(query) {
@@ -81,99 +81,29 @@ PanelWindow {
             return;
         }
         var q = query.toLowerCase();
-        for (var i = 0; i < launcher._appData.length; i++) {
-            var app = launcher._appData[i];
-            if (app.name.toLowerCase().indexOf(q) !== -1)
-                filteredApps.append(app);
-            if (filteredApps.count >= 100) break;
+        var entries = DesktopEntries.applications.values;
+        var scored = [];
+        for (var i = 0; i < entries.length; i++) {
+            var entry = entries[i];
+            if (entry.noDisplay) continue;
+            var s = _score(entry, q);
+            if (s > 0) scored.push({ name: entry.name, desktopId: entry.id, _s: s });
         }
+        scored.sort(function(a, b) { return b._s - a._s });
+        var limit = Math.min(scored.length, 100);
+        for (var j = 0; j < limit; j++)
+            filteredApps.append({ name: scored[j].name, desktopId: scored[j].desktopId });
         appList.currentIndex = filteredApps.count > 0 ? 0 : -1;
     }
 
-    function _launch(execStr) {
-        // Use Python Popen with start_new_session=True: the app gets its own
-        // process session, fully detached from quickshell, exactly how rofi
-        // and other launchers hand off apps to the OS.
-        var pyScript =
-            "import subprocess,re,shlex,sys\n" +
-            "e=sys.argv[1]\n" +
-            "# Strip desktop field codes (%f %F %u %U etc.)\n" +
-            "e=re.sub(r'%[fFuUdDnNickvmpe]','',e).strip()\n" +
-            "subprocess.Popen(shlex.split(e),\n" +
-            "    start_new_session=True,\n" +
-            "    close_fds=True,\n" +
-            "    stdin=subprocess.DEVNULL,\n" +
-            "    stdout=subprocess.DEVNULL,\n" +
-            "    stderr=subprocess.DEVNULL)\n";
-        launchProc.command = ["python3", "-c", pyScript, execStr];
-        launchProc.running = true;
+    function _launch(id) {
+        var entry = DesktopEntries.byId(id);
+        if (entry) entry.execute();
         closeLauncher();
     }
 
     // ─── Models ──────────────────────────────────────────
     ListModel { id: filteredApps }
-
-    // ─── Process: enumerate .desktop files ───────────────
-    Process {
-        id: appListProc
-        running: false
-        command: [
-            "python3", "-c",
-            "import os,glob\n" +
-            "# User entries first so they shadow system ones\n" +
-            "p2=glob.glob(os.path.expanduser('~/.local/share/applications/*.desktop'))\n" +
-            "p1=glob.glob('/usr/share/applications/*.desktop')\n" +
-            "out=[]\n" +
-            "seen=set()\n" +
-            "for f in p2+p1:\n" +
-            "    n=nd=t=e=''\n" +
-            "    s=False\n" +
-            "    base=os.path.basename(f)\n" +
-            "    try:\n" +
-            "        for l in open(f,errors='ignore'):\n" +
-            "            l=l.rstrip()\n" +
-            "            if l=='[Desktop Entry]':s=True;continue\n" +
-            "            if l.startswith('[') and s:break\n" +
-            "            if not s:continue\n" +
-            "            k,_,v=l.partition('=')\n" +
-            "            if k=='Name' and not n:n=v\n" +
-            "            if k=='Exec' and not e:e=v\n" +
-            "            if k=='NoDisplay':nd=v.lower()\n" +
-            "            if k=='Hidden':nd=v.lower()\n" +
-            "            if k=='Type':t=v\n" +
-            "        if n and e and nd!='true' and t=='Application' and base not in seen:\n" +
-            "            seen.add(base)\n" +
-            "            out.append(n+'\\t'+f+'\\t'+e)\n" +
-            "    except:pass\n" +
-            "out.sort(key=lambda x:x.lower())\n" +
-            "print('\\n'.join(out))\n"
-        ]
-
-        stdout: SplitParser {
-            onRead: data => {
-                var parts = data.split("\t");
-                if (parts.length < 3) return;
-                launcher._appData.push({
-                    name:      parts[0],
-                    path:      parts[1],
-                    desktopId: parts[2]   // Exec= value
-                });
-            }
-        }
-
-        onRunningChanged: {
-            if (!running && launcher._appData.length > 0)
-                launcher._filter(searchField.text);
-        }
-    }
-
-    // ─── Process: launch the selected app ────────────────
-    Process {
-        id: launchProc
-        command: []
-        // Re-arm after each run so subsequent launches work
-        onRunningChanged: if (!running) command = []
-    }
 
     // ─── Animations ──────────────────────────────────────
     ParallelAnimation {
@@ -402,9 +332,7 @@ PanelWindow {
 
             Text {
                 anchors.centerIn: parent
-                text: searchField.text.length > 0
-                      ? "No apps matching  \"" + searchField.text + "\""
-                      : (appListProc.running ? "Loading…" : "No apps found")
+                text: "No apps matching \"" + searchField.text + "\""
                 color: Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.35)
                 font.pixelSize: 14
                 font.family: launcher.fontFamily
