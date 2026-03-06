@@ -21,7 +21,7 @@ QtObject {
     // FILEVIEW — reads settings.json via inotify; no blocking XHR.
     // watchChanges: true means SettingsDropdown writes are picked up automatically.
     property var _settingsFile: FileView {
-        path: Qt.resolvedUrl("settings.json").toString().replace("file://", "")
+        path: Qt.resolvedUrl("modules/settings/settings.json").toString().replace("file://", "")
         watchChanges: true
         onFileChanged: reload()
         onLoaded: {
