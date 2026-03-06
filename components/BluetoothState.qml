@@ -6,6 +6,7 @@ import Quickshell.Io
 // BluetoothDropdown and SettingsDropdown.
 // Reads power state on startup and re-reads any time
 // bluetoothctl reports a change (debounced 600 ms).
+// Uses rfkill for power control (block/unblock bluetooth).
 // Call refresh() to force an immediate re-read.
 // ============================================================
 QtObject {
@@ -36,13 +37,21 @@ QtObject {
     // ── Mutation processes ────────────────────────────────
     property var _onProc: Process {
         running: false
-        command: ["bluetoothctl", "power", "on"]
-        onExited: _state.refresh()
+        command: ["rfkill", "unblock", "bluetooth"]
+        // Delay refresh for power-on: adapter needs ~300-400ms to fully initialize
+        onExited: _onDelayTimer.restart()
+    }
+
+    property var _onDelayTimer: Timer {
+        interval: 400
+        repeat: false
+        onTriggered: _state.refresh()
     }
 
     property var _offProc: Process {
         running: false
-        command: ["bluetoothctl", "power", "off"]
+        command: ["rfkill", "block", "bluetooth"]
+        // Power-off is instant, no delay needed
         onExited: _state.refresh()
     }
 
