@@ -2,7 +2,7 @@
 
 A highly customized Wayland status bar and system interface built with [Quickshell](https://quickshell.outfoxxed.me/) for Hyprland. This configuration provides a modern, feature-rich desktop panel with dropdown menus, system monitoring, and application launching capabilities.
 
-## Discalaimer
+## Disclaimer
 
 This was created out of a fun learning project - Inspiration taken from end_4, Noctalia etc - Love them drawer animations!
 This is in no way to be taken as a "this is how to do a thing..." it is purely "this is how I have done a thing..."
