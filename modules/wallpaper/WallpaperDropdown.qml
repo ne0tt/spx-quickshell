@@ -126,8 +126,8 @@ DropdownBase {
         wpDrop.currentWallpaper = path
         swwwProc.command    = ["swww", "img", path,
             "--transition-type", "wipe",
-            "--transition-angle", "30",
-            "--transition-duration", "0.5"]
+            "--transition-angle", "45",
+            "--transition-duration", "0.3"]
         matugenProc.command = ["matugen", "image", path, "--source-color-index", "0"]
         swwwProc.running    = true
         matugenProc.running = true
