@@ -369,7 +369,7 @@ PanelWindow {
                 anchors.leftMargin: 15
                 anchors.verticalCenter: parent.verticalCenter
                 text: _base.panelIcon
-                font.pixelSize: 32
+                font.pixelSize: 24
                 color: Qt.rgba(_base.accentColor.r, _base.accentColor.g, _base.accentColor.b, 0.85)
                 visible: _base.panelIcon !== ""
             }
