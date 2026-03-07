@@ -25,8 +25,8 @@ PanelWindow {
     anchors.top:   true
     anchors.left:  true
     anchors.right: true
-    implicitHeight: 50        // same as the main bar window
-    exclusiveZone:  0
+    implicitHeight: 75        // same as the main bar window
+    exclusiveZone:  -30
     color: "transparent"
 
     // Sit above every Top-layer surface (bars, dropdowns, etc.)
@@ -101,11 +101,11 @@ PanelWindow {
         MultiEffect {
             source: _glowSrc
             anchors.centerIn: _glowSrc
-            width:  _glowSrc.width + 15
+            width:  _glowSrc.width + 10
             height: _glowSrc.height
             blurEnabled: true
-            blur:        0.9
-            blurMax:     45
+            blur:        0.6
+            blurMax:     64
             brightness:  0.3
             shadowEnabled: false
         }

@@ -57,7 +57,7 @@ PanelWindow {
     color: "transparent"
 
     // Sit above the Top-layer main bar so dropdowns always render over it
-    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.layer: WlrLayer.Top
 
     // When a panel is open the mask must cover the full window so the
     // click-outside MouseArea can receive events anywhere on screen.
@@ -71,8 +71,8 @@ PanelWindow {
     // Theme defaults mirror shell.qml's colors object — override per-instance
     // only when a dropdown genuinely differs from the shell theme.
     property int barHeight: 16
-    property int openDuration: 480   // roll-up animation speed (ms)
-    property int closeDuration: 220  // roll-down animation speed (ms)
+    property int openDuration: 280   // roll-up animation speed (ms)
+    property int closeDuration: 280  // roll-down animation speed (ms)
     property string fontFamily: config.fontFamily
     property color panelColor: colors.col_main
     property int panelFullHeight: 200
@@ -123,6 +123,7 @@ PanelWindow {
         _contentFadeIn.stop();
         _contentFadeDelay.stop();
         _contentFadeOut.restart();  // fade content out before the panel shrinks
+        _hexFadeOut.restart();
         _closeAnim.from = _wrapper.height;
         _closeAnim.start();
     }
@@ -131,6 +132,7 @@ PanelWindow {
     function startOpenAnim() {
         _closeAnim.stop();
         _openAnim.stop();
+        _hexFadeOut.stop();
         _hexBar.opacity      = 0;  // reset before first frame so no stale opacity flashes
         _contentArea.opacity = 0;  // content + header fade in partway through the expansion
         _contentFadeOut.stop();
@@ -149,6 +151,7 @@ PanelWindow {
         from: 0
         to: 16 + _base.headerHeight + _base.panelFullHeight + _base.footerHeight
         duration: _base.openDuration
+        //easing.type: Easing.OutBack
         easing.type: Easing.OutCubic
         onFinished: {
             _hexBar.trigger()
@@ -157,7 +160,7 @@ PanelWindow {
 
     Timer {
         id: _contentFadeDelay
-        interval: 160   // ~57% into the 280 ms expansion — content fades in during the tail
+        interval: openDuration / 3 
         repeat: false
         onTriggered: _contentFadeIn.restart()
     }
@@ -172,11 +175,20 @@ PanelWindow {
     }
 
     NumberAnimation {
+        id: _hexFadeOut
+        target: _hexBar
+        property: "opacity"
+        from: 1; to: 0
+        duration: _base.closeDuration
+        easing.type: Easing.InCubic
+    }
+
+    NumberAnimation {
         id: _contentFadeIn
         target: _contentArea
         property: "opacity"
         from: 0; to: 1
-        duration: 130
+        duration: openDuration
         easing.type: Easing.OutCubic
     }
 
@@ -185,7 +197,7 @@ PanelWindow {
         target: _contentArea
         property: "opacity"
         from: 1; to: 0
-        duration: 120
+        duration: closeDuration
         easing.type: Easing.InCubic
     }
 
@@ -261,7 +273,7 @@ PanelWindow {
             width: parent.width
             height: 18
             fillColor: "black"
-            opacity: 0.98
+            opacity: 1
             blurShadow: true
         }
         // Shadow: unified body (header + content + footer) — flat top, rounded bottom
@@ -274,7 +286,7 @@ PanelWindow {
             bottomLeftRadius: 16
             bottomRightRadius: 16
             color: "black"
-            opacity: 0.98
+            opacity: 1
             layer.enabled: true
             layer.effect: MultiEffect {
                 blurEnabled: true

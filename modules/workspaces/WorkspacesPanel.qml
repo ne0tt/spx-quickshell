@@ -78,16 +78,20 @@ Item {
     // Active workspace glow always on top
     Item {
         id: activeGlow
-        width: 50
-        height: 20
+        readonly property int _pad: 32
+        width: 50 + _pad * 2
+        height: 20 + _pad * 2
         z: 1
 
         visible: focusedLocalIndex >= 0
-        x: focusedLocalIndex >= 0 ? focusedLocalIndex * (50 + 5) : 0
+        x: (focusedLocalIndex >= 0 ? focusedLocalIndex * (50 + 5) : 0) - _pad
+        y: -_pad
 
         Rectangle {
             id: glowSource
-            anchors.fill: parent
+            anchors.centerIn: parent
+            width:  50
+            height: 20
             radius: height / 2
             color: colors.col_source_color
             visible: true
@@ -96,7 +100,7 @@ Item {
         MultiEffect {
             source: glowSource
             anchors.centerIn: glowSource
-            width: glowSource.width + 10
+            width: glowSource.width
             height: glowSource.height
             blurEnabled: true
             blur: 0.6
