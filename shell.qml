@@ -639,7 +639,6 @@ ShellRoot {
     WorkspaceGlowOverlay {
         screen: root.screen
         monitorName: config.barMonitor
-        visible: appLaunchDropdown.isOpen
     }
 
 }
