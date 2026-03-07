@@ -9,6 +9,7 @@ Item {
     id: root
 
     property string fontFamily: config.fontFamily
+    property int    fontWeight: config.fontWeight
     property int    iconSize:   16
 
     property bool   isActive:    false
@@ -27,6 +28,7 @@ Item {
         anchors.centerIn: parent
         text:           "󰸉"
         font.family:    root.fontFamily
+        font.weight:    root.fontWeight
         font.pixelSize: root.iconSize
         color: root.isActive || root._hovered ? root.activeColor : root.accentColor
         Behavior on color { ColorAnimation { duration: 160 } }

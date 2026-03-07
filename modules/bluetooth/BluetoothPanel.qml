@@ -7,6 +7,7 @@ Item {
     id: root
 
     property string fontFamily: config.fontFamily
+    property int    fontWeight: config.fontWeight
     property int    iconSize:   16
 
     property bool   btPowered:  false
@@ -30,6 +31,7 @@ Item {
         text: root.btPowered ? "" : "󰂯"
         font.family:    root.fontFamily
         font.styleName: "Solid"
+        font.weight:    root.fontWeight
         font.pixelSize: root.iconSize
         color: root.isActive  ? root.activeColor
              : root._hovered  ? root.hoverColor

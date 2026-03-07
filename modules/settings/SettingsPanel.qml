@@ -8,6 +8,7 @@ Item {
     id: root
 
     property string fontFamily:  config.fontFamily
+    property int    fontWeight:  config.fontWeight
     property int    iconSize:    15
 
     property bool   isActive:    false   // true when the dropdown is open
@@ -29,6 +30,7 @@ Item {
         text: "󰒓"   // nf-md-cog nerd-font glyph
         font.family:    root.fontFamily
         font.styleName: "Solid"
+        font.weight:    root.fontWeight
         font.pixelSize: root.iconSize
         color: root.isActive  ? root.activeColor
              : root._hovered  ? root.hoverColor

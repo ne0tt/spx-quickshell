@@ -9,6 +9,7 @@ Rectangle {
     // ========================================================
     property string fontFamily: config.fontFamily
     property int fontSize: 13
+    property int fontWeight: config.fontWeight
     property bool fontBold: false
     property color textColor: "white"
     property color backgroundColor: colors.col_background
@@ -48,7 +49,7 @@ Rectangle {
         color: textColor
         font.family: fontFamily
         font.pixelSize: fontSize
-        font.bold: fontBold
+        font.weight: fontBold ? Font.Bold : fontWeight
         text: Qt.formatDateTime(clock.date, "dd/MM/yyyy   HH:mm:ss")
     }
 }
