@@ -1,5 +1,5 @@
 import Quickshell
-import Quickshell.Io
+import Quickshell.Services.UPower
 import QtQuick
 import "../../base"
 
@@ -29,16 +29,12 @@ DropdownBase {
         { id: "performance",  label: "Performance",  subtitle: "Maximum power",   icon: "" }
     ]
 
-    Process {
-        id: setProfile
-        property string target: ""
-        command: ["sh", "-c", "powerprofilesctl set " + target]
-        // currentProfile updates automatically via the panel's DBus monitor
-    }
-
     function activateProfile(profileId) {
-        setProfile.target = profileId
-        setProfile.running = true
+        switch (profileId) {
+            case "power-saver":  PowerProfiles.profile = PowerProfile.PowerSaver;  break
+            case "balanced":     PowerProfiles.profile = PowerProfile.Balanced;    break
+            case "performance":  PowerProfiles.profile = PowerProfile.Performance; break
+        }
     }
 
         // ── Profile list ──────────────────────────────────
