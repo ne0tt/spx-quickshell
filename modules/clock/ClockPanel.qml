@@ -17,7 +17,7 @@ Rectangle {
 
     signal clicked(real clickX, real clickY)
 
-    width: 175
+    width: 185
     height: 24
     radius: 7
     color: backgroundColor
@@ -44,7 +44,7 @@ Rectangle {
     Text {
         id: clockText
         anchors.verticalCenter: parent.verticalCenter
-        anchors.verticalCenterOffset: 0
+        anchors.verticalCenterOffset: 1
         anchors.centerIn: parent
         color: textColor
         font.family: fontFamily

@@ -275,7 +275,7 @@ ShellRoot {
 
                         Text {
                             anchors.centerIn: parent
-                            anchors.verticalCenterOffset: 1
+                            anchors.verticalCenterOffset: 0
                             text: ""
                             font.family: root.fontFamily
                             font.pixelSize: 17
@@ -317,6 +317,8 @@ ShellRoot {
                     // ---------------- Wallpaper Button ----------------
                     WallpaperPanel {
                         id: wallpaperButton
+                        anchors.verticalCenter: parent.verticalCenter
+                            anchors.verticalCenterOffset: 1
                         isActive: wpDropdown.isOpen
                         onClicked: function (clickX) {
                             wpDropdown.panelX = clickX - wpDropdown.panelWidth / 2 - 16 + 250;
@@ -404,7 +406,7 @@ ShellRoot {
                     Row {
                         spacing: 10
                         anchors.verticalCenter: parent.verticalCenter
-                        anchors.verticalCenterOffset: 1
+                        anchors.verticalCenterOffset: 0
                         height: parent.height
 
                         // BLUETOOTH TOGGLE
@@ -485,13 +487,13 @@ ShellRoot {
                     // SYSTEM TRAY (Solaar, Remmina, etc.)
                     SystemTrayPanel {
                         anchors.verticalCenter: parent.verticalCenter
-                        anchors.verticalCenterOffset: 1
+                        anchors.verticalCenterOffset: 0
                         menuWindow: trayMenu
                     }                    
 
                     ClockPanel {
                         id: clockWidget
-                        fontSize: 12
+                        fontSize: 13
                         fontBold: true
                         textColor: calendarPanel.isOpen ? colors.col_source_color : colors.col_primary
                         borderColor: "black"
