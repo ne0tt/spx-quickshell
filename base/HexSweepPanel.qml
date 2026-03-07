@@ -36,8 +36,10 @@ Rectangle {
     Canvas {
         id: hexCanvas
         anchors.fill: parent
-        anchors.leftMargin:  3
-        anchors.rightMargin: 3
+        anchors.leftMargin:   2
+        anchors.rightMargin:  2
+        anchors.topMargin:    2
+        anchors.bottomMargin: 2
 
         layer.enabled: false
         layer.smooth: false
