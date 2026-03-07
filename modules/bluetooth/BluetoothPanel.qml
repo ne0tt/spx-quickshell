@@ -12,10 +12,10 @@ Item {
     property bool   btPowered:  false
     property bool   isActive:   false   // true when the dropdown is open
 
-    property color  accentColor: "white"        // powered + dropdown closed
-    property color  activeColor: "white"        // dropdown open
-    property color  hoverColor:  accentColor    // mouse hover
-    property color  dimColor:    Qt.rgba(1, 1, 1, 0.4)  // BT off
+    property color  accentColor: colors.col_primary      // powered + dropdown closed
+    property color  activeColor: colors.col_source_color  // dropdown open
+    property color  hoverColor:  colors.col_source_color  // mouse hover
+    property color  dimColor:    Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.4)  // BT off
 
     property bool   _hovered:   false
 

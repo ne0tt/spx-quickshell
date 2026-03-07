@@ -30,17 +30,17 @@ Rectangle {
     }
     property int vpnBoxWidth: 150
     property string fontFamily: config.fontFamily
-    property int    fontSize:   11
+    property int    fontSize:   config.fontSize
     property int    iconSize:   16
-    property int    fontWeight: Font.Normal
+    property int    fontWeight: config.fontWeight
 
     property bool   isActive:   false
-    property color  accentColor: "#2decec"
-    property color  activeColor: "white"
-    property color  hoverColor:  accentColor
+    property color  accentColor: colors.col_primary
+    property color  activeColor: colors.col_source_color
+    property color  hoverColor:  colors.col_source_color
     property color  dimColor:    Qt.rgba(1, 1, 1, 0.4)
 
-    property color  backgroundColor: "#0e1514"
+    property color  backgroundColor: colors.col_background
     property bool   _hovered:   false
     property string vpnIp: ""
     property bool showVpnIp: false
@@ -59,6 +59,7 @@ Rectangle {
     }
     Row {
         anchors.centerIn: parent
+        anchors.verticalCenterOffset: 1
         spacing: 3
         height: parent.height
 

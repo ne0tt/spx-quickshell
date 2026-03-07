@@ -16,8 +16,8 @@ Item {
 
     property string fontFamily: config.fontFamily
     property int    iconSize:   15  // Match other panel icons
-    property color  accentColor: "white"
-    property color  hoverColor:  "white"
+    property color  accentColor: colors.col_primary
+    property color  hoverColor:  colors.col_source_color
     property var    menuWindow:  null  // set to TrayMenu instance from shell.qml
 
     // ============================================================
@@ -160,6 +160,7 @@ Item {
         Row {
             id: trayRow
             anchors.centerIn: parent
+            anchors.verticalCenterOffset: 1
             spacing: 4
 
         Repeater {

@@ -12,9 +12,9 @@ Item {
 
     property bool   isActive:    false   // true when the dropdown is open
 
-    property color  accentColor: "white"
-    property color  activeColor: "white"
-    property color  hoverColor:  accentColor
+    property color  accentColor: colors.col_primary
+    property color  activeColor: colors.col_source_color
+    property color  hoverColor:  colors.col_source_color
 
     property bool   _hovered:    false
 

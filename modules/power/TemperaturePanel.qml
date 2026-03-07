@@ -7,14 +7,14 @@ Item {
     height: 24
 
     property string fontFamily: config.fontFamily
-    property int    fontSize:   11
+    property int    fontSize:   config.fontSize
     property int    iconSize:   16
-    property int    fontWeight: Font.Normal
+    property int    fontWeight: config.fontWeight
 
     property bool   isActive:   false
-    property color  accentColor: "white"
-    property color  activeColor: "white"
-    property color  hoverColor:  accentColor
+    property color  accentColor: colors.col_primary
+    property color  activeColor: colors.col_source_color
+    property color  hoverColor:  colors.col_source_color
     property color  dimColor:    Qt.rgba(1, 1, 1, 0.4)
 
     property bool   _hovered:   false

@@ -11,7 +11,7 @@ Rectangle {
     property int fontSize: 13
     property bool fontBold: false
     property color textColor: "white"
-    property color backgroundColor: "#2c2c2c"
+    property color backgroundColor: colors.col_background
     property color borderColor: "black"
 
     signal clicked(real clickX, real clickY)

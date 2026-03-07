@@ -12,6 +12,8 @@ QtObject {
     // Font used everywhere in the bar and all dropdowns.
     // Change this one line to restyle the entire shell.
     property string fontFamily: "Hack Nerd Font"
+    property int    fontSize:   12
+    property int    fontWeight: Font.Normal
 
     // Hyprland output name for the monitor the main bar is displayed on.
     // Persisted to settings.json and overwritten by SettingsDropdown on change.

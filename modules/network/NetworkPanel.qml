@@ -9,18 +9,18 @@ import QtQuick
 Item {
     id: root
 
-    property string fontFamily:      ""
-    property int    fontSize:        11
+    property string fontFamily:      config.fontFamily
+    property int    fontSize:        config.fontSize
     property int    iconSize:        16
-    property int    fontWeight:      Font.Regular
+    property int    fontWeight:      config.fontWeight
 
     property string ip:              ""
 
     property bool   isActive:        false
-    property color  accentColor:     "white"
-    property color  activeColor:     "white"
-    property color  hoverColor:      accentColor
-    property color  backgroundColor: "#1e1e2e"
+    property color  accentColor:     colors.col_primary
+    property color  activeColor:     colors.col_source_color
+    property color  hoverColor:      colors.col_source_color
+    property color  backgroundColor: colors.col_background
 
     property bool   _hovered: false
 
@@ -43,6 +43,7 @@ Item {
         Row {
             id: pillRow
             anchors.centerIn: parent
+            anchors.verticalCenterOffset: 1
             spacing: 5
 
             Text {

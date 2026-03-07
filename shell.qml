@@ -133,8 +133,8 @@ ShellRoot {
         // --------------------------------------------------------
 
         property string fontFamily: config.fontFamily
-        property int fontSize: 12
-        property int fontWeight: Font.Normal
+        property int fontSize: config.fontSize
+        property int fontWeight: config.fontWeight
 
         // Semi-transparent primary colour used for dim/inactive states
         readonly property color dimPrimary: Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.4)
@@ -317,11 +317,7 @@ ShellRoot {
                     // ---------------- Wallpaper Button ----------------
                     WallpaperPanel {
                         id: wallpaperButton
-                        fontFamily: root.fontFamily
                         isActive: wpDropdown.isOpen
-                        accentColor: colors.col_primary
-                        activeColor: colors.col_source_color
-                        hoverColor: colors.col_source_color
                         onClicked: function (clickX) {
                             wpDropdown.panelX = clickX - wpDropdown.panelWidth / 2 - 16 + 250;
                             if (wpDropdown.isOpen) {
@@ -333,11 +329,7 @@ ShellRoot {
                     }
 
                     YayUpdatePanel {
-                        accentColor: colors.col_source_color
-                        backgroundColor: colors.col_background
-                        fontFamily: root.fontFamily
                         fontSize: 15
-                        fontWeight: root.fontWeight
                     }
                 }
 
@@ -364,11 +356,7 @@ ShellRoot {
                     // VLAN BUTTON — opens / closes VlanDropdown
                     VlanPanel {
                         id: vlanButton
-                        fontFamily: root.fontFamily
                         isActive: vlanDropdown.isOpen
-                        accentColor: colors.col_primary
-                        activeColor: colors.col_source_color
-                        hoverColor: colors.col_source_color
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.verticalCenterOffset: 1
                         onClicked: function (clickX) {
@@ -384,15 +372,8 @@ ShellRoot {
                     // ETHERNET IP
                     NetworkPanel {
                         id: networkPanel
-                        fontFamily: root.fontFamily
-                        fontSize: root.fontSize
-                        fontWeight: root.fontWeight
                         ip: networkDropdown.infoIp
                         isActive: networkDropdown.isOpen
-                        accentColor: colors.col_primary
-                        activeColor: colors.col_source_color
-                        hoverColor: colors.col_source_color
-                        backgroundColor: colors.col_background
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.verticalCenterOffset: 0
                         onClicked: function (clickX) {
@@ -408,14 +389,7 @@ ShellRoot {
                     // VPN MODULE
                     VPNModule {
                         id: vpnModuleWidget
-                        fontFamily: root.fontFamily
-                        fontSize: root.fontSize
-                        fontWeight: root.fontWeight
                         isActive: vpnDropdown.isOpen
-                        backgroundColor: colors.col_background
-                        accentColor: colors.col_primary
-                        activeColor: colors.col_source_color
-                        hoverColor: colors.col_source_color
                         onClicked: function (clickX) {
                             vpnDropdown.panelX = Math.max(0, clickX - vpnDropdown.panelWidth / 2 - 16);
                             if (vpnDropdown.isOpen) {
@@ -436,13 +410,8 @@ ShellRoot {
                         // BLUETOOTH TOGGLE
                         BluetoothPanel {
                             id: btPanel
-                            fontFamily: root.fontFamily
                             btPowered: AppState.btPowered
                             isActive: bluetoothDropdown.isOpen
-                            accentColor: colors.col_primary
-                            activeColor: colors.col_source_color
-                            hoverColor: colors.col_source_color
-                            dimColor: root.dimPrimary
                             onClicked: function (clickX) {
                                 bluetoothDropdown.panelX = Math.max(0, clickX - bluetoothDropdown.panelWidth / 2 - 16);
                                 if (bluetoothDropdown.isOpen) {
@@ -455,13 +424,7 @@ ShellRoot {
 
                         VolumePanel {
                             id: volumeWidget
-                            fontFamily: root.fontFamily
-                            fontSize: root.fontSize
-                            fontWeight: root.fontWeight
                             isActive: volumeDropdown.isOpen
-                            accentColor: colors.col_primary
-                            activeColor: colors.col_source_color
-                            hoverColor: colors.col_source_color
                             onClicked: function (clickX) {
                                 volumeDropdown.panelX = clickX - volumeDropdown.panelWidth / 2 - 16;
                                 if (volumeDropdown.isOpen) {
@@ -475,11 +438,6 @@ ShellRoot {
                         PowerProfilePanel {
                             id: powerProfileWidget
                             isActive: powerProfileDropdown.isOpen
-                            accentColor: colors.col_primary
-                            activeColor: colors.col_source_color
-                            hoverColor: colors.col_source_color
-                            fontFamily: root.fontFamily
-                            fontWeight: root.fontWeight
                             onClicked: function (clickX) {
                                 powerProfileDropdown.panelX = Math.max(0, clickX - powerProfileDropdown.panelWidth / 2 - 16);
                                 if (powerProfileDropdown.isOpen) {
@@ -491,22 +449,12 @@ ShellRoot {
                         }
 
                         TemperaturePanel {
-                            fontFamily: root.fontFamily
-                            fontSize: root.fontSize
-                            fontWeight: root.fontWeight
-                            accentColor: colors.col_primary
                         }
 
                         // WEATHER
                         WeatherPanel {
                             id: weatherWidget
-                            fontFamily: root.fontFamily
-                            fontSize: root.fontSize
-                            fontWeight: root.fontWeight
                             isActive: weatherDropdown.isOpen
-                            accentColor: colors.col_primary
-                            activeColor: colors.col_source_color
-                            hoverColor: colors.col_source_color
                             onClicked: function (clickX) {
                                 weatherDropdown.panelX = Math.max(0, clickX - weatherDropdown.panelWidth / 2 - 16);
                                 if (weatherDropdown.isOpen) {
@@ -521,11 +469,7 @@ ShellRoot {
                     // SETTINGS BUTTON
                     SettingsPanel {
                         id: settingsButton
-                        fontFamily: root.fontFamily
                         isActive: settingsDropdown.isOpen
-                        accentColor: colors.col_primary
-                        activeColor: colors.col_source_color
-                        hoverColor: colors.col_source_color
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.verticalCenterOffset: 0
                         onClicked: function (clickX) {
@@ -542,18 +486,14 @@ ShellRoot {
                     SystemTrayPanel {
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.verticalCenterOffset: 1
-                        accentColor: colors.col_primary
-                        hoverColor: colors.col_source_color
                         menuWindow: trayMenu
                     }                    
 
                     ClockPanel {
                         id: clockWidget
-                        fontFamily: root.fontFamily
                         fontSize: 12
                         fontBold: true
                         textColor: calendarPanel.isOpen ? colors.col_source_color : colors.col_primary
-                        backgroundColor: colors.col_background
                         borderColor: "black"
                         onClicked: function (clickX, clickY) {
                             // Right-align the calendar under the clock's right edge
