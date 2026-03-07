@@ -24,7 +24,7 @@ import qs.modules.wallpaper
 import qs.modules.weather
 import qs.modules.workspaces
 import qs.modules.yayUpdate
-import qs.modules.chat
+//import qs.modules.chat
 //import "."
 
 ShellRoot {
