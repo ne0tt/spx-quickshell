@@ -259,9 +259,9 @@ PanelWindow {
         DropdownTopFlare {
             x: 0; y: 0
             width: parent.width
-            height: 16
+            height: 18
             fillColor: "black"
-            opacity: 0.95
+            opacity: 0.98
             blurShadow: true
         }
         // Shadow: unified body (header + content + footer) — flat top, rounded bottom
@@ -274,12 +274,12 @@ PanelWindow {
             bottomLeftRadius: 16
             bottomRightRadius: 16
             color: "black"
-            opacity: 0.95
+            opacity: 0.98
             layer.enabled: true
             layer.effect: MultiEffect {
                 blurEnabled: true
-                blur:    0.65
-                blurMax: 18
+                blur:    0.8
+                blurMax: 32
             }
         }
     }
