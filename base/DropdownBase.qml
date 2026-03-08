@@ -270,7 +270,6 @@ PanelWindow {
         z: _base.panelZ - 1
         width: _wrapper.width
         height: _wrapper.height
-        clip: true
 
         // Shadow: unified body (header + content + footer) — flat top, rounded bottom
         Rectangle {
@@ -282,7 +281,7 @@ PanelWindow {
             bottomLeftRadius: 19
             bottomRightRadius: 19
             color: "black"
-            opacity: 0.9
+            opacity: 0.5
             layer.enabled: true
             layer.effect: MultiEffect {
                 blurEnabled: true
@@ -365,7 +364,7 @@ PanelWindow {
         Item {
             id: _panelHeader
             x: 16; y: 16
-            z: 0
+            z: 1
             width: _base.panelWidth
             height: _base.headerHeight
             visible: _base.headerHeight > 0
