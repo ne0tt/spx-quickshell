@@ -25,12 +25,13 @@ PanelWindow {
     anchors.top:   true
     anchors.left:  true
     anchors.right: true
-    implicitHeight: 75        // same as the main bar window
+    implicitWidth:  150
+    implicitHeight: 166        // same as the main bar window
     exclusiveZone:  -30
     color: "transparent"
 
     // Sit above every Top-layer surface (bars, dropdowns, etc.)
-    WlrLayershell.layer: WlrLayer.Top
+    WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.exclusionMode: ExclusionMode.Ignore
     // No keyboard interaction needed — pass all input through
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
@@ -39,7 +40,7 @@ PanelWindow {
     mask: Region {}
 
     // ── Bar geometry constants (must mirror shell.qml) ──────
-    readonly property int _barTopMargin: -32     // container topMargin (mirrors shell.qml topMargin: 18)
+    readonly property int _barTopMargin: 19     // container topMargin (mirrors shell.qml topMargin: 18)
     readonly property int _barHeight:    32    // container height
     readonly property int _wsItemW:      50
     readonly property int _wsItemH:      20
@@ -80,7 +81,7 @@ PanelWindow {
         visible: overlay.focusedLocalIndex >= 0
 
         // Extra padding so blur feathers to zero before the item edge
-        readonly property int _pad: 10
+        readonly property int _pad: 5
 
         width:  overlay._wsItemW + _pad * 2
         height: overlay._wsItemH + _pad * 2
@@ -102,12 +103,12 @@ PanelWindow {
         MultiEffect {
             source: _glowSrc
             anchors.centerIn: _glowSrc
-            width:  _glowSrc.width + 10
-            height: _glowSrc.height
+            width:  _glowSrc.width + 30
+            height: _glowSrc.height + 15
             blurEnabled: true
-            blur:        0.6
-            blurMax:     64
-            brightness:  0.3
+            blur:        0.3
+            blurMax:    128
+            brightness:  0.25
             shadowEnabled: false
         }
     }

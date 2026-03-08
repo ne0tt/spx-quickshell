@@ -672,4 +672,12 @@ ShellRoot {
         onAboutToOpen: root.closeAllDropdowns()
     }
 
+    // WorkspaceGlowOverlay — glow effect that sits above all other layers
+    WorkspaceGlowOverlay {
+        id: workspaceGlow
+        screen: root.screen
+    }
+
+    
+
 }
