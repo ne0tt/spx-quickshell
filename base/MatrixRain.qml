@@ -33,7 +33,7 @@ Item {
     property int    tailMax:        48          // longest  trail (rows)
     property real   cascadeSpeed:   0.5      // base rows advanced per tick
     property real   speedVariation: 0.4         // ± random deviation per column
-    property int    fontSize:       12
+    property int    fontSize:       11
     property int    speed:          50          // ms per tick (~20 fps)
     property real   density:        1.0         // 0.0 = no columns, 1.0 = all columns active
 
