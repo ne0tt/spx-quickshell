@@ -266,26 +266,27 @@ PanelWindow {
         // before the shadow is visible — prevents the 1-frame black flash.
         opacity: _hexBar.opacity
         x: _wrapper.x
-        y: _wrapper.y
+        y: _wrapper.y +3
         z: _base.panelZ - 1
         width: _wrapper.width
         height: _wrapper.height
+        clip: true
 
         // Shadow: unified body (header + content + footer) — flat top, rounded bottom
         Rectangle {
-            x: 16; y: 16
-            width: _base.panelWidth
-            height: Math.max(0, parent.height - 16)
+            x: 14; y: 6
+            width: _base.panelWidth +4
+            height: Math.max(0, parent.height - 6)
             topLeftRadius: 0
             topRightRadius: 0
-            bottomLeftRadius: 16
-            bottomRightRadius: 16
+            bottomLeftRadius: 19
+            bottomRightRadius: 19
             color: "black"
-            opacity: 1
+            opacity: 0.9
             layer.enabled: true
             layer.effect: MultiEffect {
                 blurEnabled: true
-                blur:    0.8
+                blur:    0.6
                 blurMax: 32
             }
         }
@@ -326,6 +327,7 @@ PanelWindow {
             fillColor: _base.panelColor
             borderColor: _base.borderColor
             borderWidth: _base.borderWidth
+            clip: true
         }
 
         // ── 2. UNIFIED BODY BACKGROUND ───────────────────────
@@ -345,6 +347,7 @@ PanelWindow {
             // Optional border overlay
             Rectangle {
                 anchors.fill: parent
+                anchors.topMargin: 16 //drop it down to bottom of ears, so border doesn't draw over them
                 topLeftRadius:     0
                 topRightRadius:    0
                 bottomLeftRadius:  16
@@ -362,12 +365,12 @@ PanelWindow {
         Item {
             id: _panelHeader
             x: 16; y: 16
-            z: 1
+            z: 0
             width: _base.panelWidth
             height: _base.headerHeight
             visible: _base.headerHeight > 0
             clip: true
-            opacity: _contentArea.opacity
+            opacity: 1
 
             // Icon glyph — shown when panelIcon is set
             Text {
@@ -377,7 +380,7 @@ PanelWindow {
                 anchors.verticalCenter: parent.verticalCenter
                 text: _base.panelIcon
                 font.pixelSize: 24
-                color: Qt.rgba(_base.accentColor.r, _base.accentColor.g, _base.accentColor.b, 0.85)
+                color: Qt.rgba(_base.accentColor.r, _base.accentColor.g, _base.accentColor.b, 1.0)
                 visible: _base.panelIcon !== ""
             }
 
@@ -394,6 +397,7 @@ PanelWindow {
                 font.weight: Font.Medium
                 elide: Text.ElideRight
                 visible: _base.panelTitle !== ""
+                
             }
 
             Text {
