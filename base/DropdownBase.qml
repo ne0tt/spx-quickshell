@@ -52,13 +52,13 @@ PanelWindow {
     anchors.top: true
     anchors.left: true
     anchors.right: true
-    anchors.bottom: _wrapper.visible
+    anchors.bottom: true
     exclusiveZone: 0
     color: "transparent"
 
     // Sit above the Top-layer main bar so dropdowns always render over it
     WlrLayershell.layer: WlrLayer.Overlay
-
+    WlrLayershell.exclusionMode: ExclusionMode.Ignore
     // When a panel is open the mask must cover the full window so the
     // click-outside MouseArea can receive events anywhere on screen.
     // When closed, restrict to _wrapper (height 0) so nothing is blocked.
@@ -70,7 +70,7 @@ PanelWindow {
     // ─── Configurable props ───────────────────────────────
     // Theme defaults mirror shell.qml's colors object — override per-instance
     // only when a dropdown genuinely differs from the shell theme.
-    property int barHeight: 16
+    property int barHeight: 50
     property int openDuration: 280   // roll-up animation speed (ms)
     property int closeDuration: 280  // roll-down animation speed (ms)
     property string fontFamily: config.fontFamily
@@ -267,15 +267,6 @@ PanelWindow {
         width: _wrapper.width
         height: _wrapper.height
 
-        // Shadow: ears layer
-        DropdownTopFlare {
-            x: 0; y: 0
-            width: parent.width
-            height: 18
-            fillColor: "black"
-            opacity: 1
-            blurShadow: true
-        }
         // Shadow: unified body (header + content + footer) — flat top, rounded bottom
         Rectangle {
             x: 16; y: 16
@@ -303,7 +294,7 @@ PanelWindow {
         visible: false
 
         x: _base.panelX
-        y: _base.barHeight - 16
+        y: _base.barHeight
         z: _base.panelZ
         width: _base.panelWidth + 32
         height: 0
@@ -314,7 +305,7 @@ PanelWindow {
             x: 16
             y: 16
             width: _base.panelWidth
-            height: Math.max(0, _wrapper.height - 16)
+            height: Math.max(0, _wrapper.height)
             hoverEnabled: true
             onEntered: _wrapper.containsMouse = true
             onExited: _wrapper.containsMouse = false
@@ -338,9 +329,9 @@ PanelWindow {
         // Rectangle avoids Canvas requestPaint() deferral that caused flicker.
         Rectangle {
             id: _bodyBg
-            x: 16; y: 16
+            x: 16; y: 0
             width:  _base.panelWidth
-            height: Math.max(0, _wrapper.height - 16)
+            height: _wrapper.height
             z: 0
             color: _base.panelColor
             topLeftRadius:     0

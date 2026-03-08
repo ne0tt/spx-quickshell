@@ -5,6 +5,9 @@ import QtQuick.Effects
 Item {
     id: workspacesPanel
 
+    // Toggle the glow effect on the active workspace dot
+    property bool glowEnabled: false
+
     // The Hyprland output name for the monitor this bar lives on
     property string monitorName: config.barMonitor
 
@@ -83,7 +86,7 @@ Item {
         height: 20 + _pad * 2
         z: 1
 
-        visible: focusedLocalIndex >= 0
+        visible: glowEnabled && focusedLocalIndex >= 0
         x: (focusedLocalIndex >= 0 ? focusedLocalIndex * (50 + 5) : 0) - _pad
         y: -_pad
 

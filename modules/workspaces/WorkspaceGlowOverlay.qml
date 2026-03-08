@@ -30,7 +30,8 @@ PanelWindow {
     color: "transparent"
 
     // Sit above every Top-layer surface (bars, dropdowns, etc.)
-    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.layer: WlrLayer.Top
+    WlrLayershell.exclusionMode: ExclusionMode.Ignore
     // No keyboard interaction needed — pass all input through
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 

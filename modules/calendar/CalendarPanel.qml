@@ -11,7 +11,7 @@ DropdownBase {
     id: calPanel
     reloadableId: "calendarPanel"
 
-    barHeight: 16
+    barHeight: 50
     // 10 top-pad + header(32) + gap(6) + dow-row + gap-to-grid(16) + rows×36 + 10 bottom-pad
     panelFullHeight: 10 + 32 + 6 + dowRow.implicitHeight + 16
                      + (dayGrid.calDays.length / 7) * dayGrid.cellH + 10

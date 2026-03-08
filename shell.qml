@@ -670,12 +670,4 @@ ShellRoot {
         screen: root.screen
     }
 
-    // WorkspaceGlowOverlay — declared last so it renders above all other surfaces.
-
-    WorkspaceGlowOverlay {
-        screen: root.screen
-        monitorName: config.barMonitor
-        //visible: appLaunchDropdown.isOpen
-    }
-
 }
