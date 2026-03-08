@@ -9,12 +9,7 @@ import QtQuick.Effects
 // on the wlr-layer-shell Overlay layer so it is always visible
 // above every Top-layer surface (dropdowns, app launcher, etc.).
 //
-// Must match the bar's geometry constants:
-//   barTopMargin  = 18 (container topMargin in shell.qml)
-//   barHeight     = 32 (container height in shell.qml)
-//   wsItemW       = 50
-//   wsItemH       = 20
-//   wsGap         = 5
+// No part of this was fun......
 //
 // Usage:
 //   WorkspaceGlowOverlay { screen: root.screen }
