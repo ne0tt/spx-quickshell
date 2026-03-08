@@ -60,7 +60,7 @@ DropdownBase {
     }
     Connections {
         target: config
-        function on_loadedChanged() {
+        function on_LoadedChanged() {
             if (!config._loaded) return
             if (!config.animations) { animationsProc.target = false; animationsProc.running = true }
             if (!config.blur)       { blurProc.target = false;       blurProc.running = true }
