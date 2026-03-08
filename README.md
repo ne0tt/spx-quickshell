@@ -51,48 +51,51 @@ quickshell/
     │   ├── AppLaunchDropdown.qml    # Bar-anchored inline app search dropdown
     │   └── AppLauncher.qml          # Fullscreen rofi-style launcher (Super+Space)
     ├── bluetooth/
-    │   ├── BluetoothDropdown.qml    # Bluetooth device management panel
-    │   └── BluetoothPanel.qml       # Bluetooth toggle button in bar
+    │   ├── BluetoothButton.qml      # Bluetooth toggle button in bar
+    │   └── BluetoothDropdown.qml    # Bluetooth device management panel
     ├── calendar/
-    │   └── CalendarPanel.qml        # Calendar dropdown
+    │   └── CalendarPanel.qml        # Calendar dropdown (extends DropdownBase)
     ├── chat/
     │   └── ChatShortcut.qml         # Quick chat access button
     ├── clock/
     │   └── ClockPanel.qml           # Time/date display (driven by SystemClock)
     ├── network/
     │   ├── NetworkAdminDropdown.qml # Full NetworkManager admin panel
-    │   ├── NetworkDropdown.qml      # Ethernet status and details dropdown
-    │   └── NetworkPanel.qml         # IP address pill in bar
+    │   ├── NetworkButton.qml        # IP address pill in bar
+    │   └── NetworkDropdown.qml      # Ethernet status and details dropdown
     ├── power/
+    │   ├── PowerProfileButton.qml   # Power profile icon in bar
     │   ├── PowerProfileDropdown.qml # Power profile selector
-    │   ├── PowerProfilePanel.qml    # Power profile icon in bar
-    │   └── TemperaturePanel.qml     # CPU temperature indicator
+    │   └── TemperatureButton.qml    # CPU temperature indicator in bar
+    ├── rightPanelSlider/
+    │   ├── RightPanelButton.qml     # Bar icon that opens the right-side panel
+    │   └── RightPanelSlider.qml     # Panel that slides in from the right edge
     ├── settings/
+    │   ├── SettingsButton.qml       # Settings gear button in bar
     │   ├── SettingsDropdown.qml     # Quick toggles (night light, animations, blur…)
-    │   ├── SettingsPanel.qml        # Settings gear button in bar
     │   └── settings.json            # Persisted settings (animations, blur, monitor…)
     ├── systemTray/
     │   ├── SystemTrayPanel.qml      # SNI system tray area
     │   └── TrayMenu.qml             # Right-click context menu for tray icons
     ├── volume/
-    │   ├── VolumeDropdown.qml       # Volume slider & media stream controls
-    │   └── VolumePanel.qml          # Volume icon + percentage in bar
+    │   ├── VolumeButton.qml         # Volume icon + percentage in bar
+    │   └── VolumeDropdown.qml       # Volume slider & media stream controls
     ├── vpn/
+    │   ├── VlanButton.qml           # VLAN icon button in bar
     │   ├── VlanDropdown.qml         # VLAN management panel
-    │   ├── VlanPanel.qml            # VLAN icon button in bar
     │   ├── VPNDropdown.qml          # WireGuard connection controls
     │   └── VPNModule.qml            # VPN/IP status pill in bar
     ├── wallpaper/
-    │   ├── WallpaperDropdown.qml    # Wallpaper browser and picker
-    │   └── WallpaperPanel.qml       # Wallpaper picker icon button in bar
+    │   ├── WallpaperButton.qml      # Wallpaper picker icon button in bar
+    │   └── WallpaperDropdown.qml    # Wallpaper browser and picker
     ├── weather/
-    │   ├── WeatherDropdown.qml      # Detailed weather forecast panel
-    │   └── WeatherPanel.qml         # Current conditions indicator in bar
+    │   ├── WeatherButton.qml        # Current conditions indicator in bar
+    │   └── WeatherDropdown.qml      # Detailed weather forecast panel
     ├── workspaces/
     │   ├── WorkspaceGlowOverlay.qml # Fullscreen glow that follows active workspace
     │   └── WorkspacesPanel.qml      # Hyprland workspace switcher
     └── yayUpdate/
-        └── YayUpdatePanel.qml       # Arch package update count indicator
+        └── YayUpdateButton.qml      # Arch package update count indicator
 ```
 
 ---
@@ -189,6 +192,9 @@ Two modes, switchable via Settings:
 ### Clock (`ClockPanel`)
 Uses `SystemClock { precision: SystemClock.Seconds }` — updates aligned to the actual system clock tick rather than a drifting 1 s `Timer`.
 
+### Right Panel (`RightPanelSlider`)
+`RightPanelSlider` is a `PanelWindow` anchored to the right+top+bottom edges that slides in from the right. It reserves an exclusive zone on the right edge when open so Hyprland windows reflow around it. Opened and closed via `RightPanelButton` in the bar or the `SUPER, R` global shortcut (`quickshell:toggleRightPanel`). Content is added via the `panelContent` default alias. API: `openPanel()`, `closePanel()`, `isOpen`.
+
 ### Weather
 `WeatherDropdown` reads all data from `AppState`. The dropdown shows current conditions (icon, description, temp, feels-like, humidity, wind, sunrise/sunset) and a multi-day forecast. `onAboutToOpen` triggers a manual refresh.
 
@@ -207,7 +213,7 @@ Uses `SystemClock { precision: SystemClock.Seconds }` — updates aligned to the
 Power controlled via `rfkill`. Live state from `bluetoothctl monitor` parsed in `AppState`, debounced 600 ms. A 400 ms delay after `rfkill unblock` gives the adapter time to initialize before re-reading state.
 
 ### Power & Temperature
-`PowerProfileDropdown` uses `power-profiles-daemon` (selectable cards). `TemperaturePanel` reads CPU temp from system sensors with color coding.
+`PowerProfileDropdown` uses `power-profiles-daemon` (selectable cards). `TemperatureButton` reads CPU temp from system sensors with color coding.
 
 ### Settings
 `SettingsDropdown` provides five toggle rows: Night Light (`hyprshade`), Animations, Blur (both via `hyprctl keyword`), and Launcher mode. A monitor selector writes to `settings.json`. State is persisted via a debounced JSON write; `Config.qml` picks up changes immediately via inotify.
@@ -220,11 +226,13 @@ Settings file lives at `modules/settings/settings.json`:
 ### System Tray
 `SystemTrayPanel` hosts SNI tray items via `Quickshell.Services.SystemTray`. `TrayMenu` extends `DropdownBase` for right-click context menus.
 
+> **Naming convention:** Bar button components are named `*Button` (e.g. `BluetoothButton`, `VolumeButton`). Dropdown panels that extend `DropdownBase` keep the `*Panel` or `*Dropdown` suffix. The four exceptions that use `*Panel` as bar items — `ClockPanel`, `CalendarPanel`, `SystemTrayPanel`, `WorkspacesPanel` — are more complex widgets with their own internal layout rather than simple icon buttons.
+
 ### Workspaces
 `WorkspacesPanel` filters `Hyprland.workspaces` to the configured monitor. `WorkspaceGlowOverlay` is a separate `PanelWindow` that renders a glow behind the active workspace indicator, animating horizontally as workspaces change.
 
-### Package Updates (`YayUpdatePanel`)
-Runs `yay -Qu` every 15 minutes. Hidden when count is zero.
+### Package Updates (`YayUpdateButton`)
+Runs `checkupdates` + `yay -Qua` every 15 minutes (configurable via `updateInterval`). Hidden when count is zero. Clicking opens a `kitty` terminal running `yay -Syu` and re-checks the count on completion. Pulses 10 times when updates first become available.
 
 ---
 
@@ -236,6 +244,7 @@ Add to your `hyprland.conf`:
 bind = , escape,       global, quickshell:closeAllDropdowns
 bind = SUPER CTRL, W,  global, quickshell:toggleWallpaperDropdown
 bind = SUPER, Space,   global, quickshell:toggleAppLauncher
+bind = SUPER, R,       global, quickshell:toggleRightPanel
 
 # Volume keys (capped at 100%)
 bind = , XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ --limit 1.0
@@ -323,4 +332,4 @@ This configuration is part of the SiSPX dotfiles collection. Built with [Quicksh
 
 ---
 
-**Last Updated**: March 6, 2026
+**Last Updated**: March 8, 2026
