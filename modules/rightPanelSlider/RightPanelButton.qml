@@ -25,6 +25,7 @@ Item {
 
     Text {
         anchors.centerIn: parent
+        anchors.verticalCenterOffset: 1
         text: "󰹍"
         font.family:    root.fontFamily
         font.weight:    root.fontWeight

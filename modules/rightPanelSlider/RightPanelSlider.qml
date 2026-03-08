@@ -3,6 +3,7 @@ import Quickshell.Wayland
 import Quickshell.Hyprland
 import QtQuick
 import QtQuick.Effects
+import qs.base
 
 // ============================================================
 // RIGHT PANEL SLIDER — a panel that slides in from the right edge.

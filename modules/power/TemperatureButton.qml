@@ -23,7 +23,26 @@ Item {
 
     property string sensorPath: "/sys/class/hwmon/hwmon2/temp1_input"
     property string temperature: "--°C"
+    property int    _tempValue:   0
+    readonly property string _icon:
+        _tempValue >= 80 ? "" :
+        _tempValue >= 70 ? "" :
+                           ""
+    property bool   _flashOn:   false
+    readonly property color _displayColor:
+        (_tempValue >= 85 && _flashOn) ? "#ffffff" :
+        isActive                       ? activeColor :
+        _hovered                       ? hoverColor  :
+                                         accentColor
 
+    Timer {
+        id: flashTimer
+        interval: 500
+        repeat:   true
+        running:  root._tempValue >= 85
+        onTriggered: root._flashOn = !root._flashOn
+        onRunningChanged: if (!running) root._flashOn = false
+    }
     // ============================================================
     // FILEVIEW — reads sysfs directly, no fork/exec overhead
     // ============================================================
@@ -34,7 +53,13 @@ Item {
         watchChanges: false
         onLoaded: {
             let value = parseInt(tempFile.text().trim())
-            root.temperature = !isNaN(value) ? Math.round(value / 1000) + "°C" : "--°C"
+            if (!isNaN(value)) {
+                root._tempValue  = Math.round(value / 1000)
+                root.temperature = root._tempValue + "°C"
+            } else {
+                root._tempValue  = 0
+                root.temperature = "--°C"
+            }
         }
     }
 
@@ -59,8 +84,8 @@ Item {
 
         Text {
             anchors.verticalCenter: parent.verticalCenter
-            text: ""
-            color: root.isActive ? root.activeColor : root._hovered ? root.hoverColor : root.accentColor
+            text: root._icon
+            color: root._displayColor
             font.family: root.fontFamily
             font.styleName: "Solid"
             font.pixelSize: root.iconSize
@@ -70,7 +95,7 @@ Item {
         Text {
             anchors.verticalCenter: parent.verticalCenter
             text: root.temperature
-            color: root.isActive ? root.activeColor : root._hovered ? root.hoverColor : root.accentColor
+            color: root._displayColor
             font.family: root.fontFamily
             font.pixelSize: root.fontSize
             font.weight: root.fontWeight
