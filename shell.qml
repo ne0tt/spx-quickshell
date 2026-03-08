@@ -89,7 +89,7 @@ ShellRoot {
         name: "toggleAppLauncher"
         description: "Open/close the app launcher"
         onPressed: {
-            if (settingsDropdown.launcherFloating) {
+            if (config.launcherFloating) {
                 if (appLauncher.isOpen) {
                     appLauncher.closeLauncher();
                 } else {
@@ -309,7 +309,7 @@ ShellRoot {
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
                             onClicked: {
-                                if (settingsDropdown.launcherFloating) {
+                                if (config.launcherFloating) {
                                     if (appLauncher.isOpen) {
                                         appLauncher.closeLauncher();
                                     } else {

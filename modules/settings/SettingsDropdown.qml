@@ -42,102 +42,28 @@ DropdownBase {
     // Shared bluetooth state (AppState singleton)
     readonly property bool btPowered: AppState.btPowered
 
-    // Non-queryable states — persisted to settings.json between restarts.
-    property bool animations:       true
-    property bool blur:             true
-    // false = dropdown launcher centred in bar; true = floating rofi-style launcher
-    property bool launcherFloating: false
-
     // Busy guards — prevent double-clicks during command execution
     property bool _nightLightBusy: false
 
     // Bar monitor list expand/collapse state
     property bool _monExpanded: false
 
-    // ── State persistence ─────────────────────────────────
-    // File: <quickshell config dir>/modules/settings/settings.json
-    // Only animations / blur / launcherFloating are saved;
-    // the other toggles are read from the system on every open.
-    readonly property url    _stateUrl:  Qt.resolvedUrl("settings.json")
-    readonly property string _statePath: _stateUrl.toString().replace("file://", "")
-    property bool _loaded: false  // guard: don't save during initial load
-
-    // Load state on startup
-    Component.onCompleted: _loadProc.running = true
-
-    // Save whenever a persistent value changes (after initial load)
-    onAnimationsChanged:       { if (_loaded) _save() }
-    onBlurChanged:             { if (_loaded) _save() }
-    onLauncherFloatingChanged: { if (_loaded) _save() }
-
-    // Save whenever the bar monitor is changed from the cycle picker
+    // Apply Hyprland settings for any non-default value once Config finishes
+    // loading from disk. Component.onCompleted handles the hot-reload case
+    // (Config already loaded); Connections handles cold start (Config loads
+    // after this component is instantiated).
+    Component.onCompleted: {
+        if (config._loaded) {
+            if (!config.animations) { animationsProc.target = false; animationsProc.running = true }
+            if (!config.blur)       { blurProc.target = false;       blurProc.running = true }
+        }
+    }
     Connections {
         target: config
-        function onBarMonitorChanged() { if (settingsDrop._loaded) settingsDrop._save() }
-    }
-
-    // Read the JSON file; apply values, then apply hyprctl for non-default states
-    Process {
-        id: _loadProc
-        running: false
-        command: ["cat", settingsDrop._statePath]
-        stdout: SplitParser {
-            onRead: data => {
-                try {
-                    var s = JSON.parse(data)
-                    if (s.animations       !== undefined) settingsDrop.animations       = s.animations
-                    if (s.blur             !== undefined) settingsDrop.blur             = s.blur
-                    if (s.launcherFloating !== undefined) settingsDrop.launcherFloating = s.launcherFloating
-                    if (s.barMonitor       !== undefined) config.barMonitor             = s.barMonitor
-                } catch (e) {}
-                // Re-apply hyprctl for any non-default state that survived a reload
-                if (!settingsDrop.animations) { animationsProc.target = false; animationsProc.running = true }
-                if (!settingsDrop.blur)       { blurProc.target = false;       blurProc.running = true }
-            }
-        }
-        // Always save after load: creates the file on first run and writes back on reload.
-        onExited: (code, status) => {
-            settingsDrop._loaded = true
-            _save()
-        }
-    }
-
-    // Write compact JSON imperatively — JSON is computed fresh inside _save()
-    // and stored in jsonToWrite so there are no binding-evaluation timing issues.
-    property bool   _pendingSave: false
-    property string _latestJson:  ""
-
-    function _save() {
-        // Compute eagerly right now — avoids stale-binding "one step behind" bug
-        var json = JSON.stringify({
-            animations:       settingsDrop.animations,
-            blur:             settingsDrop.blur,
-            launcherFloating: settingsDrop.launcherFloating,
-            barMonitor:       config.barMonitor
-        })
-        if (_saveProc.running) {
-            _pendingSave = true
-            _latestJson  = json   // keep newest value for the follow-up write
-        } else {
-            _saveProc.jsonToWrite = json
-            _saveProc.running = true
-        }
-    }
-
-    Process {
-        id: _saveProc
-        running: false
-        property string jsonToWrite: ""
-        command: ["python3", "-c",
-            "import sys; open(sys.argv[1],'w').write(sys.argv[2])",
-            settingsDrop._statePath,
-            jsonToWrite]
-        onExited: {
-            if (settingsDrop._pendingSave) {
-                settingsDrop._pendingSave = false
-                _saveProc.jsonToWrite = settingsDrop._latestJson
-                _saveProc.running = true
-            }
+        function on_loadedChanged() {
+            if (!config._loaded) return
+            if (!config.animations) { animationsProc.target = false; animationsProc.running = true }
+            if (!config.blur)       { blurProc.target = false;       blurProc.running = true }
         }
     }
 
@@ -208,9 +134,9 @@ DropdownBase {
     }
 
     function toggleAnimations() {
-        settingsDrop.animations  = !settingsDrop.animations
-        animationsProc.target    = settingsDrop.animations
-        animationsProc.running   = true
+        config.animations      = !config.animations
+        animationsProc.target  = config.animations
+        animationsProc.running = true
     }
 
     // ═══════════════════════════════════════════════════════
@@ -226,9 +152,9 @@ DropdownBase {
     }
 
     function toggleBlur() {
-        settingsDrop.blur  = !settingsDrop.blur
-        blurProc.target    = settingsDrop.blur
-        blurProc.running   = true
+        config.blur          = !config.blur
+        blurProc.target      = config.blur
+        blurProc.running     = true
     }
 
     // ═══════════════════════════════════════════════════════
@@ -265,7 +191,7 @@ DropdownBase {
             cardIcon:    "󰝥"
             label:       "Animations"
             subtitle:    "Hyprland motion effects"
-            checked:     settingsDrop.animations
+            checked:     config.animations
             accentColor: settingsDrop.accentColor
             textColor:   settingsDrop.textColor
             dimColor:    settingsDrop.dimColor
@@ -277,7 +203,7 @@ DropdownBase {
             cardIcon:    "󰻑"
             label:       "Blur"
             subtitle:    "Compositor blur effect"
-            checked:     settingsDrop.blur
+            checked:     config.blur
             accentColor: settingsDrop.accentColor
             textColor:   settingsDrop.textColor
             dimColor:    settingsDrop.dimColor
@@ -301,11 +227,11 @@ DropdownBase {
             cardIcon:    "󰀻"
             label:       "Floating Launcher"
             subtitle:    "Use popup instead of dropdown"
-            checked:     settingsDrop.launcherFloating
+            checked:     config.launcherFloating
             accentColor: settingsDrop.accentColor
             textColor:   settingsDrop.textColor
             dimColor:    settingsDrop.dimColor
-            onToggled:   settingsDrop.launcherFloating = !settingsDrop.launcherFloating
+            onToggled:   config.launcherFloating = !config.launcherFloating
         }
 
         // ── Bar Monitor selector ─────────────────────────────────

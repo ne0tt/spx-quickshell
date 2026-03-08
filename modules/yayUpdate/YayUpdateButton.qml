@@ -21,7 +21,6 @@ Rectangle {
 
     signal clicked(real clickX)
 
-    property int updateInterval: 900000 // ms (15 minutes)
     property int yayUpdateCount: 0
     property bool yayUpdateAvailable: false
 
@@ -93,12 +92,14 @@ Rectangle {
             }
         }
     }
-    Timer {
-        interval: updateInterval
-        running: true
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: yayUpdateProc.running = true
+    // Fire once at startup, then re-check at each hour boundary (aligns with
+    // SystemClock.Hours so the process is spawned at most ~25 times/day instead
+    // of the previous unconditional 96 times/day with a 15-minute Timer).
+    Component.onCompleted: yayUpdateProc.running = true
+
+    SystemClock {
+        precision: SystemClock.Hours
+        onHoursChanged: yayUpdateProc.running = true
     }
 
     MouseArea {

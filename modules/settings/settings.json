@@ -1,1 +1,6 @@
-{"animations":true,"blur":true,"launcherFloating":false,"barMonitor":"DP-1"}
+{
+  "barMonitor": "DP-1",
+  "animations": true,
+  "blur": true,
+  "launcherFloating": false
+}
