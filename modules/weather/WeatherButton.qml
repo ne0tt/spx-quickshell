@@ -2,7 +2,7 @@ import QtQuick
 import "../../state"
 
 // ============================================================
-// WEATHER PANEL — bar pill showing icon + temperature.
+// WEATHER BUTTON — bar pill showing icon + temperature.
 // All data comes from AppState (shared with WeatherDropdown).
 // ============================================================
 Rectangle {

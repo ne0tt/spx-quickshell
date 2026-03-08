@@ -3,7 +3,7 @@ import Quickshell.Io
 import QtQuick
 
 Rectangle {
-    id: yayUpdatePanel
+    id: yayUpdateButton
     property color backgroundColor: colors.col_background
     property color borderColor: "black"
     property string fontFamily: config.fontFamily
@@ -42,21 +42,21 @@ Rectangle {
             id: updateIcon
             anchors.verticalCenter: parent.verticalCenter
             text: " "
-            color: yayUpdatePanel.isActive ? yayUpdatePanel.activeColor : yayUpdatePanel._hovered ? yayUpdatePanel.hoverColor : yayUpdatePanel.accentColor
-            font.family: yayUpdatePanel.fontFamily
+            color: yayUpdateButton.isActive ? yayUpdateButton.activeColor : yayUpdateButton._hovered ? yayUpdateButton.hoverColor : yayUpdateButton.accentColor
+            font.family: yayUpdateButton.fontFamily
             font.styleName: "Solid"
-            font.pixelSize: yayUpdatePanel.iconSize
+            font.pixelSize: yayUpdateButton.iconSize
             Behavior on color { ColorAnimation { duration: 160 } }
         }
 
         Text {
             id: updateText
             anchors.verticalCenter: parent.verticalCenter
-            color: yayUpdatePanel.isActive ? yayUpdatePanel.activeColor : yayUpdatePanel._hovered ? yayUpdatePanel.hoverColor : yayUpdatePanel.accentColor
-            font.family: yayUpdatePanel.fontFamily
-            font.pixelSize: yayUpdatePanel.fontSize
-            font.weight: yayUpdatePanel.fontWeight
-            text: yayUpdatePanel.yayUpdateCount
+            color: yayUpdateButton.isActive ? yayUpdateButton.activeColor : yayUpdateButton._hovered ? yayUpdateButton.hoverColor : yayUpdateButton.accentColor
+            font.family: yayUpdateButton.fontFamily
+            font.pixelSize: yayUpdateButton.fontSize
+            font.weight: yayUpdateButton.fontWeight
+            text: yayUpdateButton.yayUpdateCount
             opacity: 1.0
             Behavior on color { ColorAnimation { duration: 160 } }
         }
@@ -66,19 +66,19 @@ Rectangle {
     // animation (and its render-tree invalidations) at zero updates.
     SequentialAnimation {
         id: updatePulseAnim
-        running: yayUpdatePanel.yayUpdateAvailable
+        running: yayUpdateButton.yayUpdateAvailable
         loops: 10
         ParallelAnimation {
             ColorAnimation { target: updateIcon; property: "color"; to: "white"; duration: 600 }
             ColorAnimation { target: updateText; property: "color"; to: "white"; duration: 600 }
         }
         ParallelAnimation {
-            ColorAnimation { target: updateIcon; property: "color"; to: yayUpdatePanel.accentColor; duration: 600 }
-            ColorAnimation { target: updateText; property: "color"; to: yayUpdatePanel.accentColor; duration: 600 }
+            ColorAnimation { target: updateIcon; property: "color"; to: yayUpdateButton.accentColor; duration: 600 }
+            ColorAnimation { target: updateText; property: "color"; to: yayUpdateButton.accentColor; duration: 600 }
         }
         onStopped: {
-            updateIcon.color = Qt.binding(() => yayUpdatePanel.accentColor)
-            updateText.color = Qt.binding(() => yayUpdatePanel.accentColor)
+            updateIcon.color = Qt.binding(() => yayUpdateButton.accentColor)
+            updateText.color = Qt.binding(() => yayUpdateButton.accentColor)
         }
     }
 
@@ -88,8 +88,8 @@ Rectangle {
         stdout: SplitParser {
             onRead: data => {
                 var count = parseInt(data.trim());
-                yayUpdatePanel.yayUpdateCount = isNaN(count) ? 0 : count;
-                yayUpdatePanel.yayUpdateAvailable = yayUpdatePanel.yayUpdateCount > 0;
+                yayUpdateButton.yayUpdateCount = isNaN(count) ? 0 : count;
+                yayUpdateButton.yayUpdateAvailable = yayUpdateButton.yayUpdateCount > 0;
             }
         }
     }
@@ -105,12 +105,12 @@ Rectangle {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
         hoverEnabled: true
-        onEntered: yayUpdatePanel._hovered = true
-        onExited:  yayUpdatePanel._hovered = false
+        onEntered: yayUpdateButton._hovered = true
+        onExited:  yayUpdateButton._hovered = false
         onClicked: {
             runUpgrade.running = true
-            var pos = yayUpdatePanel.mapToItem(null, 0, 0)
-            yayUpdatePanel.clicked(pos.x + yayUpdatePanel.width / 2)
+            var pos = yayUpdateButton.mapToItem(null, 0, 0)
+            yayUpdateButton.clicked(pos.x + yayUpdateButton.width / 2)
         }
     }
 

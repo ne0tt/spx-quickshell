@@ -1,9 +1,9 @@
-// components/VlanPanel.qml
+// components/VlanButton.qml
 
 import QtQuick
 
 // ============================================================
-// VLAN PANEL — bar icon button for the VLAN dropdown.
+// VLAN BUTTON — bar icon button for the VLAN dropdown.
 // ============================================================
 Item {
     id: root

@@ -57,7 +57,7 @@ PanelWindow {
     color: "transparent"
 
     // Sit above the Top-layer main bar so dropdowns always render over it
-    WlrLayershell.layer: WlrLayer.Top
+    WlrLayershell.layer: WlrLayer.Overlay
 
     // When a panel is open the mask must cover the full window so the
     // click-outside MouseArea can receive events anywhere on screen.

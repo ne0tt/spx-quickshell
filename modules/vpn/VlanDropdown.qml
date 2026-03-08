@@ -21,7 +21,7 @@ DropdownBase {
     property var _buf:        []     // accumulates {name, active} during vlanProc run
 
     panelTitle:      "VLANs"
-    panelIcon:       "󰌘"
+    panelIcon:       "󰲝"
     headerHeight:    34
     panelFullHeight: vlans.length > 0
         ? _padH + vlans.length * _cardH + (vlans.length - 1) * _gapH

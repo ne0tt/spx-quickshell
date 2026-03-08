@@ -3,7 +3,7 @@ import Quickshell.Services.UPower
 import QtQuick
 
 Rectangle {
-    id: powerProfilePanel
+    id: powerProfileButton
 
     property string fontFamily:      config.fontFamily
     property int    iconSize:        14
@@ -43,7 +43,7 @@ Rectangle {
     Text {
         id: iconText
         anchors.centerIn: parent
-        color: powerProfilePanel.isActive ? powerProfilePanel.activeColor : powerProfilePanel._hovered ? powerProfilePanel.hoverColor : powerProfilePanel.accentColor
+        color: powerProfileButton.isActive ? powerProfileButton.activeColor : powerProfileButton._hovered ? powerProfileButton.hoverColor : powerProfileButton.accentColor
         font.family: fontFamily
         font.pixelSize: iconSize
         font.weight: fontWeight
@@ -58,11 +58,11 @@ Rectangle {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
         hoverEnabled: true
-        onEntered: powerProfilePanel._hovered = true
-        onExited:  powerProfilePanel._hovered = false
+        onEntered: powerProfileButton._hovered = true
+        onExited:  powerProfileButton._hovered = false
         onClicked: {
-            var pos = powerProfilePanel.mapToItem(null, 0, 0)
-            powerProfilePanel.clicked(pos.x + powerProfilePanel.width / 2)
+            var pos = powerProfileButton.mapToItem(null, 0, 0)
+            powerProfileButton.clicked(pos.x + powerProfileButton.width / 2)
         }
     }
 

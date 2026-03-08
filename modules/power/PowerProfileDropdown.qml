@@ -19,7 +19,7 @@ DropdownBase {
     panelIcon:       "󰚥"
     headerHeight:    34
 
-    // currentProfile is injected from PowerProfilePanel via shell.qml —
+    // currentProfile is injected from PowerProfileButton via shell.qml —
     // the panel's DBus monitor is the single source of truth.
     property string currentProfile: ""
 

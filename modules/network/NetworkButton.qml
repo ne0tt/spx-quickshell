@@ -1,9 +1,9 @@
-// components/NetworkPanel.qml
+// components/NetworkButton.qml
 
 import QtQuick
 
 // ============================================================
-// NETWORK PANEL — bar pill showing the active Ethernet IP.
+// NETWORK BUTTON — bar pill showing the active Ethernet IP.
 // Hidden when no IP is available.
 // ============================================================
 Item {

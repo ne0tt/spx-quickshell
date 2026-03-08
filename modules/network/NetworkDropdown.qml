@@ -4,7 +4,7 @@ import QtQuick
 import "../../base"
 
 // ============================================================
-// NETWORK DROPDOWN — drops down from the EthernetPanel IP pill
+// NETWORK DROPDOWN — drops down from the NetworkButton IP pill
 // Shows connection name, IP, gateway and DNS for the active
 // interface, plus a button to launch nm-connection-editor.
 // ============================================================

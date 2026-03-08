@@ -24,6 +24,7 @@ import qs.modules.wallpaper
 import qs.modules.weather
 import qs.modules.workspaces
 import qs.modules.yayUpdate
+import qs.modules.rightPanelSlider
 //import qs.modules.chat
 //import "."
 
@@ -49,7 +50,20 @@ ShellRoot {
     //   bind = , escape,       global, quickshell:closeAllDropdowns
     //   bind = SUPER CTRL, W,  global, quickshell:toggleWallpaperDropdown
     //   bind = SUPER, Space,   global, quickshell:toggleAppLauncher
+    //   bind = SUPER, R,       global, quickshell:toggleRightPanel
     // ============================================================
+    GlobalShortcut {
+        name: "toggleRightPanel"
+        description: "Open/close the right panel slider"
+        onPressed: {
+            if (rightPanel.isOpen) {
+                rightPanel.closePanel()
+            } else {
+                rightPanel.openPanel()
+            }
+        }
+    }
+
     GlobalShortcut {
         name: "closeAllDropdowns"
         description: "Close any open dropdown or panel"
@@ -199,8 +213,8 @@ ShellRoot {
                 left: parent.left
                 right: parent.right
                 topMargin: 16
-                leftMargin: 14
-                rightMargin: 14
+                leftMargin: 12
+                rightMargin: 12
             }
             height: 38
             radius: 12
@@ -224,8 +238,8 @@ ShellRoot {
                 left: parent.left
                 right: parent.right
                 topMargin: 18
-                leftMargin: 17
-                rightMargin: 17
+                leftMargin: 15
+                rightMargin: 15
             }
             height: 32
 
@@ -315,7 +329,7 @@ ShellRoot {
                     }
 
                     // ---------------- Wallpaper Button ----------------
-                    WallpaperPanel {
+                    WallpaperButton {
                         id: wallpaperButton
                         anchors.verticalCenter: parent.verticalCenter
                             anchors.verticalCenterOffset: 1
@@ -330,7 +344,7 @@ ShellRoot {
                         }
                     }
 
-                    YayUpdatePanel {
+                    YayUpdateButton {
                         fontSize: 15
                     }
                 }
@@ -356,7 +370,7 @@ ShellRoot {
                     spacing: 10
 
                     // VLAN BUTTON — opens / closes VlanDropdown
-                    VlanPanel {
+                    VlanButton {
                         id: vlanButton
                         isActive: vlanDropdown.isOpen
                         anchors.verticalCenter: parent.verticalCenter
@@ -372,8 +386,8 @@ ShellRoot {
                     }
 
                     // ETHERNET IP
-                    NetworkPanel {
-                        id: networkPanel
+                    NetworkButton {
+                        id: networkButton
                         ip: networkDropdown.infoIp
                         isActive: networkDropdown.isOpen
                         anchors.verticalCenter: parent.verticalCenter
@@ -410,8 +424,8 @@ ShellRoot {
                         height: parent.height
 
                         // BLUETOOTH TOGGLE
-                        BluetoothPanel {
-                            id: btPanel
+                        BluetoothButton {
+                            id: btButton
                             btPowered: AppState.btPowered
                             isActive: bluetoothDropdown.isOpen
                             onClicked: function (clickX) {
@@ -424,7 +438,7 @@ ShellRoot {
                             }
                         }
 
-                        VolumePanel {
+                        VolumeButton {
                             id: volumeWidget
                             isActive: volumeDropdown.isOpen
                             onClicked: function (clickX) {
@@ -437,7 +451,7 @@ ShellRoot {
                             }
                         }
 
-                        PowerProfilePanel {
+                        PowerProfileButton {
                             id: powerProfileWidget
                             isActive: powerProfileDropdown.isOpen
                             onClicked: function (clickX) {
@@ -450,11 +464,11 @@ ShellRoot {
                             }
                         }
 
-                        TemperaturePanel {
+                        TemperatureButton {
                         }
 
                         // WEATHER
-                        WeatherPanel {
+                        WeatherButton {
                             id: weatherWidget
                             isActive: weatherDropdown.isOpen
                             onClicked: function (clickX) {
@@ -469,7 +483,7 @@ ShellRoot {
                     }
 
                     // SETTINGS BUTTON
-                    SettingsPanel {
+                    SettingsButton {
                         id: settingsButton
                         isActive: settingsDropdown.isOpen
                         anchors.verticalCenter: parent.verticalCenter
@@ -490,6 +504,20 @@ ShellRoot {
                         anchors.verticalCenterOffset: 0
                         menuWindow: trayMenu
                     }                    
+
+                    RightPanelButton {
+                        id: rightPanelBtn
+                        isActive: rightPanel.isOpen
+                        anchors.verticalCenter: parent.verticalCenter
+                        onClicked: {
+                            if (rightPanel.isOpen) {
+                                rightPanel.closePanel()
+                            } else {
+                                root.closeAllDropdowns()
+                                rightPanel.openPanel()
+                            }
+                        }
+                    }
 
                     ClockPanel {
                         id: clockWidget
@@ -634,6 +662,12 @@ ShellRoot {
         screen: root.screen
         // Close all other open dropdowns whenever the tray context menu opens
         onAboutToOpen: root.closeAllDropdowns()
+    }
+
+    // RightPanelSlider — slides in from the right edge
+    RightPanelSlider {
+        id: rightPanel
+        screen: root.screen
     }
 
     // WorkspaceGlowOverlay — declared last so it renders above all other surfaces.

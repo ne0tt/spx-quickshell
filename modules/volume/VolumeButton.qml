@@ -1,4 +1,4 @@
-// components/VolumePanel.qml
+// components/VolumeButton.qml
 
 import QtQuick
 import "../../state"

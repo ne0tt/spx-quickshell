@@ -1,7 +1,7 @@
 import QtQuick
 
 // ============================================================
-// BLUETOOTH PANEL — bar icon showing BT power state.
+// BLUETOOTH BUTTON — bar icon showing BT power state.
 // ============================================================
 Item {
     id: root

@@ -1,40 +1,36 @@
+// components/WallpaperButton.qml
+
 import QtQuick
 
 // ============================================================
-// SETTINGS PANEL — bar icon that opens the settings dropdown.
-// Follows the same pattern as BluetoothPanel, VolumePanel, etc.
+// WALLPAPER BUTTON — bar icon button for the wallpaper picker.
 // ============================================================
 Item {
     id: root
 
-    property string fontFamily:  config.fontFamily
-    property int    fontWeight:  config.fontWeight
-    property int    iconSize:    15
+    property string fontFamily: config.fontFamily
+    property int    fontWeight: config.fontWeight
+    property int    iconSize:   16
 
-    property bool   isActive:    false   // true when the dropdown is open
-
+    property bool   isActive:    false
     property color  accentColor: colors.col_primary
     property color  activeColor: colors.col_source_color
     property color  hoverColor:  colors.col_source_color
 
-    property bool   _hovered:    false
+    property bool   _hovered: false
 
     signal clicked(real clickX)
 
-    width:  20
+    width:  iconSize + 4
     height: 24
 
     Text {
         anchors.centerIn: parent
-        anchors.verticalCenterOffset: 1
-        text: "󰒓"   // nf-md-cog nerd-font glyph
+        text:           "󰸉"
         font.family:    root.fontFamily
-        font.styleName: "Solid"
         font.weight:    root.fontWeight
         font.pixelSize: root.iconSize
-        color: root.isActive  ? root.activeColor
-             : root._hovered  ? root.hoverColor
-             :                  root.accentColor
+        color: root.isActive || root._hovered ? root.activeColor : root.accentColor
         Behavior on color { ColorAnimation { duration: 160 } }
     }
 
@@ -42,8 +38,8 @@ Item {
         anchors.fill: parent
         cursorShape:  Qt.PointingHandCursor
         hoverEnabled: true
-        onEntered: root._hovered = true
-        onExited:  root._hovered = false
+        onEntered:    root._hovered = true
+        onExited:     root._hovered = false
         onClicked: {
             var pos = root.mapToItem(null, 0, 0)
             root.clicked(pos.x + root.width / 2)
