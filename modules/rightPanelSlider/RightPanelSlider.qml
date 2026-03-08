@@ -53,11 +53,11 @@ PanelWindow {
     // ─── Configurable props ───────────────────────────────
     property int    panelWidth:      400
     property int    panelMarginRight: 17
-    property int    panelMarginTop:   17
+    property int    panelMarginTop:   16
     property int    panelMarginBottom: 17
     readonly property var _configScreen: Quickshell.screens.find(s => s.name === config.barMonitor) ?? Quickshell.screens[0]
     readonly property int _screenHeight: _configScreen ? _configScreen.height : 1080
-    property int    panelHeight: _screenHeight - 84 // below the bar, with some breathing room
+    property int    panelHeight: _screenHeight - 83 // below the bar, with some breathing room
     //property int    panelHeight: _screenHeight - 32 // next to the bar, for a more seamless look
     property int    openDuration:  300
     property int    closeDuration: 220

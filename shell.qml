@@ -59,6 +59,7 @@ ShellRoot {
             if (rightPanel.isOpen) {
                 rightPanel.closePanel()
             } else {
+                root.closeAllDropdowns()
                 rightPanel.openPanel()
             }
         }
@@ -583,6 +584,13 @@ ShellRoot {
         }
     }
 
+    // RightPanelSlider — slides in from the right edge
+    // Declared BEFORE all dropdowns so the compositor stacks it below them.
+    RightPanelSlider {
+        id: rightPanel
+        screen: root.screen
+    }
+
     // CalendarPanel — drops down from the clock
     CalendarPanel {
         id: calendarPanel
@@ -662,12 +670,6 @@ ShellRoot {
         screen: root.screen
         // Close all other open dropdowns whenever the tray context menu opens
         onAboutToOpen: root.closeAllDropdowns()
-    }
-
-    // RightPanelSlider — slides in from the right edge
-    RightPanelSlider {
-        id: rightPanel
-        screen: root.screen
     }
 
 }
