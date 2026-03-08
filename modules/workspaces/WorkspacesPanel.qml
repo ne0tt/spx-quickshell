@@ -69,6 +69,7 @@ Item {
                         easing.type: Easing.InOutQuad
                     }
                 }
+
             }
 
             MouseArea {
