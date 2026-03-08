@@ -59,10 +59,14 @@ PanelWindow {
     // Sit above the Top-layer main bar so dropdowns always render over it
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.exclusionMode: ExclusionMode.Ignore
-    // When a panel is open the mask must cover the full window so the
-    // click-outside MouseArea can receive events anywhere on screen.
-    // When closed, restrict to _wrapper (height 0) so nothing is blocked.
-    Item { id: _windowMask; anchors.fill: parent }
+    // When a panel is open the mask covers only below the bar so bar buttons
+    // remain clickable. When closed, restrict to _wrapper (height 0).
+    Item {
+        id: _windowMask
+        x: 0; y: _base.barHeight
+        width: parent.width
+        height: parent.height - _base.barHeight
+    }
     mask: Region {
         item: _wrapper.visible ? _windowMask : _wrapper
     }
