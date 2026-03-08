@@ -91,7 +91,7 @@ PanelWindow {
             anchors.centerIn: parent
             width:  overlay._wsItemW
             height: overlay._wsItemH
-            radius: height / 2
+            radius: 6
             color:  colors.col_source_color
         }
 
