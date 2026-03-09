@@ -281,12 +281,12 @@ PanelWindow {
             bottomLeftRadius: 19
             bottomRightRadius: 19
             color: "black"
-            opacity: 0.5
+            opacity: 0.9
             layer.enabled: true
             layer.effect: MultiEffect {
                 blurEnabled: true
                 blur:    0.6
-                blurMax: 32
+                blurMax: 16
             }
         }
     }
