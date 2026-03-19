@@ -12,8 +12,8 @@ DropdownBase {
     id: wpDrop
     reloadableId: "wallpaperDropdown"
 
-    implicitHeight:  650
-    panelFullHeight: 416
+    implicitHeight:  670  // reduced since we removed a control row
+    panelFullHeight: 436  // reduced since we removed a control row
     panelWidth:      620
     panelTitle:      "Wallpaper"
     panelIcon:       "󰸉"
@@ -24,13 +24,26 @@ DropdownBase {
     WlrLayershell.keyboardFocus: panelVisible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
     // --------------------------------------------------------
-    // STATE
+    // STATE  
     // --------------------------------------------------------
     property var    images:          []
     property string currentWallpaper: ""
     property var    _findArr:         []   // array accumulator — avoids O(n²) string concat
     property bool   _applying:        false
     property int    focusedIndex:     -1   // keyboard-nav cursor
+    
+    // Wallpaper folder configuration
+    readonly property string wallpaperPath: {
+        var folder = config.wallpaperFolder
+        if (folder.startsWith("/")) {
+            return folder  // Absolute path
+        } else {
+            // Relative to home directory
+            var homePath = Qt.resolvedUrl("~/" + folder).toString()
+            return homePath.startsWith("file://") ? homePath.replace("file://", "") : homePath
+        }
+    }
+    readonly property bool includeSubdirs: config.wallpaperSubdirs
 
     // inner content margin (matches other dropdowns)
     readonly property int _mx: 14   // horizontal margin inside panel shape
@@ -43,19 +56,58 @@ DropdownBase {
     // --------------------------------------------------------
     function openPanel() {
         panelVisible = true
+        refreshImages()
+    }
+    
+    function refreshImages() {
         _findArr = []
         findProc.running = true
         currentProc.running = true
     }
+    
+    // Process to open folder selection dialog
+    Process {
+        id: folderSelectProc
+        running: false
+        command: ["sh", "-c", "if command -v zenity >/dev/null 2>&1; then zenity --file-selection --directory --title='Select Wallpaper Folder' 2>/dev/null; elif command -v kdialog >/dev/null 2>&1; then kdialog --getexistingdirectory ~ 'Select Wallpaper Folder' 2>/dev/null; else echo 'NO_DIALOG'; fi"]
+        stdout: SplitParser {
+            onRead: data => {
+                var path = data.trim()
+                if (path && path !== '' && path !== 'NO_DIALOG') {
+                    config.wallpaperFolder = path
+                    refreshImages()
+                } else if (path === 'NO_DIALOG') {
+                    console.log("No dialog tool available. Install zenity or kdialog for folder selection.")
+                }
+            }
+        }
+    }
+    
+    function selectFolder() {
+        folderSelectProc.running = true
+    }
 
     // --------------------------------------------------------
-    // FIND IMAGES
+    // FIND IMAGES — now uses configurable folder and subdirectory settings
     // --------------------------------------------------------
     Process {
         id: findProc
         running: false
-        command: ["sh", "-c",
-            "find \"$HOME/wallpaper\" -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \\) | sort"]
+        command: buildFindCommand()
+        
+        function buildFindCommand() {
+            var cmd = "find \"" + wpDrop.wallpaperPath + "\""
+            
+            // Add depth limit if subdirectories are disabled
+            if (!wpDrop.includeSubdirs) {
+                cmd += " -maxdepth 1"
+            }
+            
+            cmd += " -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \\) | sort"
+            
+            return ["sh", "-c", cmd]
+        }
+        
         stdout: SplitParser {
             onRead: data => {
                 var s = data.trim()
@@ -156,6 +208,164 @@ DropdownBase {
         }
     }
 
+    // ────────────────────────────────────────────────────────────────
+    // FOLDER CONTROLS
+    // ────────────────────────────────────────────────────────────────
+    
+    // Folder path display and selection
+    Item {
+        x: 16 + wpDrop._mx
+        y: 16 + wpDrop.headerHeight + 8
+        width: wpDrop.panelWidth - wpDrop._mx * 2
+        height: 32
+
+        Rectangle {
+            anchors.fill: parent
+            radius: 6
+            color: Qt.rgba(wpDrop.dimColor.r, wpDrop.dimColor.g, wpDrop.dimColor.b, 0.1)
+            border.color: Qt.rgba(wpDrop.dimColor.r, wpDrop.dimColor.g, wpDrop.dimColor.b, 0.2)
+            border.width: 1
+
+            // Left side - folder icon and path
+            Row {
+                anchors.left: parent.left
+                anchors.leftMargin: 10
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.right: parent.horizontalCenter
+                anchors.rightMargin: 10
+                spacing: 8
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: ""
+                    font.family: wpDrop.fontFamily
+                    font.pixelSize: 14
+                    color: colors.col_source_color
+                }
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: wpDrop.wallpaperPath
+                    elide: Text.ElideMiddle
+                    width: Math.max(100, parent.width - 30)  // Ensure minimum visible width
+                    font.pixelSize: 11
+                    color: wpDrop.textColor
+                    font.bold: true
+                }
+            }
+
+            // Right side controls
+            Row {
+                anchors.right: parent.right
+                anchors.rightMargin: 8
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 6
+
+                // Subdirectory checkbox
+                Rectangle {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 60  // Fixed width for "Subdirs" + checkbox
+                    height: 18
+                    radius: 9
+                    color: config.wallpaperSubdirs ? Qt.rgba(wpDrop.accentColor.r, wpDrop.accentColor.g, wpDrop.accentColor.b, 0.2) : "transparent"
+                    border.color: wpDrop.accentColor
+                    border.width: 1
+                    Behavior on color { ColorAnimation { duration: 120 } }
+
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: 4
+
+                        Rectangle {
+                            width: 12
+                            height: 12
+                            radius: 2
+                            anchors.verticalCenter: parent.verticalCenter
+                            color: config.wallpaperSubdirs ? wpDrop.accentColor : "transparent"
+                            border.color: wpDrop.accentColor
+                            border.width: 1
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "✓"
+                                font.pixelSize: 8
+                                color: "white"
+                                visible: config.wallpaperSubdirs
+                            }
+                        }
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "Subdirs"
+                            font.pixelSize: 9
+                            color: wpDrop.textColor
+                            font.bold: true
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            config.wallpaperSubdirs = !config.wallpaperSubdirs
+                            wpDrop.refreshImages()
+                        }
+                    }
+                }
+
+                // Refresh button  
+                Rectangle {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 24
+                    height: 20
+                    radius: 10
+                    color: refreshBtn.containsMouse ? wpDrop.accentColor : Qt.rgba(wpDrop.accentColor.r, wpDrop.accentColor.g, wpDrop.accentColor.b, 0.5)
+                    Behavior on color { ColorAnimation { duration: 120 } }
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "🔄"
+                        font.pixelSize: 10
+                    }
+
+                    MouseArea {
+                        id: refreshBtn
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: wpDrop.refreshImages()
+                    }
+                }
+
+                // Browse button
+                Rectangle {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 60
+                    height: 20
+                    radius: 10
+                    color: folderBtn.containsMouse ? wpDrop.accentColor : Qt.rgba(wpDrop.accentColor.r, wpDrop.accentColor.g, wpDrop.accentColor.b, 0.7)
+                    Behavior on color { ColorAnimation { duration: 120 } }
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "Browse"
+                        font.pixelSize: 10
+                        color: "white"
+                        font.bold: true
+                    }
+
+                    MouseArea {
+                        id: folderBtn
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: wpDrop.selectFolder()
+                    }
+                }
+            }
+        }
+    }
+
         // ── Scrollable thumbnail grid ─────────────────────
         Flickable {
             id: flickArea
@@ -190,9 +400,9 @@ DropdownBase {
                 wpDrop.ensureFocusedVisible()
             }
             x: 16 + wpDrop._mx
-            y: 16 + wpDrop.headerHeight + 10
+            y: 16 + wpDrop.headerHeight + 8 + 32 + 8  // folder controls + margin
             width:  wpDrop.panelWidth - wpDrop._mx * 2
-            height: wpDrop.panelFullHeight - 10 - wpDrop._mx
+            height: wpDrop.panelFullHeight - (8 + 32 + 8) - wpDrop._mx  // adjust for single control row
             clip: true
             flickableDirection: Flickable.VerticalFlick
             contentWidth: width

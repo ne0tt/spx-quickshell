@@ -30,6 +30,10 @@ QtObject {
     property bool   blur:             true
     property bool   launcherFloating: false
     property bool   workspaceGlow:    true
+    
+    // Wallpaper settings
+    property string wallpaperFolder:      "wallpaper"
+    property bool   wallpaperSubdirs:     true
 
     // ── Load guard — prevents saves firing during initial read ──
     property bool _loaded: false
@@ -40,6 +44,8 @@ QtObject {
     onBlurChanged:             { if (_loaded) _saveTimer.restart() }
     onLauncherFloatingChanged: { if (_loaded) _saveTimer.restart() }
     onWorkspaceGlowChanged:    { if (_loaded) _saveTimer.restart() }
+    onWallpaperFolderChanged:  { if (_loaded) _saveTimer.restart() }
+    onWallpaperSubdirsChanged: { if (_loaded) _saveTimer.restart() }
 
     // ── 500 ms debounce timer ─────────────────────────────
     property var _saveTimer: Timer {
@@ -55,7 +61,9 @@ QtObject {
             animations:       cfg.animations,
             blur:             cfg.blur,
             launcherFloating: cfg.launcherFloating,
-            workspaceGlow:    cfg.workspaceGlow
+            workspaceGlow:    cfg.workspaceGlow,
+            wallpaperFolder:  cfg.wallpaperFolder,
+            wallpaperSubdirs: cfg.wallpaperSubdirs
         }, null, 2))
     }
 
@@ -73,6 +81,8 @@ QtObject {
                 if (typeof s.blur             === "boolean")                             cfg.blur             = s.blur
                 if (typeof s.launcherFloating === "boolean")                             cfg.launcherFloating = s.launcherFloating
                 if (typeof s.workspaceGlow    === "boolean")                             cfg.workspaceGlow    = s.workspaceGlow
+                if (typeof s.wallpaperFolder  === "string"  && s.wallpaperFolder.length > 0) cfg.wallpaperFolder = s.wallpaperFolder
+                if (typeof s.wallpaperSubdirs === "boolean")                             cfg.wallpaperSubdirs = s.wallpaperSubdirs
             } catch (e) {}
             cfg._loaded = true
             // Eagerly write back: creates the file on first run and captures
