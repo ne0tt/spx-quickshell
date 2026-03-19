@@ -20,7 +20,7 @@ PanelWindow {
     anchors.top:   true
     anchors.left:  true
     anchors.right: true
-    implicitWidth:  150
+    implicitWidth:  160
     implicitHeight: 166        // same as the main bar window
     exclusiveZone:  -30
     color: "transparent"
@@ -35,7 +35,7 @@ PanelWindow {
     mask: Region {}
 
     // ── Bar geometry constants (must mirror shell.qml) ──────
-    readonly property int _barTopMargin: 19     // container topMargin (mirrors shell.qml topMargin: 18)
+    readonly property int _barTopMargin: 18     // container topMargin (mirrors shell.qml topMargin: 18)
     readonly property int _barHeight:    32    // container height
     readonly property int _wsItemW:      50
     readonly property int _wsItemH:      20

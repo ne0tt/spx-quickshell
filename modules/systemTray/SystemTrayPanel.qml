@@ -13,6 +13,12 @@ Item {
     implicitWidth: trayRow.implicitWidth > 0 ? trayRow.implicitWidth + 12 : 0
     implicitHeight: 24
     visible: trayRow.visibleChildren.length > 0 || SystemTray.items.count > 0
+    
+    // Debug: monitor system tray items  
+    // Component.onCompleted: {
+    //     console.log("SystemTray items count:", SystemTray.items.count)
+    //     console.log("Visible children:", trayRow.visibleChildren.length)
+    // }
 
     property string fontFamily: config.fontFamily
     property int    iconSize:   15  // Match other panel icons
@@ -57,11 +63,11 @@ Item {
     
     property var nerdFontIcons: ({
         // Network & Connectivity
-        "nm-applet": "\uf1eb",              // Network
-        "networkmanager": "\uf1eb",
-        "network-manager": "\uf1eb",
-        "blueman": "\uf293",                 // Bluetooth
-        "bluetooth": "\uf293",
+        "nm-applet": "󰛳",              // Network
+        "networkmanager": "󰛳",
+        "network-manager": "󰛳",
+        "blueman": "󰛶",                 // Bluetooth
+        "bluetooth": "󰛶",
         "solaar": "󰍽",                  // Logitech (mouse/keyboard)
         
         // Audio & Media
@@ -265,7 +271,12 @@ Item {
                                     root.menuWindow.closePanel();
                                 } else {
                                     var localPos = trayDelegate.mapToItem(null, 0, 0);
-                                    root.menuWindow.openAt(trayDelegate.modelData.menu, localPos.x);
+                                    // Use switchPanel to wait for other dropdowns to close
+                                    if (typeof root !== 'undefined' && root.switchPanel) {
+                                        root.switchPanel(() => root.menuWindow.openAt(trayDelegate.modelData.menu, localPos.x));
+                                    } else {
+                                        root.menuWindow.openAt(trayDelegate.modelData.menu, localPos.x);
+                                    }
                                 }
                             } else {
                                 trayDelegate.modelData.activate();

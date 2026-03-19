@@ -8,7 +8,7 @@ Item {
 
     property string fontFamily: config.fontFamily
     property int    fontWeight: config.fontWeight
-    property int    iconSize:   16
+    property int    iconSize:   18
 
     property bool   btPowered:  false
     property bool   isActive:   false   // true when the dropdown is open

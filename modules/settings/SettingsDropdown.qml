@@ -21,7 +21,7 @@ DropdownBase {
 
     // Row geometry — bump _rowCount when adding/removing toggle rows.
     // panelFullHeight is derived so implicitHeight stays correct automatically.
-    readonly property int _rowCount:  5
+    readonly property int _rowCount:  7
     readonly property int _rowH:      48   // SettingsToggleRow height
     readonly property int _gap:       8    // Column spacing
     readonly property int _padTop:    8    // top padding inside content area
@@ -232,6 +232,112 @@ DropdownBase {
             textColor:   settingsDrop.textColor
             dimColor:    settingsDrop.dimColor
             onToggled:   config.launcherFloating = !config.launcherFloating
+        }
+
+        SettingsToggleRow {
+            width:       parent.width
+            cardIcon:    "󱃄"
+            label:       "Workspace Glow"
+            subtitle:    "Highlight active workspace above panels"
+            checked:     config.workspaceGlow
+            accentColor: settingsDrop.accentColor
+            textColor:   settingsDrop.textColor
+            dimColor:    settingsDrop.dimColor
+            onToggled:   config.workspaceGlow = !config.workspaceGlow
+        }
+
+        // WALLPAPER ACTION BUTTON
+        Item {
+            width: parent.width
+            height: 48
+
+            Rectangle {
+                anchors.fill: parent
+                radius: 10
+                color: Qt.rgba(0, 0, 0, 0.18)
+                border.color: Qt.rgba(1, 1, 1, 0.06)
+                border.width: 1
+
+                // Left icon circle
+                Rectangle {
+                    id: wallpaperIconCircle
+                    anchors {
+                        left: parent.left
+                        leftMargin: 12
+                        verticalCenter: parent.verticalCenter
+                    }
+                    width: 32; height: 32; radius: 16
+                    color: Qt.rgba(1, 1, 1, 0.05)
+                    border.color: Qt.rgba(1, 1, 1, 0.10)
+                    border.width: 1
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "󰸉"
+                        font.family: settingsDrop.fontFamily
+                        font.styleName: "Solid"
+                        font.pixelSize: 15
+                        color: settingsDrop.dimColor
+                    }
+                }
+
+                // Label
+                Column {
+                    anchors {
+                        left: wallpaperIconCircle.right
+                        leftMargin: 10
+                        right: wallpaperArrow.left
+                        rightMargin: 10
+                        verticalCenter: parent.verticalCenter
+                    }
+                    spacing: 2
+
+                    Text {
+                        text: "Change Wallpaper"
+                        font.family: settingsDrop.fontFamily
+                        font.pixelSize: 13
+                        font.weight: Font.DemiBold
+                        color: settingsDrop.textColor
+                        elide: Text.ElideRight
+                    }
+
+                    Text {
+                        text: "Open wallpaper picker"
+                        font.family: settingsDrop.fontFamily
+                        font.pixelSize: 10
+                        color: settingsDrop.dimColor
+                        elide: Text.ElideRight
+                    }
+                }
+
+                // Right arrow
+                Text {
+                    id: wallpaperArrow
+                    anchors {
+                        right: parent.right
+                        rightMargin: 12
+                        verticalCenter: parent.verticalCenter
+                    }
+                    text: "󰅂"
+                    font.family: settingsDrop.fontFamily
+                    font.styleName: "Solid"
+                    font.pixelSize: 12
+                    color: settingsDrop.dimColor
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        // Close settings dropdown and open wallpaper dropdown
+                        settingsDrop.closePanel()
+                        Qt.callLater(function() {
+                            wpDropdown.panelX = Math.max(0, (root.screen.width / 2) - (wpDropdown.panelWidth / 2) - 16)
+                            root.switchPanel(() => wpDropdown.openPanel())
+                        })
+                    }
+                }
+            }
         }
 
         // ── Bar Monitor selector ─────────────────────────────────

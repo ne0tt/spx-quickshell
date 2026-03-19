@@ -10,7 +10,7 @@ Item {
 
     property string fontFamily: config.fontFamily
     property int    fontWeight: config.fontWeight
-    property int    iconSize:   18
+    property int    iconSize:   16
 
     property bool   isActive:    false
     property color  accentColor: colors.col_primary
@@ -26,7 +26,7 @@ Item {
 
     Text {
         anchors.centerIn: parent
-        text:           "󰲝"
+        text:           ""
         font.family:    root.fontFamily
         font.weight:    root.fontWeight
         font.pixelSize: root.iconSize

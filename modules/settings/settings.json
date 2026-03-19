@@ -1,6 +1,7 @@
 {
   "barMonitor": "DP-1",
   "animations": true,
-  "blur": true,
-  "launcherFloating": false
+  "blur": false,
+  "launcherFloating": false,
+  "workspaceGlow": true
 }

@@ -75,8 +75,7 @@ ShellRoot {
         name: "toggleWallpaperDropdown"
         description: "Open/close the wallpaper picker"
         onPressed: {
-            var pos = wallpaperButton.mapToItem(null, 0, 0);
-            wpDropdown.panelX = pos.x + wallpaperButton.width / 2 - wpDropdown.panelWidth / 2 - 16 + 250;
+            wpDropdown.panelX = Math.max(0, (root.screen.width / 2) - (wpDropdown.panelWidth / 2) - 16);
             if (wpDropdown.isOpen) {
                 wpDropdown.closePanel();
             } else {
@@ -329,22 +328,6 @@ ShellRoot {
                         }
                     }
 
-                    // ---------------- Wallpaper Button ----------------
-                    WallpaperButton {
-                        id: wallpaperButton
-                        anchors.verticalCenter: parent.verticalCenter
-                            anchors.verticalCenterOffset: 1
-                        isActive: wpDropdown.isOpen
-                        onClicked: function (clickX) {
-                            wpDropdown.panelX = clickX - wpDropdown.panelWidth / 2 - 16 + 250;
-                            if (wpDropdown.isOpen) {
-                                wpDropdown.closePanel();
-                            } else {
-                                root.switchPanel(() => wpDropdown.openPanel());
-                            }
-                        }
-                    }
-
                     YayUpdateButton {
                         fontSize: 15
                     }
@@ -354,7 +337,7 @@ ShellRoot {
                 WorkspacesPanel {
                     id: workspaceContainer
                     anchors.centerIn: parent
-                    anchors.verticalCenterOffset: 1
+                    anchors.verticalCenterOffset: 0
                     monitorName: config.barMonitor
                 }
 
@@ -368,14 +351,109 @@ ShellRoot {
                         rightMargin: 4
                         verticalCenter: parent.verticalCenter
                     }
-                    spacing: 10
+                    spacing: 12
 
-                    // VLAN BUTTON — opens / closes VlanDropdown
+                    // BLUETOOTH BUTTON
+                    BluetoothButton {
+                        id: btButton
+                        anchors.verticalCenterOffset: 1
+                        btPowered: AppState.btPowered
+                        isActive: bluetoothDropdown.isOpen
+                        onClicked: function (clickX) {
+                            bluetoothDropdown.panelX = Math.max(0, clickX - bluetoothDropdown.panelWidth / 2 - 16);
+                            if (bluetoothDropdown.isOpen) {
+                                bluetoothDropdown.closePanel();
+                            } else {
+                                root.switchPanel(() => bluetoothDropdown.openPanel());
+                            }
+                        }
+                    }
+
+                    // VOLUME BUTTON
+                    VolumeButton {
+                        id: volumeWidget
+                        anchors.verticalCenterOffset: 1
+                        isActive: volumeDropdown.isOpen
+                        onClicked: function (clickX) {
+                            volumeDropdown.panelX = clickX - volumeDropdown.panelWidth / 2 - 16;
+                            if (volumeDropdown.isOpen) {
+                                volumeDropdown.closePanel();
+                            } else {
+                                root.switchPanel(() => volumeDropdown.openPanel());
+                            }
+                        }
+                    }
+
+                    // POWER PROFILE BUTTON
+                    PowerProfileButton {
+                        id: powerProfileWidget
+                        anchors.verticalCenterOffset: 1
+                        isActive: powerProfileDropdown.isOpen
+                        onClicked: function (clickX) {
+                            powerProfileDropdown.panelX = Math.max(0, clickX - powerProfileDropdown.panelWidth / 2 - 16);
+                            if (powerProfileDropdown.isOpen) {
+                                powerProfileDropdown.closePanel();
+                            } else {
+                                root.switchPanel(() => powerProfileDropdown.openPanel());
+                            }
+                        }
+                    }
+
+                    // TEMPERATURE BUTTON
+                    TemperatureButton {
+                        anchors.verticalCenterOffset: 1
+                    }
+
+                    // WEATHER BUTTON
+                    WeatherButton {
+                        id: weatherWidget
+                        anchors.verticalCenterOffset: 1
+                        isActive: weatherDropdown.isOpen
+                        onClicked: function (clickX) {
+                            weatherDropdown.panelX = Math.max(0, clickX - weatherDropdown.panelWidth / 2 - 16);
+                            if (weatherDropdown.isOpen) {
+                                weatherDropdown.closePanel();
+                            } else {
+                                root.switchPanel(() => weatherDropdown.openPanel());
+                            }
+                        }
+                    }
+
+                    // SETTINGS BUTTON
+                    SettingsButton {
+                        id: settingsButton
+                        anchors.verticalCenterOffset: 1
+                        isActive: settingsDropdown.isOpen
+                        onClicked: function (clickX) {
+                            settingsDropdown.panelX = Math.max(0, clickX - settingsDropdown.panelWidth / 2 - 16);
+                            if (settingsDropdown.isOpen) {
+                                settingsDropdown.closePanel();
+                            } else {
+                                root.switchPanel(() => settingsDropdown.openPanel());
+                            }
+                        }
+                    }
+
+                    // RIGHT PANEL BUTTON
+                    RightPanelButton {
+                        id: rightPanelBtn
+                        anchors.verticalCenterOffset: 1
+                        isActive: rightPanel.isOpen
+                        onClicked: {
+                            if (rightPanel.isOpen) {
+                                rightPanel.closePanel()
+                            } else {
+                                root.closeAllDropdowns()
+                                rightPanel.openPanel()
+                            }
+                        }
+                    }
+
+                    // VLAN BUTTON
                     VlanButton {
                         id: vlanButton
-                        isActive: vlanDropdown.isOpen
-                        anchors.verticalCenter: parent.verticalCenter
                         anchors.verticalCenterOffset: 1
+                        isActive: vlanDropdown.isOpen
                         onClicked: function (clickX) {
                             vlanDropdown.panelX = Math.max(0, clickX - vlanDropdown.panelWidth / 2 - 16);
                             if (vlanDropdown.isOpen) {
@@ -386,26 +464,10 @@ ShellRoot {
                         }
                     }
 
-                    // ETHERNET IP
-                    NetworkButton {
-                        id: networkButton
-                        ip: networkDropdown.infoIp
-                        isActive: networkDropdown.isOpen
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.verticalCenterOffset: 0
-                        onClicked: function (clickX) {
-                            networkDropdown.panelX = Math.max(0, clickX - networkDropdown.panelWidth / 2 - 16);
-                            if (networkDropdown.isOpen) {
-                                networkDropdown.closePanel();
-                            } else {
-                                root.switchPanel(() => networkDropdown.openPanel());
-                            }
-                        }
-                    }
-
                     // VPN MODULE
                     VPNModule {
                         id: vpnModuleWidget
+                        anchors.verticalCenterOffset: 0
                         isActive: vpnDropdown.isOpen
                         onClicked: function (clickX) {
                             vpnDropdown.panelX = Math.max(0, clickX - vpnDropdown.panelWidth / 2 - 16);
@@ -417,113 +479,18 @@ ShellRoot {
                         }
                     }
 
-                    // SYSTEM INFO GROUP
-                    Row {
-                        spacing: 10
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.verticalCenterOffset: 0
-                        height: parent.height
-
-                        // BLUETOOTH TOGGLE
-                        BluetoothButton {
-                            id: btButton
-                            btPowered: AppState.btPowered
-                            isActive: bluetoothDropdown.isOpen
-                            onClicked: function (clickX) {
-                                bluetoothDropdown.panelX = Math.max(0, clickX - bluetoothDropdown.panelWidth / 2 - 16);
-                                if (bluetoothDropdown.isOpen) {
-                                    bluetoothDropdown.closePanel();
-                                } else {
-                                    root.switchPanel(() => bluetoothDropdown.openPanel());
-                                }
-                            }
-                        }
-
-                        VolumeButton {
-                            id: volumeWidget
-                            isActive: volumeDropdown.isOpen
-                            onClicked: function (clickX) {
-                                volumeDropdown.panelX = clickX - volumeDropdown.panelWidth / 2 - 16;
-                                if (volumeDropdown.isOpen) {
-                                    volumeDropdown.closePanel();
-                                } else {
-                                    root.switchPanel(() => volumeDropdown.openPanel());
-                                }
-                            }
-                        }
-
-                        PowerProfileButton {
-                            id: powerProfileWidget
-                            isActive: powerProfileDropdown.isOpen
-                            onClicked: function (clickX) {
-                                powerProfileDropdown.panelX = Math.max(0, clickX - powerProfileDropdown.panelWidth / 2 - 16);
-                                if (powerProfileDropdown.isOpen) {
-                                    powerProfileDropdown.closePanel();
-                                } else {
-                                    root.switchPanel(() => powerProfileDropdown.openPanel());
-                                }
-                            }
-                        }
-
-                        TemperatureButton {
-                        }
-
-                        // WEATHER
-                        WeatherButton {
-                            id: weatherWidget
-                            isActive: weatherDropdown.isOpen
-                            onClicked: function (clickX) {
-                                weatherDropdown.panelX = Math.max(0, clickX - weatherDropdown.panelWidth / 2 - 16);
-                                if (weatherDropdown.isOpen) {
-                                    weatherDropdown.closePanel();
-                                } else {
-                                    root.switchPanel(() => weatherDropdown.openPanel());
-                                }
-                            }
-                        }
-                    }
-
-                    // SETTINGS BUTTON
-                    SettingsButton {
-                        id: settingsButton
-                        isActive: settingsDropdown.isOpen
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.verticalCenterOffset: 0
-                        onClicked: function (clickX) {
-                            settingsDropdown.panelX = Math.max(0, clickX - settingsDropdown.panelWidth / 2 - 16);
-                            if (settingsDropdown.isOpen) {
-                                settingsDropdown.closePanel();
-                            } else {
-                                root.switchPanel(() => settingsDropdown.openPanel());
-                            }
-                        }
-                    }
-
-                    // SYSTEM TRAY (Solaar, Remmina, etc.)
+                    // SYSTEM TRAY
                     SystemTrayPanel {
-                        anchors.verticalCenter: parent.verticalCenter
                         anchors.verticalCenterOffset: 0
                         menuWindow: trayMenu
-                    }                    
-
-                    RightPanelButton {
-                        id: rightPanelBtn
-                        isActive: rightPanel.isOpen
-                        anchors.verticalCenter: parent.verticalCenter
-                        onClicked: {
-                            if (rightPanel.isOpen) {
-                                rightPanel.closePanel()
-                            } else {
-                                root.closeAllDropdowns()
-                                rightPanel.openPanel()
-                            }
-                        }
                     }
 
+                    // CLOCK
                     ClockPanel {
                         id: clockWidget
+                        anchors.verticalCenterOffset: 0
                         fontSize: 13
-                        fontBold: true
+                        fontBold: false
                         textColor: calendarPanel.isOpen ? colors.col_source_color : colors.col_primary
                         borderColor: "black"
                         onClicked: function (clickX, clickY) {
@@ -676,8 +643,7 @@ ShellRoot {
     WorkspaceGlowOverlay {
         id: workspaceGlow
         screen: root.screen
+        visible: config.workspaceGlow
     }
-
-    
 
 }
