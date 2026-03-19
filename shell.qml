@@ -14,14 +14,14 @@ import qs.modules.appLauncher
 import qs.modules.bluetooth
 import qs.modules.calendar
 import qs.modules.clock
-import qs.modules.network
+//import qs.modules.network
 import qs.modules.power
 import qs.modules.settings
 import qs.modules.systemTray
 import qs.modules.vpn
 import qs.modules.volume
 import qs.modules.wallpaper
-import qs.modules.weather
+//import qs.modules.weather
 import qs.modules.workspaces
 import qs.modules.yayUpdate
 import qs.modules.rightPanelSlider
@@ -161,7 +161,11 @@ ShellRoot {
 
         // Single source of truth for all panels that use closePanel()
         // appLauncher is excluded here because it uses closeLauncher() instead
-        readonly property var dropdowns: [calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown, networkDropdown, vpnDropdown, bluetoothDropdown, wpDropdown, weatherDropdown, settingsDropdown, appLaunchDropdown, trayMenu]
+        readonly property var dropdowns: [calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown, 
+        //networkDropdown, 
+        vpnDropdown, bluetoothDropdown, wpDropdown, 
+        //weatherDropdown, 
+        settingsDropdown, appLaunchDropdown, trayMenu]
 
         // Close every open dropdown/drawer in one call
         function closeAllDropdowns() {
@@ -405,19 +409,19 @@ ShellRoot {
                     }
 
                     // WEATHER BUTTON
-                    WeatherButton {
-                        id: weatherWidget
-                        anchors.verticalCenterOffset: 1
-                        isActive: weatherDropdown.isOpen
-                        onClicked: function (clickX) {
-                            weatherDropdown.panelX = Math.max(0, clickX - weatherDropdown.panelWidth / 2 - 16);
-                            if (weatherDropdown.isOpen) {
-                                weatherDropdown.closePanel();
-                            } else {
-                                root.switchPanel(() => weatherDropdown.openPanel());
-                            }
-                        }
-                    }
+                    //WeatherButton {
+                    //    id: weatherWidget
+                    //    anchors.verticalCenterOffset: 1
+                    //    isActive: weatherDropdown.isOpen
+                    //    onClicked: function (clickX) {
+                    //        weatherDropdown.panelX = Math.max(0, clickX - weatherDropdown.panelWidth / 2 - 16);
+                    //        if (weatherDropdown.isOpen) {
+                    //            weatherDropdown.closePanel();
+                    //        } else {
+                    //            root.switchPanel(() => weatherDropdown.openPanel());
+                    //        }
+                    //    }
+                    //}
 
                     // SETTINGS BUTTON
                     SettingsButton {
@@ -489,8 +493,8 @@ ShellRoot {
                     ClockPanel {
                         id: clockWidget
                         anchors.verticalCenterOffset: 0
-                        fontSize: 13
-                        fontBold: false
+                        fontSize: 12
+                        fontBold: true
                         textColor: calendarPanel.isOpen ? colors.col_source_color : colors.col_primary
                         borderColor: "black"
                         onClicked: function (clickX, clickY) {
@@ -584,10 +588,10 @@ ShellRoot {
     }
 
     // NetworkDropdown — drops down from the Ethernet IP pill
-    NetworkDropdown {
-        id: networkDropdown
-        screen: root.screen
-    }
+    //NetworkDropdown {
+    //    id: networkDropdown
+    //    screen: root.screen
+    //}
 
     // VPNDropdown — drops down from the VPN module pill
     VPNDropdown {
@@ -608,10 +612,10 @@ ShellRoot {
     }
 
     // WeatherDropdown — drops down from the weather pill
-    WeatherDropdown {
-        id: weatherDropdown
-        screen: root.screen
-    }
+    //WeatherDropdown {
+    //    id: weatherDropdown
+    //    screen: root.screen
+    //}
 
     // SettingsDropdown — drops down from the settings gear icon
     SettingsDropdown {
@@ -635,8 +639,38 @@ ShellRoot {
     TrayMenu {
         id: trayMenu
         screen: root.screen
-        // Close all other open dropdowns whenever the tray context menu opens
-        onAboutToOpen: root.closeAllDropdowns()
+        
+        // Use proper coordination like other dropdowns 
+        property var pendingMenuData: null
+        property real pendingPosX: 0
+        
+        function openWithCoordination(menuData, posX) {
+            pendingMenuData = menuData
+            pendingPosX = posX
+            
+            const anyOpen = root.isAnyPanelOpen()
+            root.closeAllDropdowns()
+            
+            if (anyOpen) {
+                // Wait for close animation to complete before opening
+                openDelayedTimer.restart()
+            } else {
+                // Open immediately if nothing was open
+                openAt(pendingMenuData, pendingPosX)
+            }
+        }
+        
+        Timer {
+            id: openDelayedTimer
+            interval: 300  // Same as root.openAfterClose
+            repeat: false
+            onTriggered: {
+                if (trayMenu.pendingMenuData) {
+                    trayMenu.openAt(trayMenu.pendingMenuData, trayMenu.pendingPosX)
+                    trayMenu.pendingMenuData = null
+                }
+            }
+        }
     }
 
     // WorkspaceGlowOverlay — glow effect that sits above all other layers

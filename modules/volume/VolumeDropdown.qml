@@ -13,9 +13,9 @@ DropdownBase {
     id: volDrop
     reloadableId: "volumeDropdown"
 
-    implicitHeight:  396
-    panelFullHeight: 292
-    panelWidth:      260
+    implicitHeight:  volDrop.mediaAvailable ? 350 : 140
+    panelFullHeight: volDrop.mediaAvailable ? 236 : 80  // precise sizing to minimize footer gap
+    panelWidth:      460
     panelTitle:      "Master volume"
     panelTitleRight: volDrop.muted ? "󰖁  Muted" : volDrop.volume + "%"
     panelIcon:       "󰕾"
@@ -42,13 +42,15 @@ DropdownBase {
 
     // Refresh on open
     onAboutToOpen: {
+        // Ensure clean state on open
+        volDrop.mediaAvailable = false
         refreshMedia()
         refreshMediaVol()
     }
 
     // Poll while open so the slider stays in sync with external changes
     Timer {
-        interval: 500
+        interval: 800  // reduced polling for better performance
         running: volDrop.isOpen
         repeat: true
         onTriggered: {
@@ -133,7 +135,11 @@ DropdownBase {
                     }
 
                     volDrop.mediaIsBrowser = pageUrl.startsWith("http://") || pageUrl.startsWith("https://")
-                    volDrop.mediaAvailable = volDrop.mediaStatus !== "Stopped" && volDrop.mediaTitle !== ""
+                    
+                    // Media is available only if we have actual playing/paused content with a real title
+                    volDrop.mediaAvailable = (volDrop.mediaStatus === "Playing" || volDrop.mediaStatus === "Paused") && 
+                                             volDrop.mediaTitle !== "" && 
+                                             volDrop.mediaTitle !== "No media playing"
 
                     if (volDrop.mediaAvailable) {
                         volDrop.mediaArtUrl = artUrl
@@ -144,10 +150,12 @@ DropdownBase {
                         volDrop.mediaArtUrl    = ""
                         volDrop.mediaIsBrowser = false
                         volDrop.mediaSinkId    = -1
+                        volDrop.mediaAvailable = false  // explicitly set to false when no media
                     }
                     // Trigger volume read now that mediaIsBrowser is known
                     Qt.callLater(() => { if (!volDrop._mediaVolPending) refreshMediaVol() })
                 } else {
+                    // Parsing failed or no data - definitely no media available
                     volDrop.mediaStatus    = "Stopped"
                     volDrop.mediaTitle     = "No media playing"
                     volDrop.mediaArtist    = ""
@@ -158,6 +166,7 @@ DropdownBase {
                 }
             }
         }
+        
         // NOTE: do NOT clear command — mediaProc uses a static command
     }
 
@@ -234,15 +243,15 @@ DropdownBase {
     // Children land in DropdownBase's _wrapper via default alias.
     // --------------------------------------------------------
     Item {
-        x: 16 + 14
+        x: 16 + 20    // increased from 16+14 for better centering
         y: 16 + volDrop.headerHeight + 6
-        width:  volDrop.panelWidth - 28
-        height: 48
+        width:  volDrop.panelWidth - 40    // adjusted for new margins
+        height: volDrop.mediaAvailable ? 48 : 60    // when no media, make it fill more space to match media panel gap
 
 
         // Volume slider
         Item {
-            y: 8
+            anchors.verticalCenter: parent.verticalCenter    // center in container instead of fixed y
             width: parent.width
             height: 40
 
@@ -298,61 +307,35 @@ DropdownBase {
     // MEDIA CONTROLS
     // ────────────────────────────────────────────────────────
     Rectangle {
-        x: 30
+        x: 40    // adjusted for new margins
         y: 104 + 8
-        width:  volDrop.panelWidth - 28
+        width:  volDrop.panelWidth - 40    // adjusted for new margins
         height: 1
         color: Qt.rgba(volDrop.dimColor.r, volDrop.dimColor.g, volDrop.dimColor.b, 0.2)
+        visible: volDrop.mediaAvailable    // hide divider when no media
     }
 
     Item {
-        x: 16 + 14
+        x: 16 + 20    // increased margins for better centering
         y: 104 + 8 + 14
-        width:  volDrop.panelWidth - 28
-        height: 216
-
-        // Header
-        Row {
-            id: mediaHeader
-            width: parent.width
-            height: 24
-            spacing: 8
-
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: volDrop.mediaStatus === "Playing" ? "󰝚" : "󰝛"
-                font.family: fontFamily
-                font.pixelSize: 22
-                color: Qt.rgba(volDrop.accentColor.r,
-                               volDrop.accentColor.g,
-                               volDrop.accentColor.b, 0.7)
-            }
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: "MEDIA"
-                font.pixelSize: 11
-                font.bold: true
-                font.letterSpacing: 2
-                color: Qt.rgba(volDrop.dimColor.r,
-                               volDrop.dimColor.g,
-                               volDrop.dimColor.b, 0.55)
-            }
-        }
+        width:  volDrop.panelWidth - 40    // adjusted for new margins
+        height: 148    // precise height: 100px art + 32px media slider + 16px spacing
+        visible: volDrop.mediaAvailable    // hide entire media section when no media
 
         // Album art + track info
         Row {
             id: artRow
-            y: mediaHeader.height + 8
+            y: 8    // removed mediaHeader, so start at top with small margin
             width: parent.width
-            height: 72
-            spacing: 12
+            height: 100     // increased from 80 to match larger album art
+            spacing: 16     // increased spacing for better proportion
 
             // Album art square
             Rectangle {
                 id: artBox
-                width: 74
-                height: 74
-                radius: 10
+                width: 100    // increased from 80 by 25%
+                height: 100   // increased from 80 by 25%
+                radius: 12    // slightly more rounded for modern look
                 color: Qt.rgba(volDrop.dimColor.r, volDrop.dimColor.g, volDrop.dimColor.b, 0.15)
 
                 // Hidden rounded mask — layer.enabled forces it to render even when invisible
@@ -397,15 +380,17 @@ DropdownBase {
                 property real _artAngle: 0
                 Timer {
                     id: __artAngleTimer
-                    running: volDrop.mediaAvailable && volDrop.isOpen
-                    interval: 40    // ~20 fps — throttled to reduce CPU load
+                    running: volDrop.mediaStatus === "Playing" && volDrop.isOpen
+                    interval: 66    // ~15 fps — optimized for battery life
                     repeat: true
-                    onTriggered: parent._artAngle -= Math.PI * 2 / 48
+                    onTriggered: parent._artAngle -= Math.PI * 2 / 60
                 }
 
                 Canvas {
                     id: _artBorderCanvas
                     anchors.fill: parent
+                    opacity: volDrop.mediaStatus === "Playing" ? 1.0 : 0.0  // hide when not playing
+                    Behavior on opacity { NumberAnimation { duration: 200 } }
 
                     property real angle: parent._artAngle
                     onAngleChanged: { if (opacity > 0) requestPaint() }
@@ -443,17 +428,57 @@ DropdownBase {
 
             // Title + artist stacked
             Column {
-                anchors.verticalCenter: parent.verticalCenter
+                anchors.top: parent.top    // align with top of album art instead of center
                 width: parent.width - artBox.width - artRow.spacing
                 spacing: 5
 
-                Text {
+                // Scrolling media title
+                Item {
                     width: parent.width
-                    text: volDrop.mediaTitle
-                    elide: Text.ElideRight
-                    color: volDrop.mediaAvailable ? volDrop.textColor : volDrop.dimColor
-                    font.pixelSize: 14
-                    font.bold: true
+                    height: 17  // font.pixelSize(14) + some padding
+                    clip: true
+                    
+                    Text {
+                        id: scrollingTitle
+                        text: volDrop.mediaTitle
+                        color: volDrop.mediaAvailable ? volDrop.textColor : volDrop.dimColor
+                        font.pixelSize: 14
+                        font.bold: true
+                        
+                        property real textWidth: paintedWidth
+                        property real containerWidth: parent.width
+                        property bool needsScroll: textWidth > containerWidth
+                        
+                        // Scroll animation
+                        SequentialAnimation {
+                            id: scrollAnim
+                            running: scrollingTitle.needsScroll && volDrop.isOpen && volDrop.mediaAvailable
+                            loops: Animation.Infinite
+                            
+                            PauseAnimation { duration: 2000 }  // pause at start
+                            NumberAnimation {
+                                target: scrollingTitle
+                                property: "x"
+                                from: 0
+                                to: scrollingTitle.containerWidth - scrollingTitle.textWidth - 10
+                                duration: Math.max(3000, scrollingTitle.textWidth * 20)  // slower for longer text
+                                easing.type: Easing.InOutQuad
+                            }
+                            PauseAnimation { duration: 1500 }  // pause at end
+                            NumberAnimation {
+                                target: scrollingTitle
+                                property: "x"
+                                from: scrollingTitle.containerWidth - scrollingTitle.textWidth - 10
+                                to: 0
+                                duration: Math.max(3000, scrollingTitle.textWidth * 20)
+                                easing.type: Easing.InOutQuad
+                            }
+                        }
+                        
+                        // Reset position when text changes or scrolling stops
+                        onNeedsScrollChanged: if (!needsScroll) x = 0
+                        Component.onCompleted: if (!needsScroll) x = 0
+                    }
                 }
 
                 Text {
@@ -467,16 +492,16 @@ DropdownBase {
             }
         }
 
-        // Playback controls
+        // Playbook controls
         Row {
-            y: artRow.y + artRow.height + 10
-            anchors.horizontalCenter: parent.horizontalCenter
+            x: artBox.width + artRow.spacing + (parent.width - artBox.width - artRow.spacing - width) / 2    // center within title/artist text area
+            y: artRow.y + 50    // align button bottoms with thumbnail bottom (100px thumbnail height - 50px button height)
             spacing: 16
 
             Rectangle {
-                width: 40
-                height: 40
-                radius: 20
+                width: 50    // increased from 40 to match play button
+                height: 50   // increased from 40 to match play button
+                radius: 25   // increased from 20 to match play button
                 color: prevHover.containsMouse 
                        ? Qt.rgba(volDrop.accentColor.r, volDrop.accentColor.g, volDrop.accentColor.b, 0.15)
                        : Qt.rgba(volDrop.dimColor.r, volDrop.dimColor.g, volDrop.dimColor.b, 0.1)
@@ -486,7 +511,7 @@ DropdownBase {
                     anchors.centerIn: parent
                     text: "󰒮"
                     font.family: fontFamily
-                    font.pixelSize: 18
+                    font.pixelSize: 20    // increased from 18 to match proportion
                     color: volDrop.accentColor
                 }
 
@@ -528,9 +553,9 @@ DropdownBase {
             }
 
             Rectangle {
-                width: 40
-                height: 40
-                radius: 20
+                width: 50    // increased from 40 to match play button
+                height: 50   // increased from 40 to match play button
+                radius: 25   // increased from 20 to match play button
                 color: nextHover.containsMouse
                        ? Qt.rgba(volDrop.accentColor.r, volDrop.accentColor.g, volDrop.accentColor.b, 0.15)
                        : Qt.rgba(volDrop.dimColor.r, volDrop.dimColor.g, volDrop.dimColor.b, 0.1)
@@ -540,7 +565,7 @@ DropdownBase {
                     anchors.centerIn: parent
                     text: "󰒭"
                     font.family: fontFamily
-                    font.pixelSize: 18
+                    font.pixelSize: 20    // increased from 18 to match proportion
                     color: volDrop.accentColor
                 }
 
@@ -555,76 +580,88 @@ DropdownBase {
             }
         }  // end controls Row
 
-        // Media player volume
-        Row {
-            y: artRow.y + artRow.height + 10 + 50 + 12
+        // ── Media Volume Slider ────────────────────────────────
+        Item {
+            x: 0
+            y: artRow.y + artRow.height + 8  // reduced gap from 16 to 8
             width: parent.width
-            height: 40
-            spacing: 10
-            opacity: volDrop.mediaAvailable ? 1.0 : 0.3
+            height: 32  // reduced from 40 to 32
 
-            Text {
+            Row {
+                anchors.fill: parent
+                spacing: 12
                 anchors.verticalCenter: parent.verticalCenter
-                text: volDrop.displayMediaVol <= 0 ? "󰕿" : (volDrop.displayMediaVol > 50 ? "󰕾" : "󰖀")
-                font.family: fontFamily
-                font.pixelSize: 18
-                color: volDrop.accentColor
-            }
 
-            Item {
-                id: mediaVolSlider
-                anchors.verticalCenter: parent.verticalCenter
-                width: parent.width - 28
-                height: 40
-
-                Rectangle {
+                Text {
                     anchors.verticalCenter: parent.verticalCenter
-                    width: parent.width
-                    height: 5
-                    radius: 3
-                    color: volDrop.dimColor
+                    text: "󰕾"
+                    font.family: fontFamily
+                    font.pixelSize: 16
+                    color: volDrop.accentColor
+                }
+
+                // Media volume slider
+                Item {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width - 60  // account for icon + percentage text
+                    height: 40
 
                     Rectangle {
-                        width: parent.width * (volDrop.displayMediaVol / 100)
-                        height: parent.height
-                        radius: 3
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width
+                        height: 4
+                        radius: 2
+                        color: Qt.rgba(volDrop.dimColor.r, volDrop.dimColor.g, volDrop.dimColor.b, 0.3)
+
+                        Rectangle {
+                            width: parent.width * (volDrop.displayMediaVol / 100)
+                            height: parent.height
+                            radius: 2
+                            color: volDrop.accentColor
+                        }
+                    }
+
+                    Rectangle {
+                        id: mediaHandle
+                        width: 14
+                        height: 14
+                        radius: 7
                         color: volDrop.accentColor
+                        anchors.verticalCenter: parent.verticalCenter
+                        x: Math.max(0, Math.min(
+                               parent.width - width,
+                               (volDrop.displayMediaVol / 100) * (parent.width - width)
+                           ))
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        preventStealing: true
+
+                        function setMediaFromX(mx) {
+                            var newVol = Math.round(Math.max(0, Math.min(100,
+                                mx / (parent.width - mediaHandle.width) * 100
+                            )))
+                            volDrop._dragMediaVol = newVol
+                            volDrop.setMediaVolume(newVol)
+                        }
+
+                        onPressed:         mouse => setMediaFromX(mouse.x)
+                        onPositionChanged: mouse => { if (pressed) setMediaFromX(mouse.x) }
+                        onReleased: volDrop._dragMediaVol = -1
                     }
                 }
 
-                Rectangle {
-                    id: mediaVolHandle
-                    width: 16; height: 16; radius: 8
-                    color: volDrop.accentColor
+                Text {
                     anchors.verticalCenter: parent.verticalCenter
-                    x: Math.max(0, Math.min(
-                           parent.width - width,
-                           (volDrop.displayMediaVol / 100) * (parent.width - width)
-                       ))
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    preventStealing: true
-                    enabled: volDrop.mediaAvailable
-
-                    function volFromX(mx) {
-                        return Math.round(Math.max(0, Math.min(100,
-                            mx / (parent.width - mediaVolHandle.width) * 100
-                        )))
-                    }
-
-                    onPressed:         mouse => { volDrop._dragMediaVol = volFromX(mouse.x) }
-                    onPositionChanged: mouse => { if (pressed) volDrop._dragMediaVol = volFromX(mouse.x) }
-                    onReleased: {
-                        var v = volDrop._dragMediaVol >= 0 ? volDrop._dragMediaVol : volDrop.mediaVolume
-                        // do NOT clear _dragMediaVol here — keep it pinned so display
-                        // doesn't snap back before the 300 ms re-read confirms the new value
-                        volDrop.setMediaVolume(v)
-                    }
+                    text: volDrop.displayMediaVol + "%"
+                    font.pixelSize: 11
+                    color: volDrop.dimColor
+                    width: 35
+                    horizontalAlignment: Text.AlignRight
                 }
             }
-        }  // end media volume Row
+        }
     }
 }

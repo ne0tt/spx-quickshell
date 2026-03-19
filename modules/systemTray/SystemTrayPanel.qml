@@ -271,9 +271,9 @@ Item {
                                     root.menuWindow.closePanel();
                                 } else {
                                     var localPos = trayDelegate.mapToItem(null, 0, 0);
-                                    // Use switchPanel to wait for other dropdowns to close
-                                    if (typeof root !== 'undefined' && root.switchPanel) {
-                                        root.switchPanel(() => root.menuWindow.openAt(trayDelegate.modelData.menu, localPos.x));
+                                    // Use the tray menu's coordination function
+                                    if (root.menuWindow.openWithCoordination) {
+                                        root.menuWindow.openWithCoordination(trayDelegate.modelData.menu, localPos.x);
                                     } else {
                                         root.menuWindow.openAt(trayDelegate.modelData.menu, localPos.x);
                                     }
