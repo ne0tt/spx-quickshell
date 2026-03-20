@@ -340,7 +340,7 @@ DropdownBase {
                 color: Qt.rgba(volDrop.dimColor.r, volDrop.dimColor.g, volDrop.dimColor.b, 0.15)
                 
                 // Animated border that changes color
-                border.width: volDrop.mediaStatus === "Playing" ? 3 : 0
+                border.width: volDrop.mediaStatus === "Playing" ? 2 : 0
                 border.color: {
                     if (volDrop.mediaStatus !== "Playing") return "transparent"
                     
