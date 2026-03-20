@@ -14,8 +14,8 @@ DropdownBase {
     id: volDrop
     reloadableId: "volumeDropdown"
 
-    implicitHeight:  volDrop.mediaAvailable ? 410 : 200  // increased to accommodate visualizer
-    panelFullHeight: volDrop.mediaAvailable ? 296 : 140  // increased for visualizer space  
+    implicitHeight:  volDrop.mediaAvailable ? 410 : 70  // adjusted to match footer gap with CAVA
+    panelFullHeight: volDrop.mediaAvailable ? 296 : 70  // adjusted for consistent footer spacing  
     panelWidth:      460
     panelTitle:      "Master volume"
     panelTitleRight: volDrop.muted ? "󰖁  Muted" : volDrop.volume + "%"
@@ -261,7 +261,7 @@ DropdownBase {
                 width: parent.width
                 height: 6
                 radius: 3
-                color: volDrop.dimColor
+                color: colors.col_background
 
                 Rectangle {
                     width: parent.width * (volDrop.muted ? 0 : volDrop.volume / 100)
@@ -277,6 +277,8 @@ DropdownBase {
                 height: 18
                 radius: 9
                 color: volDrop.accentColor
+                border.width: 1
+                border.color: colors.col_background
                 anchors.verticalCenter: parent.verticalCenter
                 x: Math.max(0, Math.min(
                        parent.width - width,

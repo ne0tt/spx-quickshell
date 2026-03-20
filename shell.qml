@@ -360,6 +360,7 @@ ShellRoot {
                     BluetoothButton {
                         id: btButton
                         anchors.verticalCenterOffset: 1
+                        visible: AppState.btPowered
                         btPowered: AppState.btPowered
                         isActive: bluetoothDropdown.isOpen
                         onClicked: function (clickX) {

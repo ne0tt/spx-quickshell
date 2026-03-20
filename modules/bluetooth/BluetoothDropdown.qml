@@ -108,30 +108,30 @@ DropdownBase {
     // ── UI ───────────────────────────────────────────────────
 
     // Mini power toggle pill — sits in the header row, right-aligned
-    Rectangle {
-        x: 16 + btDrop.panelWidth - 14 - 34
-        y: 16 + Math.floor((btDrop.headerHeight - 18) / 2)
-        z: 10
-        width: 34; height: 18; radius: 9
-        color: btDrop.btPowered
-               ? btDrop.accentColor
-               : Qt.rgba(btDrop.dimColor.r, btDrop.dimColor.g, btDrop.dimColor.b, 0.3)
-        Behavior on color { ColorAnimation { duration: 160 } }
-
-        Rectangle {
-            width: 12; height: 12; radius: 6
-            anchors.verticalCenter: parent.verticalCenter
-            x: btDrop.btPowered ? parent.width - width - 3 : 3
-            color: "white"
-            Behavior on x { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-        }
-
-        MouseArea {
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            onClicked: btDrop.togglePower()
-        }
-    }
+    //Rectangle {
+    //    x: 16 + btDrop.panelWidth - 14 - 34
+    //    y: 16 + Math.floor((btDrop.headerHeight - 18) / 2)
+    //    z: 10
+    //    width: 34; height: 18; radius: 9
+    //    color: btDrop.btPowered
+    //           ? btDrop.accentColor
+    //           : Qt.rgba(btDrop.dimColor.r, btDrop.dimColor.g, btDrop.dimColor.b, 0.3)
+    //    Behavior on color { ColorAnimation { duration: 160 } }
+//
+    //    Rectangle {
+    //        width: 12; height: 12; radius: 6
+    //        anchors.verticalCenter: parent.verticalCenter
+    //        x: btDrop.btPowered ? parent.width - width - 3 : 3
+    //        color: "white"
+    //        Behavior on x { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+    //    }
+//
+    //    MouseArea {
+    //        anchors.fill: parent
+    //        cursorShape: Qt.PointingHandCursor
+    //        onClicked: btDrop.togglePower()
+    //    }
+    //}
 
     // Paired device list (shown only when powered and devices exist)
     Item {

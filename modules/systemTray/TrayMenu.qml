@@ -10,7 +10,7 @@ DropdownBase {
     id: _drop
     reloadableId: "trayMenu"
 
-    panelWidth:  220
+    panelWidth:  320
     // Height is bound dynamically to the column content
     panelFullHeight: Math.max(30, _menuColumn.implicitHeight + 16)
     implicitHeight: panelFullHeight + 44   // +16 ears +28 footer
