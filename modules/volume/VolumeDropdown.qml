@@ -580,7 +580,7 @@ DropdownBase {
                 spacing: 3
                 
                 // Using 24 bars for a good balance of detail and performance
-                property int barCount: 26
+                property int barCount: 20
                 
                 Repeater {  
                     model: barsRow.barCount
