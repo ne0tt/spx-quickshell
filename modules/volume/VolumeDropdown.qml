@@ -1,5 +1,6 @@
 import Quickshell
 import Quickshell.Io
+import Quickshell.Services.Pipewire
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Effects
@@ -13,8 +14,8 @@ DropdownBase {
     id: volDrop
     reloadableId: "volumeDropdown"
 
-    implicitHeight:  volDrop.mediaAvailable ? 350 : 140
-    panelFullHeight: volDrop.mediaAvailable ? 236 : 80  // precise sizing to minimize footer gap
+    implicitHeight:  volDrop.mediaAvailable ? 410 : 200  // increased to accommodate visualizer
+    panelFullHeight: volDrop.mediaAvailable ? 296 : 140  // increased for visualizer space  
     panelWidth:      460
     panelTitle:      "Master volume"
     panelTitleRight: volDrop.muted ? "󰖁  Muted" : volDrop.volume + "%"
@@ -308,7 +309,7 @@ DropdownBase {
     // ────────────────────────────────────────────────────────
     Rectangle {
         x: 40    // adjusted for new margins
-        y: 104 + 8
+        y: 124   // moved up from 194 (visualizer was at 124)
         width:  volDrop.panelWidth - 40    // adjusted for new margins
         height: 1
         color: Qt.rgba(volDrop.dimColor.r, volDrop.dimColor.g, volDrop.dimColor.b, 0.2)
@@ -317,7 +318,7 @@ DropdownBase {
 
     Item {
         x: 16 + 20    // increased margins for better centering
-        y: 104 + 8 + 14
+        y: 138   // moved up from 208 (was 194 + 14 offset)
         width:  volDrop.panelWidth - 40    // adjusted for new margins
         height: 148    // precise height: 100px art + 32px media slider + 16px spacing
         visible: volDrop.mediaAvailable    // hide entire media section when no media
@@ -337,6 +338,22 @@ DropdownBase {
                 height: 100   // increased from 80 by 25%
                 radius: 12    // slightly more rounded for modern look
                 color: Qt.rgba(volDrop.dimColor.r, volDrop.dimColor.g, volDrop.dimColor.b, 0.15)
+                
+                // Animated border that changes color
+                border.width: volDrop.mediaStatus === "Playing" ? 3 : 0
+                border.color: {
+                    if (volDrop.mediaStatus !== "Playing") return "transparent"
+                    
+                    // Create chase effect by interpolating between colors based on angle
+                    var normalizedAngle = (_artAngle % 360) / 360
+                    var t = (Math.sin(normalizedAngle * Math.PI * 4) + 1) / 2 // 0-1 oscillation, faster cycle
+                    
+                    // Interpolate between source_color and C47FD5
+                    var r = volDrop.accentColor.r * (1 - t) + parseInt("C4", 16) / 255 * t
+                    var g = volDrop.accentColor.g * (1 - t) + parseInt("7F", 16) / 255 * t  
+                    var b = volDrop.accentColor.b * (1 - t) + parseInt("D5", 16) / 255 * t
+                    return Qt.rgba(r, g, b, 1.0)
+                }
 
                 // Hidden rounded mask — layer.enabled forces it to render even when invisible
                 Rectangle {
@@ -376,57 +393,16 @@ DropdownBase {
                     visible: artImage.status !== Image.Ready || volDrop.mediaArtUrl === ""
                 }
 
-                // Rotating gradient border overlay
+                // Animation property and timer
                 property real _artAngle: 0
                 Timer {
-                    id: __artAngleTimer
+                    interval: 50  // Faster for smoother color transitions
                     running: volDrop.mediaStatus === "Playing" && volDrop.isOpen
-                    interval: 66    // ~15 fps — optimized for battery life
                     repeat: true
-                    onTriggered: parent._artAngle -= Math.PI * 2 / 60
-                }
-
-                Canvas {
-                    id: _artBorderCanvas
-                    anchors.fill: parent
-                    opacity: volDrop.mediaStatus === "Playing" ? 1.0 : 0.0  // hide when not playing
-                    Behavior on opacity { NumberAnimation { duration: 200 } }
-
-                    property real angle: parent._artAngle
-                    onAngleChanged: { if (opacity > 0) requestPaint() }
-
-                    onPaint: {
-                        var ctx = getContext("2d")
-                        ctx.clearRect(0, 0, width, height)
-                        var bw = 2; var r = artBox.radius
-                        var x = bw/2; var y = bw/2
-                        var w = width - bw; var h = height - bw
-                        var cx = width/2; var cy = height/2
-                        var grad = ctx.createConicalGradient(cx, cy, angle)
-                        var sc = volDrop.accentColor
-                        var c1 = Qt.rgba(sc.r, sc.g, sc.b, 1.0).toString()
-                        grad.addColorStop(0,    c1)        // source_color half
-                        grad.addColorStop(0.5,  "#C47FD5") // purple half — chasing
-                        grad.addColorStop(1.0,  c1)        // wraps back seamlessly
-                        ctx.strokeStyle = grad
-                        ctx.lineWidth   = bw
-                        ctx.beginPath()
-                        ctx.moveTo(x+r, y)
-                        ctx.lineTo(x+w-r, y)
-                        ctx.arcTo(x+w, y,   x+w, y+r,   r)
-                        ctx.lineTo(x+w, y+h-r)
-                        ctx.arcTo(x+w, y+h, x+w-r, y+h, r)
-                        ctx.lineTo(x+r, y+h)
-                        ctx.arcTo(x, y+h,   x, y+h-r,   r)
-                        ctx.lineTo(x, y+r)
-                        ctx.arcTo(x, y,     x+r, y,     r)
-                        ctx.closePath()
-                        ctx.stroke()
-                    }
+                    onTriggered: artBox._artAngle = (artBox._artAngle + 3) % 360 // Faster rotation
                 }
             }
 
-            // Title + artist stacked
             Column {
                 anchors.top: parent.top    // align with top of album art instead of center
                 width: parent.width - artBox.width - artRow.spacing
@@ -492,7 +468,7 @@ DropdownBase {
             }
         }
 
-        // Playbook controls
+        // Playback controls
         Row {
             x: artBox.width + artRow.spacing + (parent.width - artBox.width - artRow.spacing - width) / 2    // center within title/artist text area
             y: artRow.y + 50    // align button bottoms with thumbnail bottom (100px thumbnail height - 50px button height)
@@ -579,87 +555,60 @@ DropdownBase {
                 }
             }
         }  // end controls Row
+    }
 
-        // ── Media Volume Slider ────────────────────────────────
+    // ────────────────────────────────────────────────────────
+    // AUDIO VISUALIZER (CAVA) - Now positioned below media controls
+    // ────────────────────────────────────────────────────────
+    Item {
+        x: 16 + 20
+        y: 296  // positioned below media controls (138 + 148 + 10 spacing)
+        width: volDrop.panelWidth - 40
+        height: 60
+        visible: volDrop.mediaAvailable && volDrop.isOpen  // only show and process when dropdown is open
+        
+        // Visualizer bars container
         Item {
-            x: 0
-            y: artRow.y + artRow.height + 8  // reduced gap from 16 to 8
-            width: parent.width
-            height: 32  // reduced from 40 to 32
-
+            id: visualizerContent
+            anchors.fill: parent
+            anchors.bottomMargin: 20
+            
             Row {
-                anchors.fill: parent
-                spacing: 12
-                anchors.verticalCenter: parent.verticalCenter
-
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: "󰕾"
-                    font.family: fontFamily
-                    font.pixelSize: 16
-                    color: volDrop.accentColor
-                }
-
-                // Media volume slider
-                Item {
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: parent.width - 60  // account for icon + percentage text
-                    height: 40
-
+                id: barsRow
+                anchors.centerIn: parent
+                height: parent.height - 10
+                spacing: 3
+                
+                // Using 24 bars for a good balance of detail and performance
+                property int barCount: 26
+                
+                Repeater {  
+                    model: barsRow.barCount
+                    
                     Rectangle {
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: parent.width
-                        height: 4
-                        radius: 2
-                        color: Qt.rgba(volDrop.dimColor.r, volDrop.dimColor.g, volDrop.dimColor.b, 0.3)
-
-                        Rectangle {
-                            width: parent.width * (volDrop.displayMediaVol / 100)
-                            height: parent.height
-                            radius: 2
-                            color: volDrop.accentColor
+                        id: bar
+                        
+                        required property int index  
+                        property real value: (volDrop.isOpen && volDrop.mediaAvailable) ? 
+                            Math.max(0, Math.min(1, 
+                                Audio.cava.values?.[Math.floor((index / (barsRow.barCount - 1)) * (Audio.cava.values?.length - 1 || 0))] || 0
+                            )) : 0
+                        
+                        width: (visualizerContent.width - (barsRow.spacing * (barsRow.barCount - 1))) / barsRow.barCount
+                        height: Math.max(2, bar.value * barsRow.height * 1.8)
+                        
+                        anchors.bottom: parent.bottom
+                        
+                        color: Qt.rgba(volDrop.accentColor.r, volDrop.accentColor.g, volDrop.accentColor.b, 0.8)
+                        
+                        
+                        Behavior on height {
+                            NumberAnimation {
+                                duration: 30
+                                easing.type: Easing.Linear
+                            }
                         }
                     }
-
-                    Rectangle {
-                        id: mediaHandle
-                        width: 14
-                        height: 14
-                        radius: 7
-                        color: volDrop.accentColor
-                        anchors.verticalCenter: parent.verticalCenter
-                        x: Math.max(0, Math.min(
-                               parent.width - width,
-                               (volDrop.displayMediaVol / 100) * (parent.width - width)
-                           ))
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        preventStealing: true
-
-                        function setMediaFromX(mx) {
-                            var newVol = Math.round(Math.max(0, Math.min(100,
-                                mx / (parent.width - mediaHandle.width) * 100
-                            )))
-                            volDrop._dragMediaVol = newVol
-                            volDrop.setMediaVolume(newVol)
-                        }
-
-                        onPressed:         mouse => setMediaFromX(mouse.x)
-                        onPositionChanged: mouse => { if (pressed) setMediaFromX(mouse.x) }
-                        onReleased: volDrop._dragMediaVol = -1
-                    }
-                }
-
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: volDrop.displayMediaVol + "%"
-                    font.pixelSize: 11
-                    color: volDrop.dimColor
-                    width: 35
-                    horizontalAlignment: Text.AlignRight
                 }
             }
         }

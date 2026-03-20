@@ -59,8 +59,7 @@ ShellRoot {
             if (rightPanel.isOpen) {
                 rightPanel.closePanel()
             } else {
-                root.closeAllDropdowns()
-                rightPanel.openPanel()
+                root.switchPanel(() => rightPanel.openPanel());
             }
         }
     }
@@ -447,8 +446,7 @@ ShellRoot {
                             if (rightPanel.isOpen) {
                                 rightPanel.closePanel()
                             } else {
-                                root.closeAllDropdowns()
-                                rightPanel.openPanel()
+                                root.switchPanel(() => rightPanel.openPanel());
                             }
                         }
                     }
@@ -493,7 +491,7 @@ ShellRoot {
                     ClockPanel {
                         id: clockWidget
                         anchors.verticalCenterOffset: 0
-                        fontSize: 12
+                        fontSize: 13
                         fontBold: true
                         textColor: calendarPanel.isOpen ? colors.col_source_color : colors.col_primary
                         borderColor: "black"

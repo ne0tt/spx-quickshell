@@ -3,7 +3,7 @@
   "animations": true,
   "blur": false,
   "launcherFloating": false,
-  "workspaceGlow": true,
+  "workspaceGlow": false,
   "wallpaperFolder": "/home/sispx/wallpaper",
   "wallpaperSubdirs": true
 }

@@ -35,10 +35,32 @@ PanelWindow {
     anchors.bottom: true
     anchors.right:  true
     implicitWidth:  screen ? screen.width : 1920
-    exclusiveZone:  _wrapper.visible ? panelWidth + panelMarginRight : 0
+    exclusiveZone:  _reserveSpace ? panelWidth + panelMarginRight : 0
     color: "transparent"
 
     WlrLayershell.layer: WlrLayer.Overlay
+
+    // ─── Fullscreen detection — hide panel when app is fullscreen ───
+    visible: !hasFullscreenWindow
+    
+    readonly property bool hasFullscreenWindow: {
+        var currentMonitor = Hyprland.monitorFor(_panel.screen)
+        if (!currentMonitor) return false
+        
+        return Hyprland.toplevels.values.some(window => {
+            return window.monitor === currentMonitor && 
+                   window.lastIpcObject?.fullscreen === true
+        })
+    }
+    
+    Connections {
+        target: Hyprland
+        function onRawEvent(event) {
+            if (event.name === "fullscreen" || event.name === "activewindow") {
+                _panel.hasFullscreenWindowChanged()  // Force property re-evaluation
+            }
+        }
+    }
 
     // Shrink input mask to the panel body when open, 0×0 when closed
     mask: Region { item: _maskItem }
@@ -75,18 +97,26 @@ PanelWindow {
     // ─── Content injection ────────────────────────────────
     default property alias panelContent: _contentArea.data
 
+    // ─── Internal state tracking ──────────────────────────
+    property bool _panelFullyOpen: false  // true when slide animation completes
+    property bool _reserveSpace: false    // true when exclusiveZone should be active
+
     // ─── Public API ───────────────────────────────────────
     readonly property bool isOpen: _wrapper.visible
 
     function openPanel() {
         _slideOut.stop()
         _body.x = panelWidth   // start off-screen right
-        _wrapper.visible = true
-        _slideIn.start()
+        _panelFullyOpen = false
+        _reserveSpace = true   // trigger window resize
+        _wrapper.visible = true // show panel immediately
+        _slideIn.start()       // start sliding in sync with window resize
     }
 
     function closePanel() {
         _slideIn.stop()
+        _panelFullyOpen = false
+        // Keep _reserveSpace = true during slide out
         _slideOut.start()
     }
 
@@ -104,7 +134,7 @@ PanelWindow {
 
     // ─── Drop shadow on left edge ─────────────────────────
     Rectangle {
-        visible: _wrapper.visible
+        visible: _wrapper.visible && !_slideIn.running && !_slideOut.running
         opacity: _body.x === 0 ? 0.7 : 0
         Behavior on opacity { NumberAnimation { duration: _panel.openDuration } }
         x: _panel.width - _panel.panelWidth - 18 - _panel.panelMarginRight
@@ -112,7 +142,7 @@ PanelWindow {
         width:  18
         height: _panel.panelHeight
         color:  "transparent"
-        layer.enabled: true
+        layer.enabled: !_slideIn.running && !_slideOut.running
         layer.effect: MultiEffect {
             blurEnabled: true
             blur:    0.9
@@ -130,14 +160,14 @@ PanelWindow {
 
     // ─── Glow halo — matches Hyprland active-window border style ─────
     Rectangle {
-        visible: _wrapper.visible
+        visible: _wrapper.visible && !_slideIn.running && !_slideOut.running
         x: _panel.width - _panel.panelWidth - _panel.panelMarginRight - 20 + _body.x
         y: _panel.panelMarginTop - 20
         width:  _panel.panelWidth + 40
         height: _panel.panelHeight + 40
         color:  "transparent"
 
-        layer.enabled: true
+        layer.enabled: !_slideIn.running && !_slideOut.running
         layer.effect: MultiEffect {
             blurEnabled: true
             blur:        0.6
@@ -212,6 +242,7 @@ PanelWindow {
             to:   0
             duration: _panel.openDuration
             easing.type: Easing.OutCubic
+            onFinished: _panel._panelFullyOpen = true
         }
 
         NumberAnimation {
@@ -222,7 +253,10 @@ PanelWindow {
             to:   _panel.panelWidth
             duration: _panel.closeDuration
             easing.type: Easing.InCubic
-            onFinished: _wrapper.visible = false
+            onFinished: {
+                _wrapper.visible = false
+                _panel._reserveSpace = false  // Reset exclusiveZone after slide completes
+            }
         }
     }
 }
