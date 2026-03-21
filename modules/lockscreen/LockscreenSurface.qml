@@ -40,6 +40,8 @@ Rectangle {
     
     // Settings file reader
     property string currentWallpaper: ""
+    property string originalWallpaper: ""
+    property string errorWallpaper: "/home/sispx/wallpaper/red/onyx-flow-red.jpg"
     
     FileView {
         id: settingsFile
@@ -51,6 +53,7 @@ Rectangle {
                 var settings = JSON.parse(text())
                 if (typeof settings.currentWallpaper === "string") {
                     root.currentWallpaper = settings.currentWallpaper
+                    root.originalWallpaper = settings.currentWallpaper
                 }
             } catch (e) {
                 console.warn("Failed to parse settings.json:", e)
@@ -58,7 +61,33 @@ Rectangle {
         }
     }
     
-    // Wallpaper background
+    // Wallpaper background with layered approach to avoid black flash
+    // Red error wallpaper (bottom layer - loaded after main wallpaper)
+    Image {
+        id: errorWallpaperImage
+        anchors.fill: parent
+        source: ""  // Initially empty, loaded after main wallpaper
+        fillMode: Image.PreserveAspectCrop
+        asynchronous: true
+        cache: false
+        opacity: root.context.showFailure ? 0.8 : 0.0
+        
+        onStatusChanged: {
+            if (status === Image.Error) {
+                console.warn("Failed to load error wallpaper:", source)
+            }
+        }
+        
+        // Smooth wallpaper transition
+        Behavior on opacity {
+            PropertyAnimation {
+                duration: 400
+                easing.type: Easing.InOutCubic
+            }
+        }
+    }
+    
+    // Normal wallpaper (top layer - hides/shows red layer)
     Image {
         id: wallpaperImage
         anchors.fill: parent
@@ -66,10 +95,22 @@ Rectangle {
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
         cache: false
+        opacity: root.context.showFailure ? 0.0 : 1.0
         
         onStatusChanged: {
             if (status === Image.Error) {
                 console.warn("Failed to load wallpaper:", source)
+            } else if (status === Image.Ready) {
+                // Once main wallpaper is loaded, preload the red wallpaper behind it
+                errorWallpaperImage.source = root.errorWallpaper
+            }
+        }
+        
+        // Smooth wallpaper transition
+        Behavior on opacity {
+            PropertyAnimation {
+                duration: 400
+                easing.type: Easing.InOutCubic
             }
         }
         
@@ -97,13 +138,16 @@ Rectangle {
         anchors {
             horizontalCenter: parent.horizontalCenter
             top: parent.top
-            topMargin: 100
+            topMargin: 160
         }
 
         // Native font rendering for large sizes
         renderType: Text.NativeRendering
         font.pointSize: 80
-        color: themeColors.col_primary
+        color: root.context.showFailure ? "#ff4444" : themeColors.col_primary
+        
+        // Smooth color transition
+        Behavior on color { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
 
         // Update clock every second
         Timer {
@@ -122,27 +166,30 @@ Rectangle {
     }
 
     // Date display (only on primary)
-    Label {
-        id: dateLabel
-        visible: showLoginForm
-        
-        anchors {
-            horizontalCenter: parent.horizontalCenter
-            top: clock.bottom
-            topMargin: 20
-        }
-        
-        font.pointSize: 18
-        color: themeColors.col_primary
-        
-        text: {
-            const date = clock.date
-            const day = date.getDate().toString().padStart(2, '0')
-            const month = (date.getMonth() + 1).toString().padStart(2, '0') // getMonth() is 0-based
-            const year = date.getFullYear()
-            return `${day}/${month}/${year}`
-        }
-    }
+    //Label {
+    //    id: dateLabel
+    //    visible: showLoginForm
+    //    
+    //    anchors {
+    //        horizontalCenter: parent.horizontalCenter
+    //        top: clock.bottom
+    //        topMargin: 20
+    //    }
+    //    
+    //    font.pointSize: 18
+    //    color: root.context.showFailure ? "#ff4444" : themeColors.col_primary
+    //    
+    //    // Smooth color transition
+    //    Behavior on color { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
+    //    
+    //    text: {
+    //        const date = clock.date
+    //        const day = date.getDate().toString().padStart(2, '0')
+    //        const month = (date.getMonth() + 1).toString().padStart(2, '0') // getMonth() is 0-based
+    //        const year = date.getFullYear()
+    //        return `${day}/${month}/${year}`
+    //    }
+    //}
 
     // Login form (only on primary monitor)
     ColumnLayout {
@@ -417,8 +464,11 @@ Rectangle {
         text: "Hyprland on Arch Linux • Screen Locked"
         
         font.pointSize: 10
-        color: themeColors.col_primary
+        color: root.context.showFailure ? "#ff4444" : themeColors.col_primary
         opacity: 0.7
+        
+        // Smooth color transition
+        Behavior on color { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
     }
 
 
