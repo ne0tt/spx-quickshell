@@ -27,6 +27,44 @@ Rectangle {
         }
     }
     
+    // Keyboard breathing effect process for failure state (red theme)
+    Process {
+        id: keyboardBreathingProc
+        running: false
+        command: ["python3", "/home/sispx/.config/hypr/scripts/keyboard-breathing-toggle.py", "#ff0000", "75"]
+        
+        onStarted: {
+            console.log("Lockscreen: Keyboard breathing process started")
+        }
+        
+        onExited: (exitCode) => {
+            if (exitCode === 0) {
+                console.log("Lockscreen: Keyboard breathing effect activated (red)")
+            } else {
+                console.log("Lockscreen: Failed to activate keyboard breathing, exit code:", exitCode)
+            }
+        }
+    }
+    
+    // Keyboard RGB restoration process for normal state 
+    Process {
+        id: keyboardRgbProc
+        running: false
+        command: ["python3", "/home/sispx/.config/hypr/scripts/keyboard-rgb.py"]
+        
+        onStarted: {
+            console.log("Lockscreen: Keyboard RGB restoration process started")
+        }
+        
+        onExited: (exitCode) => {
+            if (exitCode === 0) {
+                console.log("Lockscreen: Keyboard RGB restored to normal")
+            } else {
+                console.log("Lockscreen: Failed to restore keyboard RGB, exit code:", exitCode)
+            }
+        }
+    }
+    
     // Function to pause all currently playing media
     function pauseAllMedia() {
         console.log("Lockscreen: Pausing all media players")
@@ -263,16 +301,23 @@ Rectangle {
             Connections {
                 target: root.context
                 function onShowFailureChanged() {
+                    console.log("Lockscreen: showFailure changed to:", root.context.showFailure)
                     if (root.context.showFailure) {
                         // Stop any running timers when new error occurs
                         redDelayTimer.stop()
                         shakeDelayTimer.stop()
                         // Start delay timer to shake after 1 second
                         shakeDelayTimer.start()
+                        // Activate keyboard breathing effect (red)
+                        console.log("Lockscreen: Triggering keyboard breathing (red)")
+                        keyboardBreathingProc.running = true
                     } else {
                         // If failure is cleared (e.g., user started typing), stop all timers
                         redDelayTimer.stop()
                         shakeDelayTimer.stop()
+                        // Restore keyboard to normal RGB
+                        console.log("Lockscreen: Triggering keyboard RGB restoration")
+                        keyboardRgbProc.running = true
                     }
                 }
             }
@@ -485,6 +530,15 @@ Rectangle {
         
         if (showLoginForm) {
             passwordBox.forceActiveFocus()
+        }
+    }
+    
+    // Also restore keyboard when lockscreen is unlocked
+    Connections {
+        target: root.context
+        function onUnlocked() {
+            console.log("Lockscreen: Successfully unlocked, restoring keyboard RGB")
+            keyboardRgbProc.running = true
         }
     }
 }

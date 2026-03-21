@@ -47,27 +47,45 @@ QtObject {
     onWorkspaceGlowChanged:    { if (_loaded) _saveTimer.restart() }
     onWallpaperFolderChanged:  { if (_loaded) _saveTimer.restart() }
     onWallpaperSubdirsChanged: { if (_loaded) _saveTimer.restart() }
-    onCurrentWallpaperChanged: { if (_loaded) _saveTimer.restart() }
+    onCurrentWallpaperChanged: { 
+        if (_loaded) {
+            _saveTimer.restart()
+        }
+    }
 
-    // ── 500 ms debounce timer ─────────────────────────────
+    // ── 750 ms debounce timer (increased for reliability) ─────────────────────────────
     property var _saveTimer: Timer {
-        interval: 500
+        interval: 750  // Increased from 500ms to avoid conflicts with swww/matugen
         repeat:   false
         onTriggered: cfg._doSave()
+    }
+    
+    // ── Immediate save for critical settings ──
+    function _saveImmediately() {
+        _saveTimer.stop()  // Cancel any pending debounced save
+        _doSave()
     }
 
     // ── Write helper — called by timer and eagerly on first load ──
     function _doSave() {
-        _settingsFile.setText(JSON.stringify({
-            barMonitor:       cfg.barMonitor,
-            animations:       cfg.animations,
-            blur:             cfg.blur,
-            launcherFloating: cfg.launcherFloating,
-            workspaceGlow:    cfg.workspaceGlow,
-            wallpaperFolder:  cfg.wallpaperFolder,
-            wallpaperSubdirs: cfg.wallpaperSubdirs,
-            currentWallpaper: cfg.currentWallpaper
-        }, null, 2))
+        try {
+            var settingsData = {
+                barMonitor:       cfg.barMonitor,
+                animations:       cfg.animations,
+                blur:             cfg.blur,
+                launcherFloating: cfg.launcherFloating,
+                workspaceGlow:    cfg.workspaceGlow,
+                wallpaperFolder:  cfg.wallpaperFolder,
+                wallpaperSubdirs: cfg.wallpaperSubdirs,
+                currentWallpaper: cfg.currentWallpaper
+            }
+            _settingsFile.setText(JSON.stringify(settingsData, null, 2))
+        } catch (error) {
+            // Retry after a short delay
+            Qt.callLater(function() {
+                cfg._doSave()
+            })
+        }
     }
 
     // ── FileView — inotify read + FileView.write() via Quickshell.Io ──

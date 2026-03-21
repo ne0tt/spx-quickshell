@@ -28,7 +28,7 @@ DropdownBase {
     // STATE  
     // --------------------------------------------------------
     property var    images:          []
-    property string currentWallpaper: ""
+    property string currentWallpaper: config.currentWallpaper || ""  // Initialize from settings
     property var    _findArr:         []   // array accumulator — avoids O(n²) string concat
     property bool   _applying:        false
     property int    focusedIndex:     -1   // keyboard-nav cursor
@@ -176,8 +176,12 @@ DropdownBase {
         if (_applying) return
         _applying = true
         
-        // Save to settings using existing config system
+        // Save to settings using existing config system with immediate save
         config.currentWallpaper = path
+        // Force immediate save instead of waiting for debounce timer
+        Qt.callLater(function() {
+            config._saveImmediately()
+        })
         
         // update immediately so the highlight moves right away
         wpDrop.currentWallpaper = path
