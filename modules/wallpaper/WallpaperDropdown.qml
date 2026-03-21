@@ -6,7 +6,7 @@ import "../../base"
 // ============================================================
 // WALLPAPER DROPDOWN — scrollable thumbnail grid
 // Finds all images under ~/wallpaper/ recursively.
-// Click a thumbnail to apply it via wallpaper.sh.
+// Click a thumbnail to apply it with swww and save to settings.
 // ============================================================
 DropdownBase {
     id: wpDrop
@@ -175,6 +175,10 @@ DropdownBase {
     function applyWallpaper(path) {
         if (_applying) return
         _applying = true
+        
+        // Save to settings using existing config system
+        config.currentWallpaper = path
+        
         // update immediately so the highlight moves right away
         wpDrop.currentWallpaper = path
         swwwProc.command    = ["swww", "img", path,

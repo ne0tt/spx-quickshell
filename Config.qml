@@ -34,6 +34,7 @@ QtObject {
     // Wallpaper settings
     property string wallpaperFolder:      "wallpaper"
     property bool   wallpaperSubdirs:     true
+    property string currentWallpaper:     ""
 
     // ── Load guard — prevents saves firing during initial read ──
     property bool _loaded: false
@@ -46,6 +47,7 @@ QtObject {
     onWorkspaceGlowChanged:    { if (_loaded) _saveTimer.restart() }
     onWallpaperFolderChanged:  { if (_loaded) _saveTimer.restart() }
     onWallpaperSubdirsChanged: { if (_loaded) _saveTimer.restart() }
+    onCurrentWallpaperChanged: { if (_loaded) _saveTimer.restart() }
 
     // ── 500 ms debounce timer ─────────────────────────────
     property var _saveTimer: Timer {
@@ -63,7 +65,8 @@ QtObject {
             launcherFloating: cfg.launcherFloating,
             workspaceGlow:    cfg.workspaceGlow,
             wallpaperFolder:  cfg.wallpaperFolder,
-            wallpaperSubdirs: cfg.wallpaperSubdirs
+            wallpaperSubdirs: cfg.wallpaperSubdirs,
+            currentWallpaper: cfg.currentWallpaper
         }, null, 2))
     }
 
@@ -83,6 +86,7 @@ QtObject {
                 if (typeof s.workspaceGlow    === "boolean")                             cfg.workspaceGlow    = s.workspaceGlow
                 if (typeof s.wallpaperFolder  === "string"  && s.wallpaperFolder.length > 0) cfg.wallpaperFolder = s.wallpaperFolder
                 if (typeof s.wallpaperSubdirs === "boolean")                             cfg.wallpaperSubdirs = s.wallpaperSubdirs
+                if (typeof s.currentWallpaper === "string")                             cfg.currentWallpaper = s.currentWallpaper
             } catch (e) {}
             cfg._loaded = true
             // Eagerly write back: creates the file on first run and captures

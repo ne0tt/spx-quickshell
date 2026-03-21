@@ -1,7 +1,9 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.Fusion
+import Qt5Compat.GraphicalEffects
 import Quickshell.Wayland
+import Quickshell.Io
 
 Rectangle {
     id: root
@@ -10,12 +12,76 @@ Rectangle {
     
     readonly property ColorGroup colors: Window.active ? palette.active : palette.inactive
     
+    // Media control process for pausing all players when lockscreen activates
+    Process {
+        id: mediaControlProc
+        running: false
+        command: ["playerctl", "-a", "pause"]
+        
+        onExited: (exitCode) => {
+            if (exitCode === 0) {
+                console.log("Lockscreen: All media players paused")
+            } else {
+                console.log("Lockscreen: Failed to pause media players, exit code:", exitCode)
+            }
+        }
+    }
+    
+    // Function to pause all currently playing media
+    function pauseAllMedia() {
+        console.log("Lockscreen: Pausing all media players")
+        mediaControlProc.running = true
+    }
+    
     // Dynamic colors that update with theme changes (symlinked to main Colors.qml)
     Colors {
         id: themeColors
     }
     
-    // Use theme colors for consistency
+    // Settings file reader
+    property string currentWallpaper: ""
+    
+    FileView {
+        id: settingsFile
+        path: "/home/sispx/dotfiles/.config/quickshell/modules/settings/settings.json"
+        watchChanges: true
+        onFileChanged: this.reload()
+        onLoaded: {
+            try {
+                var settings = JSON.parse(text())
+                if (typeof settings.currentWallpaper === "string") {
+                    root.currentWallpaper = settings.currentWallpaper
+                }
+            } catch (e) {
+                console.warn("Failed to parse settings.json:", e)
+            }
+        }
+    }
+    
+    // Wallpaper background
+    Image {
+        id: wallpaperImage
+        anchors.fill: parent
+        source: root.currentWallpaper || ""
+        fillMode: Image.PreserveAspectCrop
+        asynchronous: true
+        cache: false
+        
+        onStatusChanged: {
+            if (status === Image.Error) {
+                console.warn("Failed to load wallpaper:", source)
+            }
+        }
+        
+        // Dark overlay for text readability
+        Rectangle {
+            anchors.fill: parent
+            color: "#000000"
+            opacity: 0.4
+        }
+    }
+    
+    // Use theme colors for consistency (fallback color)
     color: themeColors.col_background
 
     // Show login form only on primary monitor, others stay black
@@ -85,98 +151,127 @@ Rectangle {
         anchors {
             horizontalCenter: parent.horizontalCenter
             top: parent.verticalCenter
-            topMargin: 50
+            topMargin: -150
         }
 
         spacing: 20
 
-        // Username label
-        Label {
+        // Login container box
+        Rectangle {
             Layout.alignment: Qt.AlignHCenter
-            text: "Enter password to unlock"
-            font.pointSize: 16
-            color: themeColors.col_primary
-        }
-
-        // Password input and unlock button
-        RowLayout {
-            spacing: 15
+            width: 500
+            height: 200
+            opacity: 0.8
             
-            TextField {
-                id: passwordBox
-
-                Layout.preferredWidth: 300
-                Layout.preferredHeight: 50
+            color: themeColors.col_main
+            border.color: themeColors.col_source_color
+            border.width: 2
+            radius: 12
+            
+            // Black glow effect
+            layer.enabled: true
+            layer.effect: DropShadow {
+                transparentBorder: true
+                horizontalOffset: 0
+                verticalOffset: 0
+                radius: 20
+                samples: 41
+                color: "#000000"
+                opacity: 1
+            }
+            
+            // Container content with header and login form
+            Item {
+                anchors.fill: parent
                 
-                font.pointSize: 14
-                padding: 15
-                
-                // Theme colors for input field
-                color: themeColors.col_source_color
-                
-                focus: true
-                enabled: !root.context.unlockInProgress
-                echoMode: TextInput.Password
-                inputMethodHints: Qt.ImhSensitiveData
-                placeholderText: "Password"
-                placeholderTextColor: themeColors.col_background
-
-                // Custom styling for better appearance
-                background: Rectangle {
-                    color: themeColors.col_main
-                    border.color: passwordBox.focus ? themeColors.col_source_color : themeColors.col_primary
-                    border.width: 2
-                    radius: 8
-                }
-
-                // Update context when text changes
-                onTextChanged: root.context.currentText = this.text
-
-                // Try to unlock on Enter
-                onAccepted: root.context.tryUnlock()
-
-                // Sync with context text
-                Connections {
-                    target: root.context
-                    function onCurrentTextChanged() {
-                        passwordBox.text = root.context.currentText
+                // Header box anchored to top with 0px margin
+                Rectangle {
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.topMargin: 0
+                    anchors.leftMargin: 0
+                    anchors.rightMargin: 0
+                    height: 50
+                    
+                    color: themeColors.col_source_color
+                    radius: 12
+                    
+                    // Clip bottom corners to make them square
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        height: 12
+                        color: themeColors.col_source_color
+                    }
+                    
+                    RowLayout {
+                        anchors.left: parent.left
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.leftMargin: 20
+                        spacing: 10
+                        
+                        Text {
+                            text: ""
+                            font.pointSize: 14
+                            color: themeColors.col_background
+                        }
+                        
+                        Label {
+                            text: "Enter password to unlock"
+                            font.pointSize: 12
+                            font.weight: Font.Medium
+                            color: themeColors.col_background
+                        }
                     }
                 }
-            }
-
-            Button {
-                id: unlockButton
                 
-                Layout.preferredWidth: 100
-                Layout.preferredHeight: 50
-                
-                text: root.context.unlockInProgress ? "..." : "Unlock"
-                font.pointSize: 12
-                
-                // Don't steal focus from text box
-                focusPolicy: Qt.NoFocus
-                
-                enabled: !root.context.unlockInProgress && root.context.currentText !== ""
-                
-                // Custom styling
-                background: Rectangle {
-                    color: unlockButton.enabled ? (unlockButton.pressed ? themeColors.col_main : themeColors.col_source_color) : themeColors.col_primary
-                    border.color: themeColors.col_background
-                    border.width: 1
-                    radius: 8
+                // Password input centered in remaining space
+                TextField {
+                    id: passwordBox
                     
-                    opacity: unlockButton.enabled ? 1.0 : 0.6
+                    anchors.centerIn: parent
+                    anchors.verticalCenterOffset: 25
+                    
+                    width: 300
+                    height: 45
+                    
+                    font.pointSize: 12
+                    padding: 15
+                    
+                    // Theme colors for input field
+                    color: themeColors.col_source_color
+                    
+                    focus: true
+                    enabled: !root.context.unlockInProgress
+                    echoMode: TextInput.Password
+                    inputMethodHints: Qt.ImhSensitiveData
+                    placeholderText: "Password"
+                    placeholderTextColor: themeColors.col_background
+
+                    // Custom styling for better appearance
+                    background: Rectangle {
+                        color: themeColors.col_background
+                        border.color: passwordBox.focus ? themeColors.col_source_color : themeColors.col_primary
+                        border.width: 2
+                        radius: 8
+                    }
+
+                    // Update context when text changes
+                    onTextChanged: root.context.currentText = this.text
+
+                    // Try to unlock on Enter
+                    onAccepted: root.context.tryUnlock()
+
+                    // Sync with context text
+                    Connections {
+                        target: root.context
+                        function onCurrentTextChanged() {
+                            passwordBox.text = root.context.currentText
+                        }
+                    }
                 }
-                
-                contentItem: Text {
-                    text: unlockButton.text
-                    font: unlockButton.font
-                    color: themeColors.col_background
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-                
-                onClicked: root.context.tryUnlock()
             }
         }
 
@@ -246,7 +341,7 @@ Rectangle {
         
         text: "Hyprland on Arch Linux • Screen Locked"
         
-        font.pointSize: 12
+        font.pointSize: 10
         color: themeColors.col_primary
         opacity: 0.7
     }
@@ -260,6 +355,9 @@ Rectangle {
     }
 
     Component.onCompleted: {
+        // Pause all media when lockscreen becomes active
+        pauseAllMedia()
+        
         if (showLoginForm) {
             passwordBox.forceActiveFocus()
         }
