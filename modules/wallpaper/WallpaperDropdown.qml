@@ -18,6 +18,7 @@ DropdownBase {
     panelTitle:      "Wallpaper"
     panelIcon:       "󰸉"
     headerHeight:    34
+    panelZ:          1   // same z-order as app launcher dropdown
 
     // Exclusively grab keyboard input while the panel is open so arrow-key
     // navigation works without the user needing to mouse over the window first.

@@ -14,6 +14,7 @@ import qs.modules.appLauncher
 import qs.modules.bluetooth
 import qs.modules.calendar
 import qs.modules.clock
+import qs.modules.lockscreen
 //import qs.modules.network
 import qs.modules.power
 import qs.modules.settings
@@ -51,6 +52,7 @@ ShellRoot {
     //   bind = SUPER CTRL, W,  global, quickshell:toggleWallpaperDropdown
     //   bind = SUPER, Space,   global, quickshell:toggleAppLauncher
     //   bind = SUPER, R,       global, quickshell:toggleRightPanel
+    //   bind = SUPER, L,       global, quickshell:lockScreen
     // ============================================================
     GlobalShortcut {
         name: "toggleRightPanel"
@@ -102,6 +104,26 @@ ShellRoot {
                     root.switchPanel(() => appLaunchDropdown.openPanel());
                 }
             }
+        }
+    }
+
+    GlobalShortcut {
+        name: "lockScreen"
+        description: "Lock the screen"
+        onPressed: {
+            console.log("Global lockscreen shortcut pressed")
+            lockscreenProcess.startDetached()
+        }
+    }
+
+    // Process object for launching lockscreen via global shortcut
+    Process {
+        id: lockscreenProcess
+        running: false
+        command: ["quickshell", "-p", Quickshell.env("HOME") + "/dotfiles/.config/quickshell/modules/lockscreen/LockscreenService.qml"]
+        
+        onExited: (exitCode, exitStatus) => {
+            console.log("Lockscreen process exited with code:", exitCode)
         }
     }
 
@@ -437,6 +459,14 @@ ShellRoot {
                             }
                         }
                     }
+
+                    // LOCKSCREEN BUTTON
+                    //LockscreenButton {
+                    //    id: lockscreenButton
+                    //    anchors.verticalCenterOffset: 1
+                    //    // No dropdown state needed since it launches a separate process
+                    //    isActive: false
+                    //}
 
                     // RIGHT PANEL BUTTON
                     RightPanelButton {

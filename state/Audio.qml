@@ -25,7 +25,7 @@ Singleton {
             running: true
             command: [
                 "cava", 
-                "-p", "/tmp/quickshell-cava.conf"
+                "-p", Quickshell.env("HOME") + "/dotfiles/.config/quickshell/cava.conf"
             ]
             
             stdout: SplitParser {

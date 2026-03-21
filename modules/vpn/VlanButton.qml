@@ -10,7 +10,7 @@ Item {
 
     property string fontFamily: config.fontFamily
     property int    fontWeight: config.fontWeight
-    property int    iconSize:   16
+    property int    iconSize:   15
 
     property bool   isActive:    false
     property color  accentColor: colors.col_primary

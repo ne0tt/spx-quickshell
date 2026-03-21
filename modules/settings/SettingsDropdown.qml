@@ -21,7 +21,7 @@ DropdownBase {
 
     // Row geometry — bump _rowCount when adding/removing toggle rows.
     // panelFullHeight is derived so implicitHeight stays correct automatically.
-    readonly property int _rowCount:  7
+    readonly property int _rowCount:  8
     readonly property int _rowH:      48   // SettingsToggleRow height
     readonly property int _gap:       8    // Column spacing
     readonly property int _padTop:    8    // top padding inside content area
@@ -162,6 +162,28 @@ DropdownBase {
     // ═══════════════════════════════════════════════════════
 
     function toggleBluetooth() { AppState.togglePower() }
+
+    // ═══════════════════════════════════════════════════════
+    // LOCKSCREEN — launch as separate process
+    // ═══════════════════════════════════════════════════════
+
+    Process {
+        id: lockscreenProcess
+        running: false
+        command: ["quickshell", "-p", Quickshell.env("HOME") + "/dotfiles/.config/quickshell/modules/lockscreen/LockscreenService.qml"]
+        
+        onExited: (exitCode, exitStatus) => {
+            console.log("Lockscreen process exited with code:", exitCode)
+        }
+    }
+
+    function activateLockscreen() {
+        console.log("Activating lockscreen from settings...")
+        settingsDrop.closePanel()  // Close settings dropdown first
+        Qt.callLater(function() {
+            lockscreenProcess.startDetached()
+        })
+    }
 
     // ═══════════════════════════════════════════════════════
     // TOGGLE ROWS
@@ -336,6 +358,93 @@ DropdownBase {
                             root.switchPanel(() => wpDropdown.openPanel())
                         })
                     }
+                }
+            }
+        }
+
+        // LOCKSCREEN ACTION BUTTON
+        Item {
+            width: parent.width
+            height: 48
+
+            Rectangle {
+                anchors.fill: parent
+                radius: 10
+                color: Qt.rgba(0, 0, 0, 0.18)
+                border.color: Qt.rgba(1, 1, 1, 0.06)
+                border.width: 1
+
+                // Left icon circle
+                Rectangle {
+                    id: lockscreenIconCircle
+                    anchors {
+                        left: parent.left
+                        leftMargin: 12
+                        verticalCenter: parent.verticalCenter
+                    }
+                    width: 32; height: 32; radius: 16
+                    color: Qt.rgba(1, 1, 1, 0.05)
+                    border.color: Qt.rgba(1, 1, 1, 0.10)
+                    border.width: 1
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "󰌾"
+                        font.family: settingsDrop.fontFamily
+                        font.styleName: "Solid"
+                        font.pixelSize: 15
+                        color: settingsDrop.dimColor
+                    }
+                }
+
+                // Label
+                Column {
+                    anchors {
+                        left: lockscreenIconCircle.right
+                        leftMargin: 10
+                        right: lockscreenArrow.left
+                        rightMargin: 10
+                        verticalCenter: parent.verticalCenter
+                    }
+                    spacing: 2
+
+                    Text {
+                        text: "Lock Screen"
+                        font.family: settingsDrop.fontFamily
+                        font.pixelSize: 13
+                        font.weight: Font.DemiBold
+                        color: settingsDrop.textColor
+                        elide: Text.ElideRight
+                    }
+
+                    Text {
+                        text: "Lock the display immediately"
+                        font.family: settingsDrop.fontFamily
+                        font.pixelSize: 10
+                        color: settingsDrop.dimColor
+                        elide: Text.ElideRight
+                    }
+                }
+
+                // Right arrow
+                Text {
+                    id: lockscreenArrow
+                    anchors {
+                        right: parent.right
+                        rightMargin: 12
+                        verticalCenter: parent.verticalCenter
+                    }
+                    text: "󰅂"
+                    font.family: settingsDrop.fontFamily
+                    font.styleName: "Solid"
+                    font.pixelSize: 12
+                    color: settingsDrop.dimColor
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: settingsDrop.activateLockscreen()
                 }
             }
         }

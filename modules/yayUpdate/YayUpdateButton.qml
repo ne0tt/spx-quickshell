@@ -118,7 +118,16 @@ Rectangle {
     // Opens a terminal, runs yay -Syu, then re-checks the count
     Process {
         id: runUpgrade
-        command: ["kitty", "--hold", "sh", "-c", "yay -Syu"]
+        command: ["kitty", "--config", Quickshell.env("HOME") + "/dotfiles/.config/kitty/kitty-qs-yay.conf", "--title", "qs-kitty-yay", "--hold", "sh", "-c", "yay -Syu"]
         onRunningChanged: if (!running) yayUpdateProc.running = true
     }
+    
+    // Hyprland window rule for floating terminal:
+    // windowrule {
+    //     name = qs-kitty-yay
+    //     match:initial_title = ^(qs-kitty-yay)$
+    //     float = true
+    //     size = 800 600
+    //     center = true
+    // }
 }
