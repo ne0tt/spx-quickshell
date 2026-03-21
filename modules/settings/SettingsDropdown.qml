@@ -362,93 +362,6 @@ DropdownBase {
             }
         }
 
-        // LOCKSCREEN ACTION BUTTON
-        Item {
-            width: parent.width
-            height: 48
-
-            Rectangle {
-                anchors.fill: parent
-                radius: 10
-                color: Qt.rgba(0, 0, 0, 0.18)
-                border.color: Qt.rgba(1, 1, 1, 0.06)
-                border.width: 1
-
-                // Left icon circle
-                Rectangle {
-                    id: lockscreenIconCircle
-                    anchors {
-                        left: parent.left
-                        leftMargin: 12
-                        verticalCenter: parent.verticalCenter
-                    }
-                    width: 32; height: 32; radius: 16
-                    color: Qt.rgba(1, 1, 1, 0.05)
-                    border.color: Qt.rgba(1, 1, 1, 0.10)
-                    border.width: 1
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "󰌾"
-                        font.family: settingsDrop.fontFamily
-                        font.styleName: "Solid"
-                        font.pixelSize: 15
-                        color: settingsDrop.dimColor
-                    }
-                }
-
-                // Label
-                Column {
-                    anchors {
-                        left: lockscreenIconCircle.right
-                        leftMargin: 10
-                        right: lockscreenArrow.left
-                        rightMargin: 10
-                        verticalCenter: parent.verticalCenter
-                    }
-                    spacing: 2
-
-                    Text {
-                        text: "Lock Screen"
-                        font.family: settingsDrop.fontFamily
-                        font.pixelSize: 13
-                        font.weight: Font.DemiBold
-                        color: settingsDrop.textColor
-                        elide: Text.ElideRight
-                    }
-
-                    Text {
-                        text: "Lock the display immediately"
-                        font.family: settingsDrop.fontFamily
-                        font.pixelSize: 10
-                        color: settingsDrop.dimColor
-                        elide: Text.ElideRight
-                    }
-                }
-
-                // Right arrow
-                Text {
-                    id: lockscreenArrow
-                    anchors {
-                        right: parent.right
-                        rightMargin: 12
-                        verticalCenter: parent.verticalCenter
-                    }
-                    text: "󰅂"
-                    font.family: settingsDrop.fontFamily
-                    font.styleName: "Solid"
-                    font.pixelSize: 12
-                    color: settingsDrop.dimColor
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: settingsDrop.activateLockscreen()
-                }
-            }
-        }
-
         // ── Bar Monitor selector ─────────────────────────────────
         Item {
             id: _monCard
@@ -610,5 +523,93 @@ DropdownBase {
                 }
             }
         }
+
+        // LOCKSCREEN ACTION BUTTON
+        Item {
+            width: parent.width
+            height: 48
+
+            Rectangle {
+                anchors.fill: parent
+                radius: 10
+                color: Qt.rgba(0, 0, 0, 0.18)
+                border.color: Qt.rgba(1, 1, 1, 0.06)
+                border.width: 1
+
+                // Left icon circle
+                Rectangle {
+                    id: lockscreenIconCircle
+                    anchors {
+                        left: parent.left
+                        leftMargin: 12
+                        verticalCenter: parent.verticalCenter
+                    }
+                    width: 32; height: 32; radius: 16
+                    color: Qt.rgba(1, 1, 1, 0.05)
+                    border.color: Qt.rgba(1, 1, 1, 0.10)
+                    border.width: 1
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "󰌾"
+                        font.family: settingsDrop.fontFamily
+                        font.styleName: "Solid"
+                        font.pixelSize: 15
+                        color: settingsDrop.dimColor
+                    }
+                }
+
+                // Label
+                Column {
+                    anchors {
+                        left: lockscreenIconCircle.right
+                        leftMargin: 10
+                        right: lockscreenArrow.left
+                        rightMargin: 10
+                        verticalCenter: parent.verticalCenter
+                    }
+                    spacing: 2
+
+                    Text {
+                        text: "Lock Screen"
+                        font.family: settingsDrop.fontFamily
+                        font.pixelSize: 13
+                        font.weight: Font.DemiBold
+                        color: settingsDrop.textColor
+                        elide: Text.ElideRight
+                    }
+
+                    Text {
+                        text: "Lock the display immediately"
+                        font.family: settingsDrop.fontFamily
+                        font.pixelSize: 10
+                        color: settingsDrop.dimColor
+                        elide: Text.ElideRight
+                    }
+                }
+
+                // Right arrow
+                Text {
+                    id: lockscreenArrow
+                    anchors {
+                        right: parent.right
+                        rightMargin: 12
+                        verticalCenter: parent.verticalCenter
+                    }
+                    text: "󰅂"
+                    font.family: settingsDrop.fontFamily
+                    font.styleName: "Solid"
+                    font.pixelSize: 12
+                    color: settingsDrop.dimColor
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: settingsDrop.activateLockscreen()
+                }
+            }
+        }
+
     }
 }
