@@ -11,6 +11,7 @@ Rectangle {
     required property bool isPrimary  // True for primary monitor, false for others
     
     readonly property ColorGroup colors: Window.active ? palette.active : palette.inactive
+    readonly property string errorColor: "#ff3333"  // Bright red for errors (not part of theme)
     
     // Media control process for pausing all players when lockscreen activates
     Process {
@@ -31,7 +32,7 @@ Rectangle {
     Process {
         id: keyboardBreathingProc
         running: false
-        command: ["python3", "/home/sispx/.config/hypr/scripts/keyboard-breathing-toggle.py", "#ff0000", "75"]
+        command: ["python3", "/home/sispx/.config/hypr/scripts/keyboard-breathing-toggle.py", "#ff0000", "100"]
         
         onStarted: {
             console.log("Lockscreen: Keyboard breathing process started")
@@ -108,7 +109,7 @@ Rectangle {
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
         cache: false
-        opacity: root.context.showFailure ? 0.8 : 0.0
+        opacity: root.context.showFailure ? 0.6 : 0.0
         
         onStatusChanged: {
             if (status === Image.Error) {
@@ -133,7 +134,7 @@ Rectangle {
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
         cache: false
-        opacity: root.context.showFailure ? 0.0 : 1.0
+        opacity: root.context.showFailure ? 0.0 : 0.8
         
         onStatusChanged: {
             if (status === Image.Error) {
@@ -182,7 +183,7 @@ Rectangle {
         // Native font rendering for large sizes
         renderType: Text.NativeRendering
         font.pointSize: 80
-        color: root.context.showFailure ? "#ff4444" : themeColors.col_primary
+        color: root.context.showFailure ? root.errorColor : themeColors.col_primary
         
         // Smooth color transition
         Behavior on color { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
@@ -215,7 +216,7 @@ Rectangle {
     //    }
     //    
     //    font.pointSize: 18
-    //    color: root.context.showFailure ? "#ff4444" : themeColors.col_primary
+    //    color: root.context.showFailure ? "#cc3353" : themeColors.col_primary
     //    
     //    // Smooth color transition
     //    Behavior on color { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
@@ -250,7 +251,7 @@ Rectangle {
             opacity: 0.8
             
             color: root.context.showFailure ? "#4d1f1f" : themeColors.col_main  // Dark red when error
-            border.color: root.context.showFailure ? "#ff4444" : themeColors.col_source_color  // Bright red border when error
+            border.color: root.context.showFailure ? root.errorColor : themeColors.col_source_color  // Bright red border when error
             border.width: 2
             radius: 12
             
@@ -349,7 +350,7 @@ Rectangle {
                     anchors.rightMargin: 0
                     height: 50
                     
-                    color: root.context.showFailure ? "#ff4444" : themeColors.col_source_color  // Red header when error
+                    color: root.context.showFailure ? root.errorColor : themeColors.col_source_color  // Red header when error
                     radius: 12
                     
                     // Smooth color transition
@@ -361,7 +362,7 @@ Rectangle {
                         anchors.right: parent.right
                         anchors.bottom: parent.bottom
                         height: 12
-                        color: root.context.showFailure ? "#ff4444" : themeColors.col_source_color  // Match header color
+                        color: root.context.showFailure ? root.errorColor : themeColors.col_source_color  // Match header color
                         
                         // Smooth color transition
                         Behavior on color { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
@@ -417,7 +418,7 @@ Rectangle {
                     // Custom styling for better appearance
                     background: Rectangle {
                         color: themeColors.col_background
-                        border.color: root.context.showFailure ? "#ff4444" : (passwordBox.focus ? themeColors.col_source_color : themeColors.col_primary)
+                        border.color: root.context.showFailure ? root.errorColor : (passwordBox.focus ? themeColors.col_source_color : themeColors.col_primary)
                         border.width: 2
                         radius: 8
                         
@@ -448,7 +449,7 @@ Rectangle {
         //    Layout.alignment: Qt.AlignHCenter
         //    text: "ACCESS DENIED"
         //    font.pointSize: 14
-        //    color: "#ff6b6b"  // Red for error - keep this fixed as it's not part of theme
+        //    color: "#cc3353"  // Red for error - keep this fixed as it's not part of theme
         //}
     }
 
@@ -509,7 +510,7 @@ Rectangle {
         text: "Hyprland on Arch Linux • Screen Locked"
         
         font.pointSize: 10
-        color: root.context.showFailure ? "#ff4444" : themeColors.col_primary
+        color: root.context.showFailure ? root.errorColor : themeColors.col_primary
         opacity: 0.7
         
         // Smooth color transition
