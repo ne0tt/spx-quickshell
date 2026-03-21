@@ -158,15 +158,77 @@ Rectangle {
 
         // Login container box
         Rectangle {
+            id: loginContainer
             Layout.alignment: Qt.AlignHCenter
             width: 500
             height: 200
             opacity: 0.8
             
-            color: themeColors.col_main
-            border.color: themeColors.col_source_color
+            color: root.context.showFailure ? "#4d1f1f" : themeColors.col_main  // Dark red when error
+            border.color: root.context.showFailure ? "#ff4444" : themeColors.col_source_color  // Bright red border when error
             border.width: 2
             radius: 12
+            
+            // Smooth color transitions
+            Behavior on color { ColorAnimation { duration: 500; easing.type: Easing.OutCubic } }
+            Behavior on border.color { ColorAnimation { duration: 500; easing.type: Easing.OutCubic } }
+            
+            // Shake animation for password errors
+            SequentialAnimation {
+                id: shakeAnimation
+                running: false
+                
+                PropertyAnimation { target: loginContainer; property: "x"; to: loginContainer.x + 5; duration: 50 }
+                PropertyAnimation { target: loginContainer; property: "x"; to: loginContainer.x - 8; duration: 100 }
+                PropertyAnimation { target: loginContainer; property: "x"; to: loginContainer.x + 8; duration: 100 }
+                PropertyAnimation { target: loginContainer; property: "x"; to: loginContainer.x - 8; duration: 100 }
+                PropertyAnimation { target: loginContainer; property: "x"; to: loginContainer.x + 8; duration: 100 }
+                PropertyAnimation { target: loginContainer; property: "x"; to: loginContainer.x - 5; duration: 200 }
+                PropertyAnimation { target: loginContainer; property: "x"; to: loginContainer.x; duration: 50 }
+                
+                // Start delay timer when shake animation completes
+                onStopped: {
+                    redDelayTimer.start()
+                }
+            }
+            
+            // Timer to delay shake animation by 1 second
+            Timer {
+                id: shakeDelayTimer
+                interval: 600  // 0.6 second delay
+                repeat: false
+                onTriggered: {
+                    shakeAnimation.start()
+                }
+            }
+            
+            // Timer to keep box red for 3 additional seconds after shake
+            Timer {
+                id: redDelayTimer
+                interval: 2500  // 2.5 seconds
+                repeat: false
+                onTriggered: {
+                    root.context.showFailure = false
+                }
+            }
+            
+            // Trigger shake when authentication fails
+            Connections {
+                target: root.context
+                function onShowFailureChanged() {
+                    if (root.context.showFailure) {
+                        // Stop any running timers when new error occurs
+                        redDelayTimer.stop()
+                        shakeDelayTimer.stop()
+                        // Start delay timer to shake after 1 second
+                        shakeDelayTimer.start()
+                    } else {
+                        // If failure is cleared (e.g., user started typing), stop all timers
+                        redDelayTimer.stop()
+                        shakeDelayTimer.stop()
+                    }
+                }
+            }
             
             // Black glow effect
             layer.enabled: true
@@ -186,6 +248,7 @@ Rectangle {
                 
                 // Header box anchored to top with 0px margin
                 Rectangle {
+                    id: headerBox
                     anchors.top: parent.top
                     anchors.left: parent.left
                     anchors.right: parent.right
@@ -194,8 +257,11 @@ Rectangle {
                     anchors.rightMargin: 0
                     height: 50
                     
-                    color: themeColors.col_source_color
+                    color: root.context.showFailure ? "#ff4444" : themeColors.col_source_color  // Red header when error
                     radius: 12
+                    
+                    // Smooth color transition
+                    Behavior on color { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
                     
                     // Clip bottom corners to make them square
                     Rectangle {
@@ -203,7 +269,10 @@ Rectangle {
                         anchors.right: parent.right
                         anchors.bottom: parent.bottom
                         height: 12
-                        color: themeColors.col_source_color
+                        color: root.context.showFailure ? "#ff4444" : themeColors.col_source_color  // Match header color
+                        
+                        // Smooth color transition
+                        Behavior on color { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
                     }
                     
                     RowLayout {
@@ -219,10 +288,13 @@ Rectangle {
                         }
                         
                         Label {
-                            text: "Enter password to unlock"
+                            text: root.context.showFailure ? "ACCESS DENIED" : "Enter password to unlock"
                             font.pointSize: 12
                             font.weight: Font.Medium
                             color: themeColors.col_background
+                            
+                            // Smooth text transition
+                            Behavior on text { }
                         }
                     }
                 }
@@ -253,9 +325,12 @@ Rectangle {
                     // Custom styling for better appearance
                     background: Rectangle {
                         color: themeColors.col_background
-                        border.color: passwordBox.focus ? themeColors.col_source_color : themeColors.col_primary
+                        border.color: root.context.showFailure ? "#ff4444" : (passwordBox.focus ? themeColors.col_source_color : themeColors.col_primary)
                         border.width: 2
                         radius: 8
+                        
+                        // Smooth border color transition
+                        Behavior on border.color { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
                     }
 
                     // Update context when text changes
@@ -276,13 +351,13 @@ Rectangle {
         }
 
         // Error message
-        Label {
-            visible: root.context.showFailure
-            Layout.alignment: Qt.AlignHCenter
-            text: "Incorrect password"
-            font.pointSize: 14
-            color: "#ff6b6b"  // Red for error - keep this fixed as it's not part of theme
-        }
+        //Label {
+        //    visible: root.context.showFailure
+        //    Layout.alignment: Qt.AlignHCenter
+        //    text: "ACCESS DENIED"
+        //    font.pointSize: 14
+        //    color: "#ff6b6b"  // Red for error - keep this fixed as it's not part of theme
+        //}
     }
 
     // Bypass button for testing (only visible when not in production) - positioned in top right

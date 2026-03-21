@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Services.Pam
+import Quickshell.Io
 
 Scope {
     id: root
@@ -17,6 +18,36 @@ Scope {
     
     // Clear the failure text once the user starts typing
     onCurrentTextChanged: showFailure = false
+
+    // Play error sound when authentication fails
+    onShowFailureChanged: {
+        if (showFailure) {
+            //console.log("Lockscreen: Authentication failed, triggering error sound")
+            //console.log("Lockscreen: Sound file path:", Quickshell.env("HOME") + "/dotfiles/.config/quickshell/assets/nedry.mp3")
+            errorSoundProc.running = true
+        }
+    }
+
+    // Process to play error sound using ffplay
+    Process {
+        id: errorSoundProc
+        running: false
+        command: [
+            "ffplay",
+            "-nodisp",        // No video display
+            "-autoexit",     // Exit when playback finished
+            "-v", "quiet",   // Suppress verbose output
+            Quickshell.env("HOME") + "/dotfiles/.config/quickshell/assets/nedry.mp3"
+        ]
+        
+        onExited: (exitCode) => {
+            if (exitCode === 0) {
+                console.log("Lockscreen: Error sound playback completed")
+            } else {
+                console.warn("Lockscreen: Failed to play error sound, exit code:", exitCode)
+            }
+        }
+    }
 
     function tryUnlock() {
         if (bypassMode) {
