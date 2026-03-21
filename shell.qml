@@ -116,6 +116,14 @@ ShellRoot {
         }
     }
 
+    GlobalShortcut {
+        name: "triggerYayUpdate"
+        description: "Launch the yay update terminal"
+        onPressed: {
+            yayUpdateButton.triggerUpdate()
+        }
+    }
+
     // Process object for launching lockscreen via global shortcut
     Process {
         id: lockscreenProcess
@@ -354,6 +362,7 @@ ShellRoot {
                     }
 
                     YayUpdateButton {
+                        id: yayUpdateButton
                         fontSize: 15
                     }
                 }

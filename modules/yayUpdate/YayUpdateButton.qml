@@ -24,6 +24,15 @@ Rectangle {
     property int yayUpdateCount: 0
     property bool yayUpdateAvailable: false
 
+    // Public method to trigger update from external components (e.g., GlobalShortcut)
+    function triggerUpdate() {
+        if (yayUpdateAvailable) {
+            runUpgrade.running = true
+            var pos = mapToItem(null, 0, 0)
+            clicked(pos.x + width / 2)
+        }
+    }
+
     width: 55
     height: 24
     radius: 7
