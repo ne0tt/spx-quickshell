@@ -288,7 +288,7 @@ Rectangle {
                 }
             }
             
-            // Timer to keep box red for 3 additional seconds after shake
+            // Timer to keep box red for after shake
             Timer {
                 id: redDelayTimer
                 interval: 2500  // 2.5 seconds
