@@ -405,8 +405,11 @@ Rectangle {
                     font.pointSize: 12
                     padding: 15
                     
-                    // Theme colors for input field
-                    color: themeColors.col_source_color
+                    // Theme colors for input field - red when error
+                    color: root.context.showFailure ? root.errorColor : themeColors.col_source_color
+                    
+                    // Smooth color transition
+                    Behavior on color { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
                     
                     focus: true
                     enabled: !root.context.unlockInProgress
