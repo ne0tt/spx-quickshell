@@ -311,12 +311,18 @@ bind = , escape,       global, quickshell:closeAllDropdowns
 bind = SUPER CTRL, W,  global, quickshell:toggleWallpaperDropdown
 bind = SUPER, Space,   global, quickshell:toggleAppLauncher
 bind = SUPER, R,       global, quickshell:toggleRightPanel
+bind = SUPER, L,       global, quickshell:lockScreen
 
 # Volume keys (capped at 100%)
 bind = , XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ --limit 1.0
 bind = , XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
 bind = , XF86AudioMicMute,     exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
 bind = , XF86AudioMute,        exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
+
+# Window rule for floating yay update terminal
+windowrule = float, title:^(qs-kitty-yay)$
+windowrule = size 800 600, title:^(qs-kitty-yay)$
+windowrule = center, title:^(qs-kitty-yay)$
 ```
 
 ---
@@ -356,6 +362,16 @@ Change `barMonitor` in `Config.qml` (or via the Settings dropdown at runtime —
 | `bluez` + `bluez-utils` | ✅ | Bluetooth |
 | `wireguard-tools` | ✅ | VPN panel |
 | `power-profiles-daemon` | ✅ | Power profile switching |
+| `wpctl` (wireplumber) | ✅ | Keyboard volume keys |
+| `cava` | ✅ | Audio spectrum visualizer |
+| `playerctl` | ✅ | Media player control and detection |
+| `python3` | ✅ | Browser sink detection scripts |
+| `pam` | ✅ | Lockscreen authentication |
+| `kitty` | ✅ | Terminal for package updates |
+| `hyprshade` | recommended | Night light toggle in settings (works with DisplayLink monitors) |
+| `yay` | recommended | Package update count |
+| `matugen` | recommended | Auto-generate colors from wallpaper |
+| `lm_sensors` | recommended | CPU temperature |
 | `wpctl` (wireplumber) | ✅ | Keyboard volume keys |
 | `hyprshade` | recommended | Night light toggle in settings (works with DisplayLink monitors) |
 | `yay` | recommended | Package update count |
@@ -398,4 +414,4 @@ This configuration is part of the SiSPX dotfiles collection. Built with [Quicksh
 
 ---
 
-**Last Updated**: March 8, 2026
+**Last Updated**: March 21, 2026
