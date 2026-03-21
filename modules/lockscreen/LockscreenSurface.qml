@@ -380,7 +380,7 @@ Rectangle {
                         }
                         
                         Label {
-                            text: root.context.showFailure ? "ACCESS DENIED" : "Enter password to unlock"
+                            text: root.context.showFailure ? "ACCESS DENIED" : "ENTER PASSWORD"
                             font.pointSize: 12
                             font.weight: Font.Medium
                             color: themeColors.col_background
