@@ -237,23 +237,23 @@ Rectangle {
         anchors {
             horizontalCenter: parent.horizontalCenter
             top: parent.verticalCenter
-            topMargin: -150
+            topMargin: -113
         }
 
-        spacing: 20
+        spacing: 15
 
         // Login container box
         Rectangle {
             id: loginContainer
             Layout.alignment: Qt.AlignHCenter
-            width: 500
-            height: 200
+            width: 375
+            height: 150
             opacity: 0.8
             
             color: root.context.showFailure ? "#4d1f1f" : themeColors.col_main  // Dark red when error
             border.color: root.context.showFailure ? root.errorColor : themeColors.col_source_color  // Bright red border when error
             border.width: 2
-            radius: 12
+            radius: 9
             
             // Smooth color transitions
             Behavior on color { ColorAnimation { duration: 500; easing.type: Easing.OutCubic } }
@@ -329,7 +329,7 @@ Rectangle {
                 transparentBorder: true
                 horizontalOffset: 0
                 verticalOffset: 0
-                radius: 20
+                radius: 15
                 samples: 41
                 color: "#000000"
                 opacity: 1
@@ -348,10 +348,10 @@ Rectangle {
                     anchors.topMargin: 0
                     anchors.leftMargin: 0
                     anchors.rightMargin: 0
-                    height: 50
+                    height: 38
                     
                     color: root.context.showFailure ? root.errorColor : themeColors.col_source_color  // Red header when error
-                    radius: 12
+                    radius: 9
                     
                     // Smooth color transition
                     Behavior on color { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
@@ -361,7 +361,7 @@ Rectangle {
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.bottom: parent.bottom
-                        height: 12
+                        height: 9
                         color: root.context.showFailure ? root.errorColor : themeColors.col_source_color  // Match header color
                         
                         // Smooth color transition
@@ -371,18 +371,18 @@ Rectangle {
                     RowLayout {
                         anchors.left: parent.left
                         anchors.verticalCenter: parent.verticalCenter
-                        anchors.leftMargin: 20
-                        spacing: 10
+                        anchors.leftMargin: 15
+                        spacing: 8
                         
                         Text {
-                            text: ""
-                            font.pointSize: 14
+                            text: ""
+                            font.pointSize: 15
                             color: themeColors.col_background
                         }
                         
                         Label {
                             text: root.context.showFailure ? "ACCESS DENIED" : "ENTER PASSWORD"
-                            font.pointSize: 12
+                            font.pointSize: 9
                             font.weight: Font.Medium
                             color: themeColors.col_background
                             
@@ -397,13 +397,13 @@ Rectangle {
                     id: passwordBox
                     
                     anchors.centerIn: parent
-                    anchors.verticalCenterOffset: 25
+                    anchors.verticalCenterOffset: 19
                     
-                    width: 300
-                    height: 45
+                    width: 225
+                    height: 34
                     
-                    font.pointSize: 12
-                    padding: 15
+                    font.pointSize: 9
+                    padding: 11
                     
                     // Theme colors for input field - red when error
                     color: root.context.showFailure ? root.errorColor : themeColors.col_source_color
@@ -423,7 +423,7 @@ Rectangle {
                         color: themeColors.col_background
                         border.color: root.context.showFailure ? root.errorColor : (passwordBox.focus ? themeColors.col_source_color : themeColors.col_primary)
                         border.width: 2
-                        radius: 8
+                        radius: 6
                         
                         // Smooth border color transition
                         Behavior on border.color { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
