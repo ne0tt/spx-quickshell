@@ -172,7 +172,7 @@ Rectangle {
         id: clock
         property var date: new Date()
         
-        visible: showLoginForm  // Only show on primary monitor
+        visible: showLoginForm && !root.context.showFailure
 
         anchors {
             horizontalCenter: parent.horizontalCenter
@@ -183,10 +183,7 @@ Rectangle {
         // Native font rendering for large sizes
         renderType: Text.NativeRendering
         font.pointSize: 80
-        color: root.context.showFailure ? root.errorColor : themeColors.col_primary
-        
-        // Smooth color transition
-        Behavior on color { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
+        color: themeColors.col_primary
 
         // Update clock every second
         Timer {
