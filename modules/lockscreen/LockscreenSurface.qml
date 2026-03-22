@@ -377,6 +377,7 @@ Rectangle {
                         Text {
                             text: ""
                             font.pointSize: 15
+                            font.family: "Jetbrains Mono Nerd Font"
                             color: themeColors.col_background
                         }
                         
