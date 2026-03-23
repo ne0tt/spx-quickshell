@@ -3,7 +3,7 @@
   "animations": true,
   "blur": false,
   "launcherFloating": false,
-  "workspaceGlow": false,
+  "workspaceGlow": true,
   "wallpaperFolder": "/home/sispx/wallpaper",
   "wallpaperSubdirs": true,
   "currentWallpaper": "/home/sispx/wallpaper/cyan/onyx-flow-cyan.jpg"

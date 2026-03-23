@@ -16,6 +16,10 @@ Shout out to the peoples on discord for helping me out ;)
 
 ---
 
+**Last Updated**: March 23, 2026
+
+---
+
 ## Overview
 
 A feature-rich top panel for Hyprland with smooth animations, reactive system state, and dropdown panels for everything. The bar is divided into three sections:
@@ -438,4 +442,4 @@ This configuration is part of the SiSPX dotfiles collection. Built with [Quicksh
 
 ---
 
-**Last Updated**: March 21, 2026
+
