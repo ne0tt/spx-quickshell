@@ -23,6 +23,8 @@ Rectangle {
 
     property int yayUpdateCount: 0
     property bool yayUpdateAvailable: false
+    // -1 so the very first check notifies if updates are found
+    property int _prevCount: -1
 
     // Public method to trigger update from external components (e.g., GlobalShortcut)
     function triggerUpdate() {
@@ -96,10 +98,26 @@ Rectangle {
         stdout: SplitParser {
             onRead: data => {
                 var count = parseInt(data.trim());
-                yayUpdateButton.yayUpdateCount = isNaN(count) ? 0 : count;
-                yayUpdateButton.yayUpdateAvailable = yayUpdateButton.yayUpdateCount > 0;
+                count = isNaN(count) ? 0 : count;
+                yayUpdateButton.yayUpdateCount     = count;
+                yayUpdateButton.yayUpdateAvailable = count > 0;
+                if (count > 0 && count !== yayUpdateButton._prevCount)
+                    notifProc.running = true;
+                yayUpdateButton._prevCount = count;
             }
         }
+    }
+
+    Process {
+        id: notifProc
+        running: false
+        command: [
+            "notify-send",
+            "--app-name", "yay",
+            "--icon", "system-software-update",
+            "System updates available",
+            yayUpdateButton.yayUpdateCount + " package" + (yayUpdateButton.yayUpdateCount === 1 ? "" : "s") + " ready to update"
+        ]
     }
     // Fire once at startup, then re-check at each hour boundary (aligns with
     // SystemClock.Hours so the process is spawned at most ~25 times/day instead

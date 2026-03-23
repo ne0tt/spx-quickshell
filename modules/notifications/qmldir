@@ -1,0 +1,5 @@
+singleton NotifService 1.0 NotifService.qml
+NotifCard 1.0 NotifCard.qml
+NotifPopups 1.0 NotifPopups.qml
+NotifButton 1.0 NotifButton.qml
+NotifDropdown 1.0 NotifDropdown.qml

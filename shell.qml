@@ -26,8 +26,9 @@ import qs.modules.wallpaper
 import qs.modules.workspaces
 import qs.modules.yayUpdate
 import qs.modules.rightPanelSlider
+import qs.modules.notifications
 //import qs.modules.chat
-//import "."
+//import ".."
 
 ShellRoot {
 
@@ -194,7 +195,7 @@ ShellRoot {
         //networkDropdown, 
         vpnDropdown, bluetoothDropdown, wpDropdown, 
         //weatherDropdown, 
-        settingsDropdown, appLaunchDropdown, trayMenu]
+        settingsDropdown, appLaunchDropdown, trayMenu, notifDropdown]
 
         // Close every open dropdown/drawer in one call
         function closeAllDropdowns() {
@@ -454,6 +455,21 @@ ShellRoot {
                     //    }
                     //}
 
+                    // NOTIFICATION BUTTON
+                    NotifButton {
+                        id: notifButton
+                        anchors.verticalCenterOffset: 1
+                        isActive: notifDropdown.isOpen
+                        onClicked: function (clickX) {
+                            notifDropdown.panelX = Math.max(0, clickX - notifDropdown.panelWidth / 2 - 16);
+                            if (notifDropdown.isOpen) {
+                                notifDropdown.closePanel();
+                            } else {
+                                root.switchPanel(() => notifDropdown.openPanel());
+                            }
+                        }
+                    }
+
                     // SETTINGS BUTTON
                     SettingsButton {
                         id: settingsButton
@@ -655,6 +671,24 @@ ShellRoot {
     //    screen: root.screen
     //}
 
+    // NotifDropdown — notification history panel
+    NotifDropdown {
+        id: notifDropdown
+        screen: root.screen
+        yayUpdateCount: yayUpdateButton.yayUpdateCount
+        onUpgradeRequested: {
+            notifDropdown.closePanel();
+            _yayLaunchDelay.start();
+        }
+    }
+
+    Timer {
+        id: _yayLaunchDelay
+        interval: notifDropdown.closeDuration + 20
+        repeat: false
+        onTriggered: yayUpdateButton.triggerUpdate()
+    }
+
     // SettingsDropdown — drops down from the settings gear icon
     SettingsDropdown {
         id: settingsDropdown
@@ -716,6 +750,11 @@ ShellRoot {
         id: workspaceGlow
         screen: root.screen
         visible: config.workspaceGlow
+    }
+
+    // NotifPopups — floating overlay for D-Bus notification popups
+    NotifPopups {
+        screen: root.screen
     }
 
 }
