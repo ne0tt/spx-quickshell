@@ -140,21 +140,5 @@ PanelWindow {
             }
         }
 
-        // Smooth repositioning when items above are removed.
-        move: Transition {
-            NumberAnimation {
-                property:    "y"
-                duration:    220
-                easing.type: Easing.OutCubic
-            }
-        }
-
-        displaced: Transition {
-            NumberAnimation {
-                property:    "y"
-                duration:    220
-                easing.type: Easing.OutCubic
-            }
-        }
     }
 }

@@ -22,6 +22,16 @@ Item {
     signal clicked(real clickX)
 
     readonly property int _count: NotifService.list.filter(n => !n.closed).length
+    property int _prevCount: 0
+
+    on_CountChanged: {
+        if (_count > _prevCount && _prevCount >= 0) {
+            bellFlashAnim.stop();
+            icon.color = root.accentColor;
+            bellFlashAnim.start();
+        }
+        _prevCount = _count;
+    }
 
     width:  24
     height: 24
@@ -39,6 +49,19 @@ Item {
              : root._hovered ? root.hoverColor
              :                 root.accentColor
         Behavior on color { ColorAnimation { duration: 160 } }
+    }
+
+    // Flash the bell when a new notification arrives
+    SequentialAnimation {
+        id: bellFlashAnim
+        loops: 4
+        ColorAnimation { target: icon; property: "color"; to: "white";            duration: 200 }
+        ColorAnimation { target: icon; property: "color"; to: root.accentColor;   duration: 200 }
+        onStopped: icon.color = Qt.binding(() =>
+            root.isActive ? root.activeColor
+          : root._hovered ? root.hoverColor
+          :                 root.accentColor
+        )
     }
 
     // Count badge — visible when there are unread notifications
