@@ -156,9 +156,7 @@ DropdownBase {
     Process {
         id: swwwProc
         running: false
-        command: ["swww", "img", ""]
         onExited: (code, status) => {
-            // swww done — refresh current wallpaper indicator
             currentProc.running = true
         }
     }
@@ -166,7 +164,6 @@ DropdownBase {
     Process {
         id: matugenProc
         running: false
-        command: ["matugen", "image", "", "--source-color-index", "0"]
         onExited: (code, status) => {
             wpDrop._applying = false
         }
@@ -189,7 +186,10 @@ DropdownBase {
             "--transition-type", "wipe",
             "--transition-angle", "45",
             "--transition-duration", "0.3"]
-        matugenProc.command = ["matugen", "image", path, "--source-color-index", "0"]
+        matugenProc.command = ["matugen", "image", path, 
+            "--source-color-index", "0", 
+            "--type", "scheme-tonal-spot"]
+        
         swwwProc.running    = true
         matugenProc.running = true
     }
