@@ -20,19 +20,21 @@ DropdownBase {
     reloadableId: "settingsDropdown"
 
     // Row geometry — bump _rowCount when adding/removing toggle rows.
+    // Night Light and Bar Monitor cards are counted separately below.
     // panelFullHeight is derived so implicitHeight stays correct automatically.
-    readonly property int _rowCount:  8
+    readonly property int _rowCount:  7    // 5 toggles + wallpaper + lockscreen
     readonly property int _rowH:      48   // SettingsToggleRow height
     readonly property int _gap:       8    // Column spacing
     readonly property int _padTop:    8    // top padding inside content area
     readonly property int _padBottom: 12   // gap between last row and footer
 
-    panelFullHeight: _padTop + _rowCount * _rowH + _rowCount * _gap
+    panelFullHeight: _padTop + _rowCount * _rowH + (_rowCount + 1) * _gap
+                   + 48 + (_nlExpanded ? 60 : 0)
                    + 48 + (_monExpanded ? Quickshell.screens.length * 36 : 0)
                    + _padBottom
     implicitHeight:  panelFullHeight + headerHeight + 52   // 16 ears + footerHeight + buffer
     panelWidth:      310
-    panelTitle:      "Quick Settings"
+    panelTitle:      "Settings"
     panelIcon:       "󰒓"
     headerHeight:    34
 
@@ -44,6 +46,9 @@ DropdownBase {
 
     // Busy guards — prevent double-clicks during command execution
     property bool _nightLightBusy: false
+
+    // Night light expand/collapse state
+    property bool _nlExpanded: false
 
     // Bar monitor list expand/collapse state
     property bool _monExpanded: false
@@ -79,7 +84,22 @@ DropdownBase {
     // Default: "blue-light-filter" (ships with hyprshade).
     // ═══════════════════════════════════════════════════════
 
-    readonly property string _nlShader: "blue-light-filter-50"
+    // Derive shader name from persisted strength setting.
+    readonly property string _nlShader: {
+        switch (config.nightLightStrength) {
+            case "low":  return "blue-light-filter-25"
+            case "full": return "blue-light-filter-75"
+            default:     return "blue-light-filter-50"
+        }
+    }
+
+    readonly property string _nlStrengthLabel: {
+        switch (config.nightLightStrength) {
+            case "low":  return "Low (25%)"
+            case "full": return "Full (75%)"
+            default:     return "Medium (50%)"
+        }
+    }
 
     // Check whether a screen shader is currently active via hyprctl.
     // When no shader is set the option value contains "EMPTY"; any other
@@ -117,6 +137,14 @@ DropdownBase {
         if (settingsDrop.nightLight) {
             nightLightDisable.running = true
         } else {
+            nightLightEnable.running = true
+        }
+    }
+
+    function setNightLightStrength(strength) {
+        config.nightLightStrength = strength
+        // Re-apply shader live if night light is currently on
+        if (settingsDrop.nightLight) {
             nightLightEnable.running = true
         }
     }
@@ -195,17 +223,219 @@ DropdownBase {
         width: settingsDrop.panelWidth - 28
         spacing: settingsDrop._gap
 
-        SettingsToggleRow {
-            width:       parent.width
-            cardIcon:    "󱠃"
-            label:       "Night Light"
-            subtitle:    "Warm colour temperature"
-            checked:     settingsDrop.nightLight
-            isBusy:      settingsDrop._nightLightBusy
-            accentColor: settingsDrop.accentColor
-            textColor:   settingsDrop.textColor
-            dimColor:    settingsDrop.dimColor
-            onToggled:   settingsDrop.toggleNightLight()
+        // ── Night Light card (expandable for strength) ───────
+        Item {
+            id: _nlCard
+            width:  parent.width
+            height: settingsDrop._nlExpanded ? 48 + 60 : 48
+            clip:   true
+            Behavior on height { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+
+            // Background — colour reflects on/off state like SettingsToggleRow
+            Rectangle {
+                width:  parent.width
+                height: parent.height
+                radius: 10
+                color: settingsDrop.nightLight
+                    ? Qt.rgba(settingsDrop.accentColor.r, settingsDrop.accentColor.g, settingsDrop.accentColor.b, 0.10)
+                    : Qt.rgba(0, 0, 0, 0.18)
+                border.color: settingsDrop.nightLight
+                    ? Qt.rgba(settingsDrop.accentColor.r, settingsDrop.accentColor.g, settingsDrop.accentColor.b, 0.36)
+                    : Qt.rgba(1, 1, 1, 0.06)
+                border.width: 1
+                Behavior on color        { ColorAnimation { duration: 260 } }
+                Behavior on border.color { ColorAnimation { duration: 260 } }
+            }
+
+            // ── Header row ──────────────────────────────────────
+            Item {
+                width: parent.width; height: 48
+
+                // Clicking the header (except the toggle pill) expands/collapses
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape:  Qt.PointingHandCursor
+                    onClicked: {
+                        settingsDrop._nlExpanded = !settingsDrop._nlExpanded
+                        if (settingsDrop.isOpen) settingsDrop.resizePanel()
+                    }
+                }
+
+                Rectangle {
+                    id: _nlIconCircle
+                    anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter }
+                    width: 32; height: 32; radius: 16
+                    color: settingsDrop.nightLight
+                        ? Qt.rgba(settingsDrop.accentColor.r, settingsDrop.accentColor.g, settingsDrop.accentColor.b, 0.22)
+                        : Qt.rgba(1, 1, 1, 0.05)
+                    border.color: settingsDrop.nightLight
+                        ? Qt.rgba(settingsDrop.accentColor.r, settingsDrop.accentColor.g, settingsDrop.accentColor.b, 0.55)
+                        : Qt.rgba(1, 1, 1, 0.10)
+                    border.width: 1
+                    Behavior on color        { ColorAnimation { duration: 260 } }
+                    Behavior on border.color { ColorAnimation { duration: 260 } }
+                    Text {
+                        anchors.centerIn: parent
+                        text:           "󱠃"
+                        font.family:    config.fontFamily
+                        font.styleName: "Solid"
+                        font.pixelSize: 15
+                        color: settingsDrop.nightLight ? settingsDrop.accentColor : settingsDrop.dimColor
+                        Behavior on color { ColorAnimation { duration: 260 } }
+                    }
+                }
+
+                Column {
+                    anchors {
+                        left: _nlIconCircle.right; leftMargin: 10
+                        right: _nlTogglePill.left; rightMargin: 8
+                        verticalCenter: parent.verticalCenter
+                    }
+                    spacing: 2
+                    Text {
+                        text:           "Night Light"
+                        font.family:    config.fontFamily
+                        font.pixelSize: 13
+                        font.weight:    Font.DemiBold
+                        color:          settingsDrop.textColor
+                    }
+                    Text {
+                        text:   settingsDrop._nlStrengthLabel
+                        font.family:    config.fontFamily
+                        font.pixelSize: 10
+                        color:  settingsDrop.nightLight ? settingsDrop.accentColor : settingsDrop.dimColor
+                        Behavior on color { ColorAnimation { duration: 260 } }
+                    }
+                }
+
+                // Toggle pill — inner MouseArea absorbs click, stops expand from firing
+                Rectangle {
+                    id: _nlTogglePill
+                    anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
+                    width: 38; height: 20; radius: 10
+                    color: settingsDrop.nightLight
+                        ? Qt.rgba(settingsDrop.accentColor.r, settingsDrop.accentColor.g, settingsDrop.accentColor.b, 0.82)
+                        : Qt.rgba(1, 1, 1, 0.15)
+                    Behavior on color { ColorAnimation { duration: 200 } }
+                    Rectangle {
+                        width: 14; height: 14; radius: 7
+                        anchors.verticalCenter: parent.verticalCenter
+                        x: settingsDrop.nightLight ? parent.width - width - 3 : 3
+                        color: settingsDrop.nightLight ? "white" : Qt.rgba(1, 1, 1, 0.55)
+                        Behavior on x     { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                        Behavior on color { ColorAnimation  { duration: 180 } }
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape:  Qt.PointingHandCursor
+                        enabled:      !settingsDrop._nightLightBusy
+                        onClicked:    settingsDrop.toggleNightLight()
+                    }
+                }
+
+            }
+
+            // Divider
+            Rectangle {
+                x: 12; y: 47
+                width: parent.width - 24; height: 1
+                color:   Qt.rgba(1, 1, 1, 0.08)
+                visible: settingsDrop._nlExpanded
+            }
+
+            // ── Strength slider ──────────────────────────────────
+            Item {
+                y: 48
+                width: parent.width
+                height: 60
+
+                readonly property int _snapIdx: {
+                    switch (config.nightLightStrength) {
+                        case "low":  return 0
+                        case "full": return 2
+                        default:     return 1
+                    }
+                }
+
+                Item {
+                    id: _sliderArea
+                    anchors {
+                        left:  parent.left;  leftMargin:  24
+                        right: parent.right; rightMargin: 24
+                        top:   parent.top;   topMargin:   10
+                    }
+                    height: 34
+
+                    // Track background
+                    Rectangle {
+                        id: _trackBg
+                        x: 7; y: 5
+                        width: parent.width - 14; height: 3; radius: 2
+                        color: Qt.rgba(1, 1, 1, 0.12)
+                    }
+
+                    // Active fill (left side up to knob centre)
+                    Rectangle {
+                        x: _trackBg.x; y: _trackBg.y
+                        width: _nlKnob.x + 7 - _trackBg.x
+                        height: _trackBg.height; radius: _trackBg.radius
+                        color: Qt.rgba(settingsDrop.accentColor.r, settingsDrop.accentColor.g, settingsDrop.accentColor.b, 0.70)
+                        Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                    }
+
+                    // Knob
+                    Rectangle {
+                        id: _nlKnob
+                        width: 14; height: 14; radius: 7
+                        y: 0
+                        x: _sliderArea.parent._snapIdx * (_sliderArea.width - 14) / 2
+                        color: settingsDrop.nightLight ? settingsDrop.accentColor : Qt.rgba(1, 1, 1, 0.75)
+                        border.color: "black"
+                        border.width: 1
+                        Behavior on x     { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                        Behavior on color { ColorAnimation  { duration: 260 } }
+                    }
+
+                    // Labels
+                    Text {
+                        anchors { left: parent.left; top: _trackBg.bottom; topMargin: 6 }
+                        text: "Low"; font.family: config.fontFamily; font.pixelSize: 10
+                        color: config.nightLightStrength === "low"
+                            ? (settingsDrop.nightLight ? settingsDrop.accentColor : settingsDrop.textColor)
+                            : settingsDrop.dimColor
+                        Behavior on color { ColorAnimation { duration: 120 } }
+                    }
+                    Text {
+                        anchors { horizontalCenter: parent.horizontalCenter; top: _trackBg.bottom; topMargin: 6 }
+                        text: "Med"; font.family: config.fontFamily; font.pixelSize: 10
+                        color: config.nightLightStrength === "medium"
+                            ? (settingsDrop.nightLight ? settingsDrop.accentColor : settingsDrop.textColor)
+                            : settingsDrop.dimColor
+                        Behavior on color { ColorAnimation { duration: 120 } }
+                    }
+                    Text {
+                        anchors { right: parent.right; top: _trackBg.bottom; topMargin: 6 }
+                        text: "Full"; font.family: config.fontFamily; font.pixelSize: 10
+                        color: config.nightLightStrength === "full"
+                            ? (settingsDrop.nightLight ? settingsDrop.accentColor : settingsDrop.textColor)
+                            : settingsDrop.dimColor
+                        Behavior on color { ColorAnimation { duration: 120 } }
+                    }
+
+                    // Click and drag
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape:  Qt.PointingHandCursor
+                        function _snap(mx) {
+                            var idx = Math.round((mx - 7) / ((_sliderArea.width - 14) / 2))
+                            idx = Math.max(0, Math.min(2, idx))
+                            settingsDrop.setNightLightStrength(["low", "medium", "full"][idx])
+                        }
+                        onClicked:         (mouse) => _snap(mouse.x)
+                        onPositionChanged: (mouse) => { if (pressed) _snap(mouse.x) }
+                    }
+                }
+            }
         }
 
         SettingsToggleRow {
