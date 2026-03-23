@@ -22,7 +22,7 @@ A feature-rich top panel for Hyprland with smooth animations, reactive system st
 
 - **Left** — App launcher button, wallpaper picker
 - **Center** — Hyprland workspace indicators with glow overlay
-- **Right** — Package updates, VPN, Bluetooth, volume with audio visualizer, power profile, temperature, system tray, lockscreen, clock
+- **Right** — Package updates, VPN, Bluetooth, volume with audio visualizer, power profile, temperature, system tray, notifications, lockscreen, clock
 
 ---
 
@@ -74,7 +74,15 @@ quickshell/
     │   ├── NetworkAdminDropdown.qml # Full NetworkManager admin panel
     │   ├── NetworkButton.qml        # IP address pill in bar
     │   └── NetworkDropdown.qml      # Ethernet status and details dropdown
+    ├── notifications/
+    │   ├── NotifService.qml         # Singleton: D-Bus notification server + list management
+    │   ├── NotifCard.qml            # Visual card for a single notification (fade in/out)
+    │   ├── NotifPopups.qml          # WlrLayer.Overlay popup stack (top-right)
+    │   ├── NotifButton.qml          # Bell icon button in bar with unread count badge
+    │   └── NotifDropdown.qml        # Notification history + yay update card (DropdownBase)
     ├── power/
+    │   ├── BatteryButton.qml        # Battery percentage + icon indicator in bar
+    │   ├── BatteryDropdown.qml      # Battery detail panel (state, ETA, energy)
     │   ├── PowerProfileButton.qml   # Power profile icon in bar
     │   ├── PowerProfileDropdown.qml # Power profile selector
     │   └── TemperatureButton.qml    # CPU temperature indicator in bar
@@ -203,7 +211,7 @@ Animated hexagonal grid painted to a `Canvas`. Repaints are rate-limited to ~20 
 Matrix-style digital rain canvas effect with configurable cascade animation. Features adjustable speed, density, trail lengths, and character colors. Currently unused but available for background effects or easter eggs. Runs at ~20 fps with Canvas optimization.
 
 ### `SelectableCard.qml`
-Card widget used in power profile, VPN, and VLAN dropdowns for single-select lists.
+Card widget used in power profile, VPN, VLAN, and notification history dropdowns for single-select or informational lists.
 
 ### `SettingsToggleRow.qml`
 Icon circle + label + optional subtitle + animated toggle pill. Has an `isBusy` spinner state.
@@ -211,6 +219,24 @@ Icon circle + label + optional subtitle + animated toggle pill. Has an `isBusy` 
 ---
 
 ## Modules
+
+### Notifications
+
+`NotifService` is a `pragma Singleton` that owns the D-Bus `NotificationServer` and all notification state. Any file in the `qs.modules.notifications` module can reference it directly.
+
+| Component | Purpose |
+|---|---|
+| `NotifService` | D-Bus server; holds `list` (all notifications) and `popups` (active, non-closed). Provides `clearAll()` and `dnd` toggle. |
+| `NotifCard` | Visual card per notification. Fades in on appear; dragging or timeout fades it out. Hover pauses the expire timer. |
+| `NotifPopups` | `PanelWindow` on `WlrLayer.Overlay`, top-right corner. `ListView` backed by `NotifService.popups`. Cards fade in/out; wrapper collapses height to pull remaining cards up. |
+| `NotifButton` | Bell icon (`󰂚`) in the bar. Shows a count badge when there are unread notifications. Click opens `NotifDropdown`. |
+| `NotifDropdown` | History panel extending `DropdownBase`. Shows all non-closed notifications as `SelectableCard` items. Includes a `yayUpdateCount` card at the top when updates are pending — clicking it closes the panel then launches the yay upgrade terminal. |
+
+The notification popup window hides itself when `NotifService.popups` is empty. Each `Notif` object holds a `Set`-based lock mechanism so visual animations can finish before the object is destroyed.
+
+### Battery (`BatteryButton` + `BatteryDropdown`)
+
+`BatteryButton` reads `/sys/class/power_supply/` via `upower` to display a dynamic icon and percentage. Hidden when no battery is detected (desktop systems). `BatteryDropdown` shows full detail: state (charging / discharging / fully-charged), time-to-full or time-to-empty, energy and capacity values, and battery technology.
 
 ### App Launcher
 Two modes, switchable via Settings:
@@ -256,7 +282,7 @@ Complete session locking system using Wayland's `WlSessionLock` protocol:
 - **Visual Design**: Clock, date, password input with theme consistency via symlinked Colors.qml
 - **Global Shortcut**: Triggered by `quickshell:lockScreen` (typically `SUPER, L`)
 - **Session Integration**: Proper Wayland session locking that works with power management
-
+> **⚠️ Bypass button** — `LockscreenSurface.qml` contains a hidden "Bypass" button in the **top-right corner** of the screen. It is invisible (`opacity: 0.0` on both background and label) but fully clickable — it calls `enableBypass()` + `tryUnlock()` to skip PAM authentication entirely. This exists purely for troubleshooting during initial setup. **Remove it (or set `visible: false`) once you are happy with your configuration.** Leaving it in place means anyone with physical access can unlock the screen without a password.
 Components:
 - **LockscreenButton.qml** — Bar trigger button (icon: 󰌾)
 - **LockscreenService.qml** — Entry point for separate process
@@ -271,7 +297,7 @@ Components:
 Power controlled via `rfkill`. Live state from `bluetoothctl monitor` parsed in `AppState`, debounced 600 ms. A 400 ms delay after `rfkill unblock` gives the adapter time to initialize before re-reading state.
 
 ### Power & Temperature
-`PowerProfileDropdown` uses `power-profiles-daemon` (selectable cards). `TemperatureButton` reads CPU temp from system sensors with color coding.
+`PowerProfileDropdown` uses `power-profiles-daemon` (selectable cards). `TemperatureButton` reads CPU temp from system sensors with color coding. `BatteryButton` shows a dynamic icon and percentage in the bar; `BatteryDropdown` provides full battery detail including charge state and ETA.
 
 ### Settings
 `SettingsDropdown` provides five toggle rows: Night Light (`hyprshade`), Animations, Blur (both via `hyprctl keyword`), and Launcher mode. A monitor selector writes to `settings.json`. State is persisted via a debounced JSON write; `Config.qml` picks up changes immediately via inotify.
@@ -290,7 +316,7 @@ Settings file lives at `modules/settings/settings.json`:
 `WorkspacesPanel` filters `Hyprland.workspaces` to the configured monitor. `WorkspaceGlowOverlay` is a separate `PanelWindow` that renders a glow behind the active workspace indicator, animating horizontally as workspaces change.
 
 ### Package Updates (`YayUpdateButton`)
-Runs `checkupdates` + `yay -Qua` hourly via `SystemClock.Hours` (more efficient than 15-minute polling). Hidden when count is zero. Clicking opens a floating `kitty` terminal with custom configuration:
+Runs `checkupdates` + `yay -Qua` hourly via `SystemClock.Hours` (more efficient than 15-minute polling). Hidden when count is zero. When updates are found for the first time (or the count changes), a D-Bus notification is sent through QuickShell's own notification server so it appears as a popup. Clicking the bar button opens a floating `kitty` terminal with custom configuration:
 
 - **Floating Terminal**: Uses kitty with `--title "qs-kitty-yay"` and custom config file
 - **Hyprland Integration**: Requires window rule for floating behavior (800x600, centered)
@@ -366,13 +392,11 @@ Change `barMonitor` in `Config.qml` (or via the Settings dropdown at runtime —
 | `cava` | ✅ | Audio spectrum visualizer |
 | `playerctl` | ✅ | Media player control and detection |
 | `python3` | ✅ | Browser sink detection scripts |
+
+> **Note on Python scripts** — Two files reference personal Python scripts for controlling keyboard RGB lighting: `LockscreenSurface.qml` (sets the keyboard to red on lock, restores on unlock) and `VolumeDropdown.qml` (browser audio sink detection). The keyboard RGB scripts (`keyboard-breathing-toggle.py`, `keyboard-rgb.py`) are specific to one hardware setup and are **not needed by most users** — you can safely comment out those `Process` blocks. The `python3` inline commands in `VolumeDropdown.qml` for browser sink detection are more broadly useful and can be kept.
 | `pam` | ✅ | Lockscreen authentication |
 | `kitty` | ✅ | Terminal for package updates |
-| `hyprshade` | recommended | Night light toggle in settings (works with DisplayLink monitors) |
-| `yay` | recommended | Package update count |
-| `matugen` | recommended | Auto-generate colors from wallpaper |
-| `lm_sensors` | recommended | CPU temperature |
-| `wpctl` (wireplumber) | ✅ | Keyboard volume keys |
+| `upower` | recommended | Battery status |
 | `hyprshade` | recommended | Night light toggle in settings (works with DisplayLink monitors) |
 | `yay` | recommended | Package update count |
 | `matugen` | recommended | Auto-generate colors from wallpaper |
