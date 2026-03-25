@@ -6,14 +6,14 @@ import "../../base"
 // ============================================================
 // WALLPAPER DROPDOWN — scrollable thumbnail grid
 // Finds all images under ~/wallpaper/ recursively.
-// Click a thumbnail to apply it with swww and save to settings.
+// Click a thumbnail to apply it with awww and save to settings.
 // ============================================================
 DropdownBase {
     id: wpDrop
     reloadableId: "wallpaperDropdown"
 
-    implicitHeight:  670  // reduced since we removed a control row
-    panelFullHeight: 436  // reduced since we removed a control row
+    implicitHeight:  710  // +40 for matugen scheme row
+    panelFullHeight: 476  // +40 for matugen scheme row
     panelWidth:      620
     panelTitle:      "Wallpaper"
     panelIcon:       "󰸉"
@@ -126,12 +126,12 @@ DropdownBase {
     }
 
     // --------------------------------------------------------
-    // READ CURRENT WALLPAPER — ask swww what is actually displayed
+    // READ CURRENT WALLPAPER — ask awww what is actually displayed
     // --------------------------------------------------------
     Process {
         id: currentProc
         running: false
-        command: ["sh", "-c", "swww query 2>/dev/null | awk -F'image: ' '{print $2}' | awk '{print $1}' | tr -d ',' | head -1"]
+        command: ["sh", "-c", "awww query 2>/dev/null | awk -F'image: ' '{print $2}' | awk '{print $1}' | tr -d ',' | head -1"]
         stdout: SplitParser {
             onRead: data => {
                 var s = data.trim()
@@ -154,7 +154,7 @@ DropdownBase {
     // APPLY WALLPAPER
     // --------------------------------------------------------
     Process {
-        id: swwwProc
+        id: awwwProc
         running: false
         onExited: (code, status) => {
             currentProc.running = true
@@ -182,15 +182,15 @@ DropdownBase {
         
         // update immediately so the highlight moves right away
         wpDrop.currentWallpaper = path
-        swwwProc.command    = ["swww", "img", path,
-            "--transition-type", "wipe",
-            "--transition-angle", "45",
-            "--transition-duration", "0.3"]
-        matugenProc.command = ["matugen", "image", path, 
-            "--source-color-index", "0", 
-            "--type", "scheme-tonal-spot"]
+        awwwProc.command    = ["awww", "img", path,
+            "--transition-type", "fade",
+            "--transition-angle", "0",
+            "--transition-duration", "0.5"]
+        matugenProc.command = ["matugen", "image", path,
+            "--source-color-index", "0",
+            "--type", config.matugenType]
         
-        swwwProc.running    = true
+        awwwProc.running    = true
         matugenProc.running = true
     }
 
@@ -377,6 +377,7 @@ DropdownBase {
 
         // ── Scrollable thumbnail grid ─────────────────────
         Flickable {
+
             id: flickArea
             focus: true
 
@@ -411,7 +412,7 @@ DropdownBase {
             x: 16 + wpDrop._mx
             y: 16 + wpDrop.headerHeight + 8 + 32 + 8  // folder controls + margin
             width:  wpDrop.panelWidth - wpDrop._mx * 2
-            height: wpDrop.panelFullHeight - (8 + 32 + 8) - wpDrop._mx  // adjust for single control row
+            height: wpDrop.panelFullHeight - (8 + 32 + 8) - (32 + 8) - wpDrop._mx  // subtract folder row + matugen row + margins
             clip: true
             flickableDirection: Flickable.VerticalFlick
             contentWidth: width
@@ -542,4 +543,97 @@ DropdownBase {
                 }
             }
         }
+
+    // ── Matugen colour scheme selector ───────────────────────────────
+    Item {
+        x: 16 + wpDrop._mx
+        y: flickArea.y + flickArea.height + 8
+        width: wpDrop.panelWidth - wpDrop._mx * 2
+        height: 32
+
+        Rectangle {
+            anchors.fill: parent
+            radius: 6
+            color: Qt.rgba(wpDrop.dimColor.r, wpDrop.dimColor.g, wpDrop.dimColor.b, 0.1)
+            border.color: Qt.rgba(wpDrop.dimColor.r, wpDrop.dimColor.g, wpDrop.dimColor.b, 0.2)
+            border.width: 1
+
+            Text {
+                id: schemeLabel
+                anchors.left: parent.left
+                anchors.leftMargin: 10
+                anchors.verticalCenter: parent.verticalCenter
+                text: "Matugen Scheme"
+                font.pixelSize: 10
+                font.bold: true
+                color: wpDrop.textColor
+            }
+
+            // Horizontally scrollable pill row
+            Flickable {
+                anchors.left: schemeLabel.right
+                anchors.leftMargin: 8
+                anchors.right: parent.right
+                anchors.rightMargin: 6
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                clip: true
+                flickableDirection: Flickable.HorizontalFlick
+                contentWidth: schemePills.implicitWidth
+                contentHeight: height
+                interactive: contentWidth > width
+
+                Row {
+                    id: schemePills
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 4
+
+                    Repeater {
+                        model: [
+                            "scheme-tonal-spot",
+                            "scheme-content",
+                            "scheme-expressive",
+                            "scheme-fidelity",
+                            "scheme-fruit-salad",
+                            "scheme-monochrome",
+                            "scheme-neutral",
+                            "scheme-rainbow"
+                        ]
+
+                        delegate: Rectangle {
+                            property bool active: modelData === config.matugenType
+                            anchors.verticalCenter: parent.verticalCenter
+                            height: 20
+                            radius: 10
+                            width: pillText.implicitWidth + 14
+                            color: active
+                                ? wpDrop.accentColor
+                                : Qt.rgba(wpDrop.accentColor.r, wpDrop.accentColor.g, wpDrop.accentColor.b, 0.1)
+                            border.color: wpDrop.accentColor
+                            border.width: active ? 0 : 1
+                            Behavior on color { ColorAnimation { duration: 120 } }
+
+                            Text {
+                                id: pillText
+                                anchors.centerIn: parent
+                                text: modelData.replace("scheme-", "")
+                                font.pixelSize: 9
+                                font.bold: active
+                                color: active ? "#1a1a1a" : wpDrop.textColor
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    config.matugenType = modelData
+                                    Qt.callLater(function() { config._saveImmediately() })
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

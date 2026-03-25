@@ -87,17 +87,19 @@ DropdownBase {
     // Derive shader name from persisted strength setting.
     readonly property string _nlShader: {
         switch (config.nightLightStrength) {
-            case "low":  return "blue-light-filter-25"
-            case "full": return "blue-light-filter-75"
+            case "soft": return "blue-light-filter-25"
+            case "hot":  return "blue-light-filter-75"
+            case "max":  return "blue-light-filter-100"
             default:     return "blue-light-filter-50"
         }
     }
 
     readonly property string _nlStrengthLabel: {
         switch (config.nightLightStrength) {
-            case "low":  return "Low (25%)"
-            case "full": return "Full (75%)"
-            default:     return "Medium (50%)"
+            case "soft": return "Soft (25%)"
+            case "hot":  return "Hot (75%)"
+            case "max":  return "Max (100%)"
+            default:     return "Warm (50%)"
         }
     }
 
@@ -351,8 +353,9 @@ DropdownBase {
 
                 readonly property int _snapIdx: {
                     switch (config.nightLightStrength) {
-                        case "low":  return 0
-                        case "full": return 2
+                        case "soft": return 0
+                        case "hot":  return 2
+                        case "max":  return 3
                         default:     return 1
                     }
                 }
@@ -388,7 +391,7 @@ DropdownBase {
                         id: _nlKnob
                         width: 14; height: 14; radius: 7
                         y: 0
-                        x: _sliderArea.parent._snapIdx * (_sliderArea.width - 14) / 2
+                        x: _sliderArea.parent._snapIdx * (_sliderArea.width - 14) / 3
                         color: settingsDrop.nightLight ? settingsDrop.accentColor : Qt.rgba(1, 1, 1, 0.75)
                         border.color: "black"
                         border.width: 1
@@ -399,24 +402,34 @@ DropdownBase {
                     // Labels
                     Text {
                         anchors { left: parent.left; top: _trackBg.bottom; topMargin: 6 }
-                        text: "Low"; font.family: config.fontFamily; font.pixelSize: 10
-                        color: config.nightLightStrength === "low"
+                        text: "Soft"; font.family: config.fontFamily; font.pixelSize: 10
+                        color: config.nightLightStrength === "soft"
                             ? (settingsDrop.nightLight ? settingsDrop.accentColor : settingsDrop.textColor)
                             : settingsDrop.dimColor
                         Behavior on color { ColorAnimation { duration: 120 } }
                     }
                     Text {
-                        anchors { horizontalCenter: parent.horizontalCenter; top: _trackBg.bottom; topMargin: 6 }
-                        text: "Med"; font.family: config.fontFamily; font.pixelSize: 10
-                        color: config.nightLightStrength === "medium"
+                        x: Math.round((_sliderArea.width - 14) / 3)
+                        anchors { top: _trackBg.bottom; topMargin: 6 }
+                        text: "Warm"; font.family: config.fontFamily; font.pixelSize: 10
+                        color: config.nightLightStrength === "warm"
+                            ? (settingsDrop.nightLight ? settingsDrop.accentColor : settingsDrop.textColor)
+                            : settingsDrop.dimColor
+                        Behavior on color { ColorAnimation { duration: 120 } }
+                    }
+                    Text {
+                        x: Math.round(2 * (_sliderArea.width - 14) / 3)
+                        anchors { top: _trackBg.bottom; topMargin: 6 }
+                        text: "Hot"; font.family: config.fontFamily; font.pixelSize: 10
+                        color: config.nightLightStrength === "hot"
                             ? (settingsDrop.nightLight ? settingsDrop.accentColor : settingsDrop.textColor)
                             : settingsDrop.dimColor
                         Behavior on color { ColorAnimation { duration: 120 } }
                     }
                     Text {
                         anchors { right: parent.right; top: _trackBg.bottom; topMargin: 6 }
-                        text: "Full"; font.family: config.fontFamily; font.pixelSize: 10
-                        color: config.nightLightStrength === "full"
+                        text: "Max"; font.family: config.fontFamily; font.pixelSize: 10
+                        color: config.nightLightStrength === "max"
                             ? (settingsDrop.nightLight ? settingsDrop.accentColor : settingsDrop.textColor)
                             : settingsDrop.dimColor
                         Behavior on color { ColorAnimation { duration: 120 } }
@@ -427,9 +440,9 @@ DropdownBase {
                         anchors.fill: parent
                         cursorShape:  Qt.PointingHandCursor
                         function _snap(mx) {
-                            var idx = Math.round((mx - 7) / ((_sliderArea.width - 14) / 2))
-                            idx = Math.max(0, Math.min(2, idx))
-                            settingsDrop.setNightLightStrength(["low", "medium", "full"][idx])
+                            var idx = Math.round((mx - 7) / ((_sliderArea.width - 14) / 3))
+                            idx = Math.max(0, Math.min(3, idx))
+                            settingsDrop.setNightLightStrength(["soft", "warm", "hot", "max"][idx])
                         }
                         onClicked:         (mouse) => _snap(mouse.x)
                         onPositionChanged: (mouse) => { if (pressed) _snap(mouse.x) }
