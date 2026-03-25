@@ -54,6 +54,7 @@ ShellRoot {
     //   bind = SUPER, Space,   global, quickshell:toggleAppLauncher
     //   bind = SUPER, R,       global, quickshell:toggleRightPanel
     //   bind = SUPER, L,       global, quickshell:lockScreen
+    //   bind = SUPER CTRL, S,  global, quickshell:toggleSettingsDropdown
     // ============================================================
     GlobalShortcut {
         name: "toggleRightPanel"
@@ -122,6 +123,18 @@ ShellRoot {
         description: "Launch the yay update terminal"
         onPressed: {
             yayUpdateButton.triggerUpdate()
+        }
+    }
+
+    GlobalShortcut {
+        name: "toggleSettingsDropdown"
+        description: "Open/close the settings dropdown"
+        onPressed: {
+            if (settingsDropdown.isOpen) {
+                settingsDropdown.closePanel();
+            } else {
+                root.switchPanel(() => settingsDropdown.openPanel());
+            }
         }
     }
 
