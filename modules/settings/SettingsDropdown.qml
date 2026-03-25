@@ -757,9 +757,8 @@ DropdownBase {
                             onEntered: _monDelegate._hov = true
                             onExited:  _monDelegate._hov = false
                             onClicked: {
-                                config.barMonitor         = _monDelegate.screenName
-                                settingsDrop._monExpanded = false
-                                if (settingsDrop.isOpen) settingsDrop.resizePanel()
+                                settingsDrop.closePanel()
+                                config.barMonitor = _monDelegate.screenName
                             }
                         }
                     }
