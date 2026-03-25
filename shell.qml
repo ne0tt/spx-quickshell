@@ -55,6 +55,8 @@ ShellRoot {
     //   bind = SUPER, R,       global, quickshell:toggleRightPanel
     //   bind = SUPER, L,       global, quickshell:lockScreen
     //   bind = SUPER CTRL, S,  global, quickshell:toggleSettingsDropdown
+    //   bind = SUPER CTRL, V,  global, quickshell:toggleVolumeDropdown
+    //   bind = SUPER CTRL, N,  global, quickshell:toggleNotifDropdown
     // ============================================================
     GlobalShortcut {
         name: "toggleRightPanel"
@@ -136,6 +138,34 @@ ShellRoot {
                 settingsDropdown.closePanel();
             } else {
                 root.switchPanel(() => settingsDropdown.openPanel());
+            }
+        }
+    }
+
+    GlobalShortcut {
+        name: "toggleVolumeDropdown"
+        description: "Open/close the volume dropdown"
+        onPressed: {
+            var pos = volumeWidget.mapToItem(null, volumeWidget.width / 2, 0);
+            volumeDropdown.panelX = pos.x - volumeDropdown.panelWidth / 2 - 16;
+            if (volumeDropdown.isOpen) {
+                volumeDropdown.closePanel();
+            } else {
+                root.switchPanel(() => volumeDropdown.openPanel());
+            }
+        }
+    }
+
+    GlobalShortcut {
+        name: "toggleNotifDropdown"
+        description: "Open/close the notification dropdown"
+        onPressed: {
+            var pos = notifButton.mapToItem(null, notifButton.width / 2, 0);
+            notifDropdown.panelX = Math.max(0, pos.x - notifDropdown.panelWidth / 2 - 16);
+            if (notifDropdown.isOpen) {
+                notifDropdown.closePanel();
+            } else {
+                root.switchPanel(() => notifDropdown.openPanel());
             }
         }
     }
