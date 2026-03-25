@@ -66,8 +66,9 @@ Item {
         "nm-applet": "󰛳",              // Network
         "networkmanager": "󰛳",
         "network-manager": "󰛳",
-        "blueman": "󰛶",                 // Bluetooth
-        "bluetooth": "󰛶",
+        "blueman-tray": "󰂯",            // Bluetooth
+        "blueman": "󰂯",                 
+        "bluetooth": "󰂯",
         "solaar": "󰍽",                  // Logitech (mouse/keyboard)
         
         // Audio & Media
