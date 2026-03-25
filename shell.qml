@@ -130,6 +130,8 @@ ShellRoot {
         name: "toggleSettingsDropdown"
         description: "Open/close the settings dropdown"
         onPressed: {
+            var pos = settingsButton.mapToItem(null, settingsButton.width / 2, 0);
+            settingsDropdown.panelX = Math.max(0, pos.x - settingsDropdown.panelWidth / 2 - 16);
             if (settingsDropdown.isOpen) {
                 settingsDropdown.closePanel();
             } else {

@@ -103,6 +103,12 @@ Rectangle {
                 yayUpdateButton.yayUpdateAvailable = count > 0;
                 if (count > 0 && count !== yayUpdateButton._prevCount)
                     notifProc.running = true;
+                if (count === 0 && yayUpdateButton._prevCount > 0) {
+                    for (var i = 0; i < NotifService.list.length; i++) {
+                        var n = NotifService.list[i];
+                        if (n.appName === "yay" && !n.closed) n.close();
+                    }
+                }
                 yayUpdateButton._prevCount = count;
             }
         }
