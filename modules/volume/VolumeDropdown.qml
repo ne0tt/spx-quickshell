@@ -413,7 +413,7 @@ DropdownBase {
                 // Scrolling media title
                 Item {
                     width: parent.width
-                    height: 17  // font.pixelSize(14) + some padding
+                    height: 20  // font.pixelSize(14) + some padding
                     clip: true
                     
                     Text {
