@@ -77,14 +77,13 @@ DropdownBase {
         if (!volDrop.isOpen || volDrop._mediaVolPending) return
         if (volDrop.mediaIsBrowser) {
             mediaVolProc.command = ["bash", "-c",
-                "SINK=$(pactl -f json list sink-inputs | python3 -c " +
-                "\"import json,sys;[print(s['index']) for s in json.load(sys.stdin) " +
-                "if any(b in (s.get('properties',{}).get('application.name','')+" +
-                "s.get('properties',{}).get('application.process.binary','')).lower() " +
-                "for b in ['chrom','firefox','brave','vivaldi','opera'])]\") && " +
-                "pactl -f json list sink-inputs | python3 -c " +
-                "\"import json,sys;[print(str(s['index'])+'|'+str(round(list(s.get('volume',{}).values())[0].get('value',65536)/65536*100))) " +
-                "for s in json.load(sys.stdin) if str(s['index'])==('$SINK' or '-1')]\""
+                "pactl -f json list sink-inputs | python3 -c \"" +
+                "import json,sys;" +
+                "d=json.load(sys.stdin);" +
+                "bl=['chrom','firefox','brave','vivaldi','opera'];" +
+                "s=next((s for s in d if any(b in (s.get('properties',{}).get('application.name','')+s.get('properties',{}).get('application.process.binary','')).lower() for b in bl)),None);" +
+                "s and print(str(s['index'])+'|'+str(round(list(s.get('volume',{}).values())[0].get('value',65536)/65536*100)))" +
+                "\""
             ]
         } else {
             mediaVolProc.command = ["bash", "-c",
@@ -151,7 +150,6 @@ DropdownBase {
                         volDrop.mediaArtUrl    = ""
                         volDrop.mediaIsBrowser = false
                         volDrop.mediaSinkId    = -1
-                        volDrop.mediaAvailable = false  // explicitly set to false when no media
                     }
                     // Trigger volume read now that mediaIsBrowser is known
                     Qt.callLater(() => { if (!volDrop._mediaVolPending) refreshMediaVol() })
@@ -350,10 +348,10 @@ DropdownBase {
                     var normalizedAngle = (_artAngle % 360) / 360
                     var t = (Math.sin(normalizedAngle * Math.PI * 4) + 1) / 2 // 0-1 oscillation, faster cycle
                     
-                    // Interpolate between source_color and C47FD5
-                    var r = volDrop.accentColor.r * (1 - t) + parseInt("C4", 16) / 255 * t
-                    var g = volDrop.accentColor.g * (1 - t) + parseInt("7F", 16) / 255 * t  
-                    var b = volDrop.accentColor.b * (1 - t) + parseInt("D5", 16) / 255 * t
+                    // Interpolate between source_color and #C47FD5 (0xC4/255, 0x7F/255, 0xD5/255)
+                    var r = volDrop.accentColor.r * (1 - t) + 0.769 * t
+                    var g = volDrop.accentColor.g * (1 - t) + 0.498 * t
+                    var b = volDrop.accentColor.b * (1 - t) + 0.835 * t
                     return Qt.rgba(r, g, b, 1.0)
                 }
 
