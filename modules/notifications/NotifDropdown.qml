@@ -19,8 +19,8 @@ DropdownBase {
     readonly property int _cardH: 48
     readonly property int _gapH:  8
 
-    /// Set from shell.qml to yayUpdateButton.yayUpdateCount
-    property int yayUpdateCount: 0
+    /// Set from shell.qml to systemUpdatesButton.systemUpdateCount
+    property int systemUpdateCount: 0
     /// Emitted when the user clicks the update card
     signal upgradeRequested()
 
@@ -31,7 +31,7 @@ DropdownBase {
     panelWidth:      390
     // Each card = 48px + 8px gap; top pad = 10; clearAll strip = 24+8 when shown
     panelFullHeight: {
-        var n = _history.length + (yayUpdateCount > 0 ? 1 : 0);
+        var n = _history.length + (systemUpdateCount > 0 ? 1 : 0);
         return n > 0 ? 44 + n * 56 : 80;
     }
     implicitHeight:  panelFullHeight + headerHeight + 52
@@ -70,11 +70,11 @@ DropdownBase {
 
         // ── Yay update card — shown when updates are available ──────────────
         SelectableCard {
-            visible:     drop.yayUpdateCount > 0
+            visible:     drop.systemUpdateCount > 0
             width:       parent.width
             isActive:    true
             cardIcon:    "󰚰"
-            label:       drop.yayUpdateCount + " update" + (drop.yayUpdateCount === 1 ? "" : "s") + " available"
+            label:       drop.systemUpdateCount + " update" + (drop.systemUpdateCount === 1 ? "" : "s") + " available"
             subtitle:    "Click to run yay -Syu"
             accentColor: drop.accentColor
             textColor:   drop.textColor
@@ -110,7 +110,7 @@ DropdownBase {
 
         // ── Empty state ───────────────────────────────────────────────────
         SelectableCard {
-            visible:     drop._history.length === 0
+            visible:     drop._history.length === 0 && drop.systemUpdateCount === 0
             width:       parent.width
             isActive:    false
             cardIcon:    "󰂚"

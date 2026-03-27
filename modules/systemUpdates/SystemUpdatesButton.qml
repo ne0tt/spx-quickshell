@@ -3,7 +3,12 @@ import Quickshell.Io
 import QtQuick
 
 Rectangle {
-    id: yayUpdateButton
+    id: systemUpdatesButton
+
+    // ── Toggle: true = word form ("Three updates available")
+    //           false = numeric ("3 updates available")
+    property bool   numberToText:   true
+
     property color backgroundColor: colors.col_background
     property color borderColor: "black"
     property string fontFamily: config.fontFamily
@@ -21,29 +26,31 @@ Rectangle {
 
     signal clicked(real clickX)
 
-    property int yayUpdateCount: 0
-    property bool yayUpdateAvailable: false
+    property int systemUpdateCount: 0
+    property bool systemUpdateAvailable: false
     // -1 so the very first check notifies if updates are found
     property int _prevCount: -1
 
     // Public method to trigger update from external components (e.g., GlobalShortcut)
     function triggerUpdate() {
-        if (yayUpdateAvailable) {
+        if (systemUpdateAvailable) {
             runUpgrade.running = true
             var pos = mapToItem(null, 0, 0)
             clicked(pos.x + width / 2)
         }
     }
 
-    width: 55
+    // Width expands to fit the word representation of the count
+    width: innerRow.implicitWidth + 14
     height: 24
     radius: 7
     color: backgroundColor
     border.color: borderColor
     border.width: 1
-    visible: yayUpdateAvailable
+    visible: systemUpdateAvailable
 
     Row {
+        id: innerRow
         anchors.centerIn: parent
         spacing: 4
         height: parent.height
@@ -52,21 +59,24 @@ Rectangle {
             id: updateIcon
             anchors.verticalCenter: parent.verticalCenter
             text: " "
-            color: yayUpdateButton.isActive ? yayUpdateButton.activeColor : yayUpdateButton._hovered ? yayUpdateButton.hoverColor : yayUpdateButton.accentColor
-            font.family: yayUpdateButton.fontFamily
+            color: systemUpdatesButton.isActive ? systemUpdatesButton.activeColor : systemUpdatesButton._hovered ? systemUpdatesButton.hoverColor : systemUpdatesButton.accentColor
+            font.family: systemUpdatesButton.fontFamily
             font.styleName: "Solid"
-            font.pixelSize: yayUpdateButton.iconSize
+            font.pixelSize: systemUpdatesButton.iconSize
             Behavior on color { ColorAnimation { duration: 160 } }
         }
 
         Text {
             id: updateText
             anchors.verticalCenter: parent.verticalCenter
-            color: yayUpdateButton.isActive ? yayUpdateButton.activeColor : yayUpdateButton._hovered ? yayUpdateButton.hoverColor : yayUpdateButton.accentColor
-            font.family: yayUpdateButton.fontFamily
-            font.pixelSize: yayUpdateButton.fontSize
-            font.weight: yayUpdateButton.fontWeight
-            text: yayUpdateButton.yayUpdateCount
+            anchors.verticalCenterOffset: 1
+            color: systemUpdatesButton.isActive ? systemUpdatesButton.activeColor : systemUpdatesButton._hovered ? systemUpdatesButton.hoverColor : systemUpdatesButton.accentColor
+            font.family: systemUpdatesButton.fontFamily
+            font.pixelSize: systemUpdatesButton.fontSize
+            font.weight: systemUpdatesButton.fontWeight
+            text: systemUpdatesButton.numberToText
+                    ? numbersToText.convert(systemUpdatesButton.systemUpdateCount) + (systemUpdatesButton.systemUpdateCount === 1 ? " update available" : " updates available")
+                    : systemUpdatesButton.systemUpdateCount
             opacity: 1.0
             Behavior on color { ColorAnimation { duration: 160 } }
         }
@@ -76,40 +86,40 @@ Rectangle {
     // animation (and its render-tree invalidations) at zero updates.
     SequentialAnimation {
         id: updatePulseAnim
-        running: yayUpdateButton.yayUpdateAvailable
+        running: systemUpdatesButton.systemUpdateAvailable
         loops: 10
         ParallelAnimation {
             ColorAnimation { target: updateIcon; property: "color"; to: "white"; duration: 600 }
             ColorAnimation { target: updateText; property: "color"; to: "white"; duration: 600 }
         }
         ParallelAnimation {
-            ColorAnimation { target: updateIcon; property: "color"; to: yayUpdateButton.accentColor; duration: 600 }
-            ColorAnimation { target: updateText; property: "color"; to: yayUpdateButton.accentColor; duration: 600 }
+            ColorAnimation { target: updateIcon; property: "color"; to: systemUpdatesButton.accentColor; duration: 600 }
+            ColorAnimation { target: updateText; property: "color"; to: systemUpdatesButton.accentColor; duration: 600 }
         }
         onStopped: {
-            updateIcon.color = Qt.binding(() => yayUpdateButton.accentColor)
-            updateText.color = Qt.binding(() => yayUpdateButton.accentColor)
+            updateIcon.color = Qt.binding(() => systemUpdatesButton.accentColor)
+            updateText.color = Qt.binding(() => systemUpdatesButton.accentColor)
         }
     }
 
     Process {
-        id: yayUpdateProc
+        id: systemUpdateProc
         command: ["sh", "-c", "{ checkupdates 2>/dev/null; yay -Qua 2>/dev/null; } | wc -l"]
         stdout: SplitParser {
             onRead: data => {
                 var count = parseInt(data.trim());
                 count = isNaN(count) ? 0 : count;
-                yayUpdateButton.yayUpdateCount     = count;
-                yayUpdateButton.yayUpdateAvailable = count > 0;
-                if (count > 0 && count !== yayUpdateButton._prevCount)
+                systemUpdatesButton.systemUpdateCount     = count;
+                systemUpdatesButton.systemUpdateAvailable = count > 0;
+                if (count > 0 && count !== systemUpdatesButton._prevCount)
                     notifProc.running = true;
-                if (count === 0 && yayUpdateButton._prevCount > 0) {
+                if (count === 0 && systemUpdatesButton._prevCount > 0) {
                     for (var i = 0; i < NotifService.list.length; i++) {
                         var n = NotifService.list[i];
                         if (n.appName === "yay" && !n.closed) n.close();
                     }
                 }
-                yayUpdateButton._prevCount = count;
+                systemUpdatesButton._prevCount = count;
             }
         }
     }
@@ -122,29 +132,29 @@ Rectangle {
             "--app-name", "yay",
             "--icon", "system-software-update",
             "System updates available",
-            yayUpdateButton.yayUpdateCount + " package" + (yayUpdateButton.yayUpdateCount === 1 ? "" : "s") + " ready to update"
+            systemUpdatesButton.systemUpdateCount + " package" + (systemUpdatesButton.systemUpdateCount === 1 ? "" : "s") + " ready to update"
         ]
     }
     // Fire once at startup, then re-check at each hour boundary (aligns with
     // SystemClock.Hours so the process is spawned at most ~25 times/day instead
     // of the previous unconditional 96 times/day with a 15-minute Timer).
-    Component.onCompleted: yayUpdateProc.running = true
+    Component.onCompleted: systemUpdateProc.running = true
 
     SystemClock {
         precision: SystemClock.Hours
-        onHoursChanged: yayUpdateProc.running = true
+        onHoursChanged: systemUpdateProc.running = true
     }
 
     MouseArea {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
         hoverEnabled: true
-        onEntered: yayUpdateButton._hovered = true
-        onExited:  yayUpdateButton._hovered = false
+        onEntered: systemUpdatesButton._hovered = true
+        onExited:  systemUpdatesButton._hovered = false
         onClicked: {
             runUpgrade.running = true
-            var pos = yayUpdateButton.mapToItem(null, 0, 0)
-            yayUpdateButton.clicked(pos.x + yayUpdateButton.width / 2)
+            var pos = systemUpdatesButton.mapToItem(null, 0, 0)
+            systemUpdatesButton.clicked(pos.x + systemUpdatesButton.width / 2)
         }
     }
 
@@ -152,7 +162,7 @@ Rectangle {
     Process {
         id: runUpgrade
         command: ["kitty", "--config", Quickshell.env("HOME") + "/dotfiles/.config/kitty/kitty-qs-yay.conf", "--title", "qs-kitty-yay", "--hold", "sh", "-c", "yay -Syu"]
-        onRunningChanged: if (!running) yayUpdateProc.running = true
+        onRunningChanged: if (!running) systemUpdateProc.running = true
     }
     
     // Hyprland window rule for floating terminal:

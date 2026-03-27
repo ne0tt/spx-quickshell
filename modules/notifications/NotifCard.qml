@@ -36,7 +36,7 @@ Rectangle {
     implicitWidth:  cardWidth
     implicitHeight: inner.implicitHeight + padV * 2
 
-    radius:       10
+    radius:       8
     color:        isCritical ? "#2d1a1a" : "#1b3534"
     border.color: isCritical ? "#7a2020" : themeColors.col_source_color
     border.width: 2
@@ -124,7 +124,7 @@ Rectangle {
 
                 width:   22
                 height:  22
-                radius:  5
+                radius:  4
                 color:   root.isCritical ? "#5c2020" : "#234442"
                 visible: root.hasAppIcon
 

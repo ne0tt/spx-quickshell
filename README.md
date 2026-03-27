@@ -117,8 +117,8 @@ quickshell/
     ├── workspaces/
     │   ├── WorkspaceGlowOverlay.qml # Fullscreen glow that follows active workspace
     │   └── WorkspacesPanel.qml      # Hyprland workspace switcher
-    └── yayUpdate/
-        └── YayUpdateButton.qml      # Arch package update count indicator
+    └── systemUpdates/
+        └── SystemUpdatesButton.qml  # System package update count indicator
 ```
 
 ---
@@ -241,7 +241,7 @@ Icon circle + label + optional subtitle + animated toggle pill. Has an `isBusy` 
 | `NotifCard` | Visual card per notification. Fades in on appear; dragging or timeout fades it out. Hover pauses the expire timer. |
 | `NotifPopups` | `PanelWindow` on `WlrLayer.Overlay`, top-right corner. `ListView` backed by `NotifService.popups`. Cards fade in/out; wrapper collapses height to pull remaining cards up. |
 | `NotifButton` | Bell icon (`󰂚`) in the bar. Shows a count badge when there are unread notifications. Click opens `NotifDropdown`. |
-| `NotifDropdown` | History panel extending `DropdownBase`. Shows all non-closed notifications as `SelectableCard` items. Includes a `yayUpdateCount` card at the top when updates are pending — clicking it closes the panel then launches the yay upgrade terminal. |
+| `NotifDropdown` | History panel extending `DropdownBase`. Shows all non-closed notifications as `SelectableCard` items. Includes a `systemUpdateCount` card at the top when updates are pending — clicking it closes the panel then launches the system upgrade terminal. |
 
 The notification popup window hides itself when `NotifService.popups` is empty. Each `Notif` object holds a `Set`-based lock mechanism so visual animations can finish before the object is destroyed.
 
@@ -404,7 +404,7 @@ The `--type` argument is configurable from inside the dropdown itself and persis
 ### Workspaces
 `WorkspacesPanel` filters `Hyprland.workspaces` to the configured monitor. `WorkspaceGlowOverlay` is a separate `PanelWindow` that renders a glow behind the active workspace indicator, animating horizontally as workspaces change.
 
-### Package Updates (`YayUpdateButton`)
+### Package Updates (`SystemUpdatesButton`)
 Runs `checkupdates` + `yay -Qua` hourly via `SystemClock.Hours` (more efficient than 15-minute polling). Hidden when count is zero. When updates are found for the first time (or the count changes), a D-Bus notification is sent through QuickShell's own notification server so it appears as a popup. Clicking the bar button opens a floating `kitty` terminal with custom configuration:
 
 - **Floating Terminal**: Uses kitty with `--title "qs-kitty-yay"` and custom config file

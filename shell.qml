@@ -24,8 +24,8 @@ import qs.modules.volume
 import qs.modules.wallpaper
 //import qs.modules.weather
 import qs.modules.workspaces
-import qs.modules.yayUpdate
-import qs.modules.rightPanelSlider
+import qs.modules.systemUpdates
+//import qs.modules.rightPanelSlider
 import qs.modules.notifications
 //import qs.modules.chat
 //import ".."
@@ -44,6 +44,13 @@ ShellRoot {
     // ============================================================
     Config {
         id: config
+    }
+
+    // ============================================================
+    // UTILITY — NUMBER TO WORDS CONVERTER
+    // ============================================================
+    NumbersToText {
+        id: numbersToText
     }
 
     // ============================================================
@@ -121,10 +128,10 @@ ShellRoot {
     }
 
     GlobalShortcut {
-        name: "triggerYayUpdate"
-        description: "Launch the yay update terminal"
+        name: "triggerSystemUpdate"
+        description: "Launch the system update terminal"
         onPressed: {
-            yayUpdateButton.triggerUpdate()
+            systemUpdatesButton.triggerUpdate()
         }
     }
 
@@ -407,10 +414,6 @@ ShellRoot {
                         }
                     }
 
-                    YayUpdateButton {
-                        id: yayUpdateButton
-                        fontSize: 15
-                    }
                 }
 
                 // CENTER SECTION – WORKSPACES
@@ -432,6 +435,12 @@ ShellRoot {
                         verticalCenter: parent.verticalCenter
                     }
                     spacing: 12
+
+                    // SYSTEM UPDATES BUTTON
+                    SystemUpdatesButton {
+                        id: systemUpdatesButton
+                        numberToText: true
+                    }
 
                     // BLUETOOTH BUTTON
                     BluetoothButton {
@@ -539,18 +548,18 @@ ShellRoot {
                     //}
 
                     // RIGHT PANEL BUTTON
-                    RightPanelButton {
-                        id: rightPanelBtn
-                        anchors.verticalCenterOffset: 1
-                        isActive: rightPanel.isOpen
-                        onClicked: {
-                            if (rightPanel.isOpen) {
-                                rightPanel.closePanel()
-                            } else {
-                                root.switchPanel(() => rightPanel.openPanel());
-                            }
-                        }
-                    }
+                    //RightPanelButton {
+                    //    id: rightPanelBtn
+                    //    anchors.verticalCenterOffset: 1
+                    //    isActive: rightPanel.isOpen
+                    //    onClicked: {
+                    //        if (rightPanel.isOpen) {
+                    //            rightPanel.closePanel()
+                    //        } else {
+                    //            root.switchPanel(() => rightPanel.openPanel());
+                    //        }
+                    //    }
+                    //}
 
                     // VLAN BUTTON
                     VlanButton {
@@ -656,10 +665,10 @@ ShellRoot {
 
     // RightPanelSlider — slides in from the right edge
     // Declared BEFORE all dropdowns so the compositor stacks it below them.
-    RightPanelSlider {
-        id: rightPanel
-        screen: root.screen
-    }
+    //RightPanelSlider {
+    //    id: rightPanel
+    //    screen: root.screen
+    //}
 
     // CalendarPanel — drops down from the clock
     CalendarPanel {
@@ -720,18 +729,18 @@ ShellRoot {
     NotifDropdown {
         id: notifDropdown
         screen: root.screen
-        yayUpdateCount: yayUpdateButton.yayUpdateCount
+        systemUpdateCount: systemUpdatesButton.systemUpdateCount
         onUpgradeRequested: {
             notifDropdown.closePanel();
-            _yayLaunchDelay.start();
+            _systemUpdateLaunchDelay.start();
         }
     }
 
     Timer {
-        id: _yayLaunchDelay
+        id: _systemUpdateLaunchDelay
         interval: notifDropdown.closeDuration + 20
         repeat: false
-        onTriggered: yayUpdateButton.triggerUpdate()
+        onTriggered: systemUpdatesButton.triggerUpdate()
     }
 
     // SettingsDropdown — drops down from the settings gear icon
