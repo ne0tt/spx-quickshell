@@ -317,10 +317,15 @@ Complete session locking system using Wayland's `WlSessionLock` protocol:
 - **Session Integration**: Proper Wayland session locking that works with power management
 > **⚠️ Bypass button** — `LockscreenSurface.qml` contains a hidden "Bypass" button in the **top-right corner** of the screen. It is invisible (`opacity: 0.0` on both background and label) but fully clickable — it calls `enableBypass()` + `tryUnlock()` to skip PAM authentication entirely. This exists purely for troubleshooting during initial setup. **Remove it (or set `visible: false`) once you are happy with your configuration.** Leaving it in place means anyone with physical access can unlock the screen without a password.
 Components:
+Components:
 - **LockscreenButton.qml** — Bar trigger button (icon: 󰌾)
 - **LockscreenService.qml** — Entry point for separate process
 - **LockscreenSurface.qml** — Multi-monitor UI with authentication
 - **LockscreenContext.qml** — PAM integration with testing bypass
+
+> **🖼️ Wallpapers** — The lockscreen uses background wallpapers that are **not included** in this repo. You will need to supply your own and update the path in `LockscreenSurface.qml` to point to them.
+
+> **🦕 Audio** — On lock, a sound clip of Dennis Nedry from *Jurassic Park* plays ("Ah ah ah, you didn't say the magic word!"). The audio file is included in the `assets/` directory. Because I am a man child.
 
 ### VPN / VLAN
 - `VPNDropdown` — lists all WireGuard connections via `nmcli`, click to bring up/down. `VPNModule` shows a status pill that hides 5 s after the VPN IP clears.
