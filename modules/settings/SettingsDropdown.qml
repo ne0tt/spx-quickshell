@@ -33,7 +33,7 @@ DropdownBase {
                    + 48 + (_monExpanded ? Quickshell.screens.length * 36 : 0)
                    + _padBottom
     implicitHeight:  panelFullHeight + headerHeight + 52   // 16 ears + footerHeight + buffer
-    panelWidth:      310
+    panelWidth:      360
     panelTitle:      "Settings"
     panelIcon:       "󰒓"
     headerHeight:    34
@@ -503,7 +503,7 @@ DropdownBase {
             width:       parent.width
             cardIcon:    "󱃄"
             label:       "Workspace Glow"
-            subtitle:    "Highlight active workspace above panels"
+            subtitle:    "Highlight active workspace"
             checked:     config.workspaceGlow
             accentColor: settingsDrop.accentColor
             textColor:   settingsDrop.textColor
