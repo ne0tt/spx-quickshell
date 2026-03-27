@@ -563,7 +563,7 @@ DropdownBase {
                 anchors.left: parent.left
                 anchors.leftMargin: 10
                 anchors.verticalCenter: parent.verticalCenter
-                text: "Matugen"
+                text: "Matugen Scheme"
                 font.pixelSize: 10
                 font.bold: true
                 color: wpDrop.textColor
@@ -591,7 +591,6 @@ DropdownBase {
                     Repeater {
                         model: [
                             "scheme-tonal-spot",
-                            "scheme-vibrant",
                             "scheme-content",
                             "scheme-expressive",
                             "scheme-fidelity",
