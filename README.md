@@ -1,18 +1,24 @@
 # Quickshell Configuration
 
+![Screenshot](assets/screenshot.png)
+
 A highly customized Wayland status bar and system interface built with [Quickshell](https://quickshell.outfoxxed.me/) for Hyprland.
 
 ## Disclaimer
 
-This was created out of a fun learning project — inspiration taken from end_4, Noctalia etc. Love them drawer animations!
+This was created as a fun learning project — inspiration taken from end_4, Noctalia, etc. Love those drawer animations!
 This is in no way to be taken as a "this is how to do a thing..." it is purely "this is how I have done a thing..."
-Much of the code was initially fleshed out using Claude AI, Then I ventured into the quickshell discord and sought some help and advice.
 
-I'm putting this out there in the hope it may inspire or help people like me that like the look of quickshell but wanted to try and build something from the ground up rather than using someone else's dots.
+I found there was a lack of tutorials and trying to learn by reverse engineering some other dotfiles was a little overwhelming.
 
-Feel free to use however you want, Just give me a shout out ;) (SiSPX_ on reddit)
+Much of the code was initially created using Claude AI. I then ventured into the Quickshell Discord and sought some help and advice.
+Since then I have learnt quite a bit (still more to learn!)
 
-Shout out to the peoples on discord for helping me out.
+I'm putting this out there in the hope it may help or inspire people.
+
+Feel free to use however you want, Just give me a shout out (SiSPX_ on reddit) if you find it helpful.
+
+Once again, a massive shout out to the people on Discord for helping me out.
 
 ---
 
@@ -542,7 +548,7 @@ Change `barMonitor` in `Config.qml` (or via the Settings dropdown at runtime —
 
 9. **`AppLauncher` launch history** — The launcher ranks results purely by string match. Tracking recently launched apps and surfacing them at the top would make it noticeably faster to use day-to-day.
 
-10. **Spring/overshoot animations** — The open/close animations use `OutCubic`/`InCubic`. Replacing the open easing with `OutBack` or a spring curve would give the panels a more playful, polished feel consistent with the hex sweep aesthetic.
+10. **Notification grouping** — Repeated notifications from the same app (e.g. a build system firing many alerts) stack up as separate cards. Grouping them by `appName` with a collapse toggle would keep the popup stack tidy.
 
 
 
