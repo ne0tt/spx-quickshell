@@ -13,7 +13,7 @@ Rectangle {
     property color borderColor: "black"
     property string fontFamily: config.fontFamily
     property int    fontSize:   13
-    property int    iconSize:   15
+    property int    iconSize:   14
     property int    fontWeight: config.fontWeight
 
     property bool   isActive:   false
@@ -58,6 +58,7 @@ Rectangle {
         Text {
             id: updateIcon
             anchors.verticalCenter: parent.verticalCenter
+            anchors.verticalCenterOffset: 1
             text: " "
             color: systemUpdatesButton.isActive ? systemUpdatesButton.activeColor : systemUpdatesButton._hovered ? systemUpdatesButton.hoverColor : systemUpdatesButton.accentColor
             font.family: systemUpdatesButton.fontFamily
