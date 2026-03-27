@@ -12,7 +12,7 @@ This is in no way to be taken as a "this is how to do a thing..." it is purely "
 I found there was a lack of tutorials and trying to learn by reverse engineering some other dotfiles was a little overwhelming.
 
 Much of the code was initially created using Claude AI. I then ventured into the Quickshell Discord and sought some help and advice.
-Since then I have learnt quite a bit (still more to learn!)
+Since then I have learnt quite a bit (still more to learn!) 
 
 I'm putting this out there in the hope it may help or inspire people.
 
