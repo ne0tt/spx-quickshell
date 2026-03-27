@@ -24,8 +24,8 @@ PanelWindow {
 
     // ── Layout constants ─────────────────────────────────────────────────
     readonly property int notifWidth:   360
-    readonly property int sidePadding:  18
-    readonly property int topOffset:    18   // clears the 70 px bar + 6 px gap
+    readonly property int sidePadding:  17
+    readonly property int topOffset:    17   // clears the 70 px bar + 6 px gap
     readonly property int cardSpacing:  8
 
     // ── Wayland surface setup ────────────────────────────────────────────

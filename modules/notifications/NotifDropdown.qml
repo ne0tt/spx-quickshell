@@ -24,6 +24,25 @@ DropdownBase {
     /// Emitted when the user clicks the update card
     signal upgradeRequested()
 
+    // ── Deferred action after close animation starts ──────────────────────
+    property var _pendingAction: null
+    Timer {
+        id: _actionTimer
+        interval: 120   // enough for closePanel() to start rolling up
+        repeat:   false
+        onTriggered: {
+            if (drop._pendingAction) {
+                drop._pendingAction();
+                drop._pendingAction = null;
+            }
+        }
+    }
+    function _closeAndRun(fn) {
+        drop._pendingAction = fn;
+        drop.closePanel();
+        _actionTimer.start();
+    }
+
     panelTitle:      "Notifications"
     panelTitleRight: _history.length > 0 ? _history.length + "" : ""
     panelIcon:       "󰂚"
@@ -79,7 +98,7 @@ DropdownBase {
             accentColor: drop.accentColor
             textColor:   drop.textColor
             dimColor:    drop.dimColor
-            onClicked:   drop.upgradeRequested()
+            onClicked:   drop._closeAndRun(function() { drop.upgradeRequested() })
         }
 
         // ── Notification history items ────────────────────────────────────
@@ -103,7 +122,7 @@ DropdownBase {
                     accentColor: drop.accentColor
                     textColor:   drop.textColor
                     dimColor:    drop.dimColor
-                    onClicked:   histRow.modelData.close()
+                    onClicked:   drop._closeAndRun(function() { histRow.modelData.close() })
                 }
             }
         }
