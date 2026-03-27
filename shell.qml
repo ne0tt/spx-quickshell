@@ -27,6 +27,7 @@ import qs.modules.workspaces
 import qs.modules.systemUpdates
 //import qs.modules.rightPanelSlider
 import qs.modules.notifications
+
 //import qs.modules.chat
 //import ".."
 
@@ -70,7 +71,7 @@ ShellRoot {
         description: "Open/close the right panel slider"
         onPressed: {
             if (rightPanel.isOpen) {
-                rightPanel.closePanel()
+                rightPanel.closePanel();
             } else {
                 root.switchPanel(() => rightPanel.openPanel());
             }
@@ -122,8 +123,8 @@ ShellRoot {
         name: "lockScreen"
         description: "Lock the screen"
         onPressed: {
-            console.log("Global lockscreen shortcut pressed")
-            lockscreenProcess.startDetached()
+            console.log("Global lockscreen shortcut pressed");
+            lockscreenProcess.startDetached();
         }
     }
 
@@ -131,7 +132,7 @@ ShellRoot {
         name: "triggerSystemUpdate"
         description: "Launch the system update terminal"
         onPressed: {
-            systemUpdatesButton.triggerUpdate()
+            systemUpdatesButton.triggerUpdate();
         }
     }
 
@@ -182,9 +183,9 @@ ShellRoot {
         id: lockscreenProcess
         running: false
         command: ["quickshell", "-p", Quickshell.env("HOME") + "/dotfiles/.config/quickshell/modules/lockscreen/LockscreenService.qml"]
-        
+
         onExited: (exitCode, exitStatus) => {
-            console.log("Lockscreen process exited with code:", exitCode)
+            console.log("Lockscreen process exited with code:", exitCode);
         }
     }
 
@@ -243,11 +244,11 @@ ShellRoot {
 
         // Single source of truth for all panels that use closePanel()
         // appLauncher is excluded here because it uses closeLauncher() instead
-        readonly property var dropdowns: [calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown, 
-        //networkDropdown, 
-        vpnDropdown, bluetoothDropdown, wpDropdown, 
-        //weatherDropdown, 
-        settingsDropdown, appLaunchDropdown, trayMenu, notifDropdown]
+        readonly property var dropdowns: [calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown,
+            //networkDropdown,
+            vpnDropdown, bluetoothDropdown, wpDropdown,
+            //weatherDropdown,
+            settingsDropdown, appLaunchDropdown, trayMenu, notifDropdown]
 
         // Close every open dropdown/drawer in one call
         function closeAllDropdowns() {
@@ -413,7 +414,6 @@ ShellRoot {
                             }
                         }
                     }
-
                 }
 
                 // CENTER SECTION – WORKSPACES
@@ -648,7 +648,8 @@ ShellRoot {
         }
         Item {
             id: _scrimMask
-            x: 0; y: 0
+            x: 0
+            y: 0
             // Always 0×0 — keeps the scrim permanently click-through at the Wayland
             // input-region level so it never intercepts events destined for dropdowns.
             // Click-outside-to-close is handled elsewhere when re-enabled.
@@ -765,35 +766,35 @@ ShellRoot {
     TrayMenu {
         id: trayMenu
         screen: root.screen
-        
-        // Use proper coordination like other dropdowns 
+
+        // Use proper coordination like other dropdowns
         property var pendingMenuData: null
         property real pendingPosX: 0
-        
+
         function openWithCoordination(menuData, posX) {
-            pendingMenuData = menuData
-            pendingPosX = posX
-            
-            const anyOpen = root.isAnyPanelOpen()
-            root.closeAllDropdowns()
-            
+            pendingMenuData = menuData;
+            pendingPosX = posX;
+
+            const anyOpen = root.isAnyPanelOpen();
+            root.closeAllDropdowns();
+
             if (anyOpen) {
                 // Wait for close animation to complete before opening
-                openDelayedTimer.restart()
+                openDelayedTimer.restart();
             } else {
                 // Open immediately if nothing was open
-                openAt(pendingMenuData, pendingPosX)
+                openAt(pendingMenuData, pendingPosX);
             }
         }
-        
+
         Timer {
             id: openDelayedTimer
             interval: 300  // Same as root.openAfterClose
             repeat: false
             onTriggered: {
                 if (trayMenu.pendingMenuData) {
-                    trayMenu.openAt(trayMenu.pendingMenuData, trayMenu.pendingPosX)
-                    trayMenu.pendingMenuData = null
+                    trayMenu.openAt(trayMenu.pendingMenuData, trayMenu.pendingPosX);
+                    trayMenu.pendingMenuData = null;
                 }
             }
         }
@@ -810,5 +811,4 @@ ShellRoot {
     NotifPopups {
         screen: root.screen
     }
-
 }
