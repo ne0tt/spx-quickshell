@@ -1,6 +1,6 @@
 # Quickshell Configuration
 
-![Screenshot](assets/screenshot.png)
+![Screenshot](assets/screenshot2.png)
 
 A highly customized Wayland status bar and system interface built with [Quickshell](https://quickshell.outfoxxed.me/) for Hyprland.
 
