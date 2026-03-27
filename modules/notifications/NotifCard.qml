@@ -118,15 +118,16 @@ Rectangle {
             Layout.fillWidth: true
             spacing: 8
 
-            // App icon
+            // App icon (shown when available)
             Rectangle {
                 id: iconBg
 
-                width:   22
-                height:  22
-                radius:  4
-                color:   root.isCritical ? "#5c2020" : "#234442"
-                visible: root.hasAppIcon
+                width:            22
+                height:           22
+                radius:           4
+                color:            root.isCritical ? "#5c2020" : "#234442"
+                visible:          root.hasAppIcon
+                Layout.alignment: Qt.AlignVCenter
 
                 Image {
                     anchors.fill:    parent
@@ -138,14 +139,14 @@ Rectangle {
                 }
             }
 
-            // Fallback icon when no appIcon is set
+            // Fallback bell icon when no appIcon is set
             Text {
-                text:                 "󰂚"
-                color:                root.isCritical ? "#ff8080" : "#80d5d4"
-                font.family:          "Hack Nerd Font"
-                font.pixelSize:       16
-                visible:              !root.hasAppIcon
-                Layout.alignment:     Qt.AlignVCenter
+                text:             "󰂚"
+                color:            root.isCritical ? "#ff8080" : "#80d5d4"
+                font.family:      "Hack Nerd Font"
+                font.pixelSize:   16
+                visible:          !root.hasAppIcon
+                Layout.alignment: Qt.AlignVCenter
             }
 
             // App name
@@ -155,7 +156,8 @@ Rectangle {
                                        : "Notification"
                 color:             root.isCritical ? "#ff9090" : "#80d5d4"
                 font.family:       "Hack Nerd Font"
-                font.pixelSize:    11
+                font.pixelSize:    14
+                font.bold:         true
                 elide:             Text.ElideRight
                 Layout.fillWidth:  true
                 Layout.alignment:  Qt.AlignVCenter
@@ -184,41 +186,32 @@ Rectangle {
             }
         }
 
-        // ── Summary ──────────────────────────────────────────────────────
+        // ── Summary ───────────────────────────────────────────────────────
         Text {
-            text:              root.modelData.summary
-            color:             "#e8f5f4"
-            font.family:       "Hack Nerd Font"
-            font.pixelSize:    13
-            font.bold:         true
-            wrapMode:          Text.WordWrap
-            Layout.fillWidth:  true
-            visible:           text.length > 0
+            text:                root.modelData.summary
+            color:               "#e8f5f4"
+            font.family:         "Hack Nerd Font"
+            font.pixelSize:      13
+            font.bold:           true
+            wrapMode:            Text.WordWrap
+            horizontalAlignment: Text.AlignLeft
+            Layout.fillWidth:    true
+            visible:             text.length > 0
         }
 
-        // ── Body ─────────────────────────────────────────────────────────
+        // ── Body (full width, flush left) ─────────────────────────────────
         Text {
-            text:              root.modelData.body
-            color:             "#a8cccb"
-            font.family:       "Hack Nerd Font"
-            font.pixelSize:    12
-            wrapMode:          Text.WordWrap
-            Layout.fillWidth:  true
-            visible:           text.length > 0
+            text:                root.modelData.body
+            color:               "#a8cccb"
+            font.family:         "Hack Nerd Font"
+            font.pixelSize:      12
+            wrapMode:            Text.WordWrap
+            horizontalAlignment: Text.AlignLeft
+            Layout.fillWidth:    true
+            visible:             text.length > 0
             // Limit to 4 lines to keep cards compact
-            maximumLineCount:  4
-            elide:             Text.ElideRight
-        }
-
-        // ── App image (if present) ────────────────────────────────────────
-        Image {
-            source:               root.hasImage ? Qt.resolvedUrl(root.modelData.image) : ""
-            fillMode:             Image.PreserveAspectFit
-            Layout.fillWidth:     true
-            Layout.maximumHeight: 120
-            visible:              root.hasImage
-            smooth:               true
-            clip:                 true
+            maximumLineCount:    4
+            elide:               Text.ElideRight
         }
 
         // ── Action buttons ────────────────────────────────────────────────

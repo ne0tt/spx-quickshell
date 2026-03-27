@@ -439,7 +439,7 @@ ShellRoot {
                     // SYSTEM UPDATES BUTTON
                     SystemUpdatesButton {
                         id: systemUpdatesButton
-                        numberToText: true
+                        numberToText: false
                     }
 
                     // BLUETOOTH BUTTON
