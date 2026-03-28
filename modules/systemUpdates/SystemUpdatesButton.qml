@@ -112,8 +112,10 @@ Rectangle {
                 count = isNaN(count) ? 0 : count;
                 systemUpdatesButton.systemUpdateCount     = count;
                 systemUpdatesButton.systemUpdateAvailable = count > 0;
+                // Send notification only when count increases
                 if (count > 0 && count !== systemUpdatesButton._prevCount)
                     notifProc.running = true;
+                // Clean up all yay notifications when no updates remain
                 if (count === 0 && systemUpdatesButton._prevCount > 0) {
                     for (var i = 0; i < NotifService.list.length; i++) {
                         var n = NotifService.list[i];
@@ -164,7 +166,18 @@ Rectangle {
     Process {
         id: runUpgrade
         command: ["kitty", "--config", Quickshell.env("HOME") + "/dotfiles/.config/kitty/kitty-qs-yay.conf", "--title", "qs-kitty-yay", "sh", "-c", "yay -Syu; echo ''; echo 'Press Enter to close...'; read"]
-        onRunningChanged: if (!running) systemUpdateProc.running = true
+        onRunningChanged: {
+            if (running) {
+                // Proactively remove yay notifications when upgrade starts
+                for (var i = 0; i < NotifService.list.length; i++) {
+                    var n = NotifService.list[i];
+                    if (n.appName === "yay" && !n.closed) n.close();
+                }
+            } else {
+                // Re-check update count after upgrade completes
+                systemUpdateProc.running = true
+            }
+        }
     }
     
     // Window rules defined in hyprland windowrule.conf (float, size, center, workspace unset)

@@ -44,7 +44,11 @@ DropdownBase {
     }
 
     panelTitle:      "Notifications"
-    panelTitleRight: _history.length > 0 ? _history.length + "" : ""
+    // Include system update card in the total count
+    panelTitleRight: {
+        var total = _history.length + (systemUpdateCount > 0 ? 1 : 0);
+        return total > 0 ? total + "" : "";
+    }
     panelIcon:       "󰂚"
     headerHeight:    34
     panelWidth:      390
