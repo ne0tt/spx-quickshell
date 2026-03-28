@@ -116,6 +116,9 @@ PanelWindow {
     // ─── Signal: fired before open animation starts ───────
     signal aboutToOpen
 
+    // ─── Hex sweep public API ─────────────────────────────
+    function triggerHex() { _hexBar.trigger() }
+
     // ─── Open / Close API ────────────────────────────────
     function openPanel() {
         aboutToOpen();

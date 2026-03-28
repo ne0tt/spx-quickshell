@@ -59,13 +59,17 @@ Singleton {
     property string wSunrise:     ""
     property string wSunset:      ""
     property var    wForecast:    []
+    property var    wHourly:      []   // next-24h hourly array: {time, temp, icon}
     property bool   wLoading:     true
     property var    _forecastBuf: []
+    property var    _hourlyBuf:   []
 
     function refresh() {
         wLoading      = true
         wForecast     = []
+        wHourly       = []
         _forecastBuf  = []
+        _hourlyBuf    = []
         wSunrise      = ""
         wSunset       = ""
         _fetchProc.running = true
@@ -109,7 +113,8 @@ Singleton {
             "latitude=$LAT&longitude=$LON" +
             "&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m,relative_humidity_2m" +
             "&daily=weathercode,temperature_2m_max,temperature_2m_min,sunrise,sunset" +
-            "&timezone=auto&forecast_days=3\" | " +
+            "&hourly=temperature_2m,weathercode" +
+            "&timezone=auto&forecast_days=7\" | " +
             "jq -r '\"code=\"+(.current.weathercode|tostring)," +
             "\"temp=\"+(.current.temperature_2m|tostring)," +
             "\"feels=\"+(.current.apparent_temperature|tostring)," +
@@ -117,7 +122,9 @@ Singleton {
             "\"wind=\"+(.current.windspeed_10m|tostring)," +
             "\"sunrise=\"+(.daily.sunrise[0] | split(\"T\")[1])," +
             "\"sunset=\"+(.daily.sunset[0] | split(\"T\")[1])," +
-            "(.daily.time[] as $i | \"day=\"+$i+\"|\"+(.daily.weathercode[(.daily.time|index($i))]|tostring)+\"|\"+(.daily.temperature_2m_min[(.daily.time|index($i))]|tostring)+\"|\"+(.daily.temperature_2m_max[(.daily.time|index($i))]|tostring))'"]
+            "(.daily.time[] as $i | \"day=\"+$i+\"|\"+(.daily.weathercode[(.daily.time|index($i))]|tostring)+\"|\"+(.daily.temperature_2m_min[(.daily.time|index($i))]|tostring)+\"|\"+(.daily.temperature_2m_max[(.daily.time|index($i))]|tostring))," +
+            "([.hourly.time,.hourly.temperature_2m,.hourly.weathercode]|transpose|.[]" +
+            "|\"hour=\"+.[0]+\"|\"+(.[1]|round|tostring)+\"|\"+(.[2]|tostring))'"]
 
         stdout: SplitParser {
             onRead: data => {
@@ -154,12 +161,23 @@ Singleton {
                     var parts = val.split("|")
                     var dp    = parts[0].split("-")
                     appState._forecastBuf.push({
-                        date: dp[2] + "/" + dp[1] + "/" + dp[0],
+                        date: parts[0],
                         icon: appState._codeToIcon(parseInt(parts[1])),
                         desc: appState._codeToDesc(parseInt(parts[1])),
                         min:  Math.round(parseFloat(parts[2])) + "°",
                         max:  Math.round(parseFloat(parts[3])) + "°"
                     })
+                    break
+                }
+                case "hour": {
+                    var hp = val.split("|")
+                    if (hp.length === 3) {
+                        appState._hourlyBuf.push({
+                            time: hp[0],
+                            temp: Math.round(parseFloat(hp[1])) + "°",
+                            icon: appState._codeToIcon(parseInt(hp[2]))
+                        })
+                    }
                     break
                 }
                 }
@@ -169,6 +187,8 @@ Singleton {
         onExited: {
             appState.wForecast    = appState._forecastBuf.slice()
             appState._forecastBuf = []
+            appState.wHourly      = appState._hourlyBuf.slice()
+            appState._hourlyBuf   = []
             appState.wLoading     = false
         }
     }

@@ -27,6 +27,7 @@ import qs.modules.workspaces
 import qs.modules.systemUpdates
 //import qs.modules.rightPanelSlider
 import qs.modules.notifications
+import qs.modules.dashboard
 
 //import qs.modules.chat
 //import ".."
@@ -65,6 +66,7 @@ ShellRoot {
     //   bind = SUPER CTRL, S,  global, quickshell:toggleSettingsDropdown
     //   bind = SUPER CTRL, V,  global, quickshell:toggleVolumeDropdown
     //   bind = SUPER CTRL, N,  global, quickshell:toggleNotifDropdown
+    //   bind = SUPER CTRL, D,  global, quickshell:toggleDashboardDropdown
     // ============================================================
     GlobalShortcut {
         name: "toggleRightPanel"
@@ -178,6 +180,19 @@ ShellRoot {
         }
     }
 
+    GlobalShortcut {
+        name: "toggleDashboardDropdown"
+        description: "Open/close the dashboard dropdown"
+        onPressed: {
+            dashboardDropdown.panelX = Math.max(0, (root.screen.width / 2) - (dashboardDropdown.panelWidth / 2) - 16);
+            if (dashboardDropdown.isOpen) {
+                dashboardDropdown.closePanel();
+            } else {
+                root.switchPanel(() => dashboardDropdown.openPanel());
+            }
+        }
+    }
+
     // Process object for launching lockscreen via global shortcut
     Process {
         id: lockscreenProcess
@@ -248,7 +263,7 @@ ShellRoot {
             //networkDropdown,
             vpnDropdown, bluetoothDropdown, wpDropdown,
             //weatherDropdown,
-            settingsDropdown, appLaunchDropdown, trayMenu, notifDropdown]
+            settingsDropdown, appLaunchDropdown, trayMenu, notifDropdown, dashboardDropdown]
 
         // Close every open dropdown/drawer in one call
         function closeAllDropdowns() {
@@ -725,6 +740,12 @@ ShellRoot {
     //    id: weatherDropdown
     //    screen: root.screen
     //}
+
+    // DashboardDropdown — tabbed dashboard panel
+    DashboardDropdown {
+        id: dashboardDropdown
+        screen: root.screen
+    }
 
     // NotifDropdown — notification history panel
     NotifDropdown {
