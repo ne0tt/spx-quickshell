@@ -160,18 +160,12 @@ Rectangle {
     }
 
     // Opens a terminal, runs yay -Syu, then re-checks the count
+    // Direct Process execution waits for the terminal to close before re-checking
     Process {
         id: runUpgrade
-        command: ["kitty", "--config", Quickshell.env("HOME") + "/dotfiles/.config/kitty/kitty-qs-yay.conf", "--title", "qs-kitty-yay", "--hold", "sh", "-c", "yay -Syu"]
+        command: ["kitty", "--config", Quickshell.env("HOME") + "/dotfiles/.config/kitty/kitty-qs-yay.conf", "--title", "qs-kitty-yay", "sh", "-c", "yay -Syu; echo ''; echo 'Press Enter to close...'; read"]
         onRunningChanged: if (!running) systemUpdateProc.running = true
     }
     
-    // Hyprland window rule for floating terminal:
-    // windowrule {
-    //     name = qs-kitty-yay
-    //     match:initial_title = ^(qs-kitty-yay)$
-    //     float = true
-    //     size = 800 600
-    //     center = true
-    // }
+    // Window rules defined in hyprland windowrule.conf (float, size, center, workspace unset)
 }
