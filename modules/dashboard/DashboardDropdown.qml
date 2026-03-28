@@ -93,6 +93,9 @@ DropdownBase {
     onAboutToOpen: {
         _tab      = 0
         _updates  = -1
+        var now = new Date()
+        inlineCal.displayYear  = now.getFullYear()
+        inlineCal.displayMonth = now.getMonth()
         AppState.refresh()
         uptimeProc.running  = true
         mediaProc.running   = true
