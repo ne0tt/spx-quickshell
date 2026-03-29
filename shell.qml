@@ -118,7 +118,7 @@ ShellRoot {
         name: "lockScreen"
         description: "Lock the screen"
         onPressed: {
-            console.log("Global lockscreen shortcut pressed");
+            //console.log("Global lockscreen shortcut pressed");
             lockscreenProcess.startDetached();
         }
     }
