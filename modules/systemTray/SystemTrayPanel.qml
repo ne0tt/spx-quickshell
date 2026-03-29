@@ -15,12 +15,6 @@ Item {
     implicitHeight: 24
     visible: trayRow.visibleChildren.length > 0 || SystemTray.items.count > 0
     
-    // Debug: monitor system tray items  
-    // Component.onCompleted: {
-    //     console.log("SystemTray items count:", SystemTray.items.count)
-    //     console.log("Visible children:", trayRow.visibleChildren.length)
-    // }
-
     property string fontFamily: config.fontFamily
     property int    iconSize:   15  // Match other panel icons
     property color  accentColor: Colors.col_primary
@@ -128,9 +122,6 @@ Item {
         
         // Try matching against item ID (preferred)
         var id = item.id ? item.id.toLowerCase() : ""
-        
-        // Debug: log the ID and title to help identify apps
-        // console.log("Tray item - ID:", item.id, "Title:", item.title)
         
         if (id && nerdFontIcons[id]) {
             return nerdFontIcons[id]

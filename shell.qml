@@ -15,22 +15,16 @@ import qs.modules.bluetooth
 import qs.modules.calendar
 import qs.modules.clock
 import qs.modules.lockscreen
-//import qs.modules.network
 import qs.modules.power
 import qs.modules.settings
 import qs.modules.systemTray
 import qs.modules.vpn
 import qs.modules.volume
 import qs.modules.wallpaper
-//import qs.modules.weather
 import qs.modules.workspaces
 import qs.modules.systemUpdates
-//import qs.modules.rightPanelSlider
 import qs.modules.notifications
 import qs.modules.dashboard
-
-//import qs.modules.chat
-//import ".."
 
 ShellRoot {
 
@@ -54,24 +48,12 @@ ShellRoot {
     //   bind = , escape,       global, quickshell:closeAllDropdowns
     //   bind = SUPER CTRL, W,  global, quickshell:toggleWallpaperDropdown
     //   bind = SUPER, Space,   global, quickshell:toggleAppLauncher
-    //   //bind = SUPER, R,     global, quickshell:toggleRightPanel   (RightPanelSlider disabled)
     //   bind = SUPER, L,       global, quickshell:lockScreen
     //   bind = SUPER CTRL, S,  global, quickshell:toggleSettingsDropdown
     //   bind = SUPER CTRL, V,  global, quickshell:toggleVolumeDropdown
     //   bind = SUPER CTRL, N,  global, quickshell:toggleNotifDropdown
     //   bind = SUPER CTRL, D,  global, quickshell:toggleDashboardDropdown
     // ============================================================
-    //GlobalShortcut {
-    //    name: "toggleRightPanel"
-    //    description: "Open/close the right panel slider"
-    //    onPressed: {
-    //        if (rightPanel.isOpen) {
-    //            rightPanel.closePanel();
-    //        } else {
-    //            root.switchPanel(() => rightPanel.openPanel());
-    //        }
-    //    }
-    //}
 
     GlobalShortcut {
         name: "closeAllDropdowns"
@@ -118,7 +100,6 @@ ShellRoot {
         name: "lockScreen"
         description: "Lock the screen"
         onPressed: {
-            //console.log("Global lockscreen shortcut pressed");
             lockscreenProcess.startDetached();
         }
     }
@@ -253,10 +234,8 @@ ShellRoot {
         // Single source of truth for all panels that use closePanel()
         // appLauncher is excluded here because it uses closeLauncher() instead
         readonly property var dropdowns: [calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown,
-            //networkDropdown,
-            vpnDropdown, bluetoothDropdown, wpDropdown,
-            //weatherDropdown,
-            settingsDropdown, appLaunchDropdown, trayMenu, notifDropdown, dashboardDropdown]
+            vpnDropdown, bluetoothDropdown, wpDropdown, settingsDropdown, appLaunchDropdown, 
+            trayMenu, notifDropdown, dashboardDropdown]
 
         // Close every open dropdown/drawer in one call
         function closeAllDropdowns() {
@@ -502,21 +481,6 @@ ShellRoot {
                         anchors.verticalCenterOffset: 1
                     }
 
-                    // WEATHER BUTTON
-                    //WeatherButton {
-                    //    id: weatherWidget
-                    //    anchors.verticalCenterOffset: 1
-                    //    isActive: weatherDropdown.isOpen
-                    //    onClicked: function (clickX) {
-                    //        weatherDropdown.panelX = Math.max(0, clickX - weatherDropdown.panelWidth / 2 - 16);
-                    //        if (weatherDropdown.isOpen) {
-                    //            weatherDropdown.closePanel();
-                    //        } else {
-                    //            root.switchPanel(() => weatherDropdown.openPanel());
-                    //        }
-                    //    }
-                    //}
-
                     // NOTIFICATION BUTTON
                     NotifButton {
                         id: notifButton
@@ -553,20 +517,6 @@ ShellRoot {
                     //    anchors.verticalCenterOffset: 1
                     //    // No dropdown state needed since it launches a separate process
                     //    isActive: false
-                    //}
-
-                    // RIGHT PANEL BUTTON
-                    //RightPanelButton {
-                    //    id: rightPanelBtn
-                    //    anchors.verticalCenterOffset: 1
-                    //    isActive: rightPanel.isOpen
-                    //    onClicked: {
-                    //        if (rightPanel.isOpen) {
-                    //            rightPanel.closePanel()
-                    //        } else {
-                    //            root.switchPanel(() => rightPanel.openPanel());
-                    //        }
-                    //    }
                     //}
 
                     // VLAN BUTTON
@@ -649,7 +599,7 @@ ShellRoot {
 
         // Reactive: becomes true the moment any dropdown opens.
         // QML resolves the IDs lazily, so forward refs (calendarPanel etc.) are fine.
-        readonly property bool anyOpen: (typeof calendarPanel !== "undefined" && calendarPanel.isOpen) || (typeof volumeDropdown !== "undefined" && volumeDropdown.isOpen) || (typeof vlanDropdown !== "undefined" && vlanDropdown.isOpen) || (typeof powerProfileDropdown !== "undefined" && powerProfileDropdown.isOpen) || (typeof networkDropdown !== "undefined" && networkDropdown.isOpen) || (typeof vpnDropdown !== "undefined" && vpnDropdown.isOpen) || (typeof bluetoothDropdown !== "undefined" && bluetoothDropdown.isOpen) || (typeof wpDropdown !== "undefined" && wpDropdown.isOpen) || (typeof weatherDropdown !== "undefined" && weatherDropdown.isOpen) || (typeof settingsDropdown !== "undefined" && settingsDropdown.isOpen) || (typeof appLaunchDropdown !== "undefined" && appLaunchDropdown.isOpen) || (typeof appLauncher !== "undefined" && appLauncher.isOpen)
+        readonly property bool anyOpen: (typeof calendarPanel !== "undefined" && calendarPanel.isOpen) || (typeof volumeDropdown !== "undefined" && volumeDropdown.isOpen) || (typeof vlanDropdown !== "undefined" && vlanDropdown.isOpen) || (typeof powerProfileDropdown !== "undefined" && powerProfileDropdown.isOpen) || (typeof vpnDropdown !== "undefined" && vpnDropdown.isOpen) || (typeof bluetoothDropdown !== "undefined" && bluetoothDropdown.isOpen) || (typeof wpDropdown !== "undefined" && wpDropdown.isOpen) || (typeof settingsDropdown !== "undefined" && settingsDropdown.isOpen) || (typeof appLaunchDropdown !== "undefined" && appLaunchDropdown.isOpen) || (typeof appLauncher !== "undefined" && appLauncher.isOpen)
 
         mask: Region {
             item: _scrimMask
@@ -671,13 +621,6 @@ ShellRoot {
             onClicked: root.closeAllDropdowns()
         }
     }
-
-    // RightPanelSlider — slides in from the right edge
-    // Declared BEFORE all dropdowns so the compositor stacks it below them.
-    //RightPanelSlider {
-    //    id: rightPanel
-    //    screen: root.screen
-    //}
 
     // CalendarPanel — drops down from the clock
     CalendarPanel {
@@ -704,12 +647,6 @@ ShellRoot {
         currentProfile: powerProfileWidget.currentProfile
     }
 
-    // NetworkDropdown — drops down from the Ethernet IP pill
-    //NetworkDropdown {
-    //    id: networkDropdown
-    //    screen: root.screen
-    //}
-
     // VPNDropdown — drops down from the VPN module pill
     VPNDropdown {
         id: vpnDropdown
@@ -727,12 +664,6 @@ ShellRoot {
         id: wpDropdown
         screen: root.screen
     }
-
-    // WeatherDropdown — drops down from the weather pill
-    //WeatherDropdown {
-    //    id: weatherDropdown
-    //    screen: root.screen
-    //}
 
     // DashboardDropdown — tabbed dashboard panel
     DashboardDropdown {

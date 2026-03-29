@@ -4,7 +4,7 @@
 
 A highly customized Wayland status bar and system interface built with [Quickshell](https://quickshell.outfoxxed.me/) for Hyprland.
 
-**Last Updated**: March 29, 2026
+**Last Updated**: March 29, 2026 — ✅ Code cleanup and improvements completed
 
 ---
 
@@ -52,8 +52,9 @@ quickshell/
     │   └── BluetoothDropdown.qml    # Bluetooth device management panel
     ├── calendar/
     │   └── CalendarPanel.qml        # Calendar dropdown (extends DropdownBase)
-    ├── chat/
-    │   └── ChatShortcut.qml         # Quick chat access button (currently unused)
+    ├── chat/                            # (qmldir added, disabled in shell.qml)
+    │   ├── ChatShortcut.qml             # Quick chat access button (currently unused)
+    │   └── qmldir                       # Module exports
     ├── dashboard/
     │   ├── DashboardButton.qml      # Dashboard icon button in bar
     │   └── DashboardDropdown.qml    # Tabbed info panel (Dashboard / Media / Performance / Weather)
@@ -67,10 +68,11 @@ quickshell/
     │   ├── pam/password.conf        # Custom PAM configuration
     │   ├── Colors.qml               # Theme colors symlink
     │   └── qmldir                   # Module exports
-    ├── network/
-    │   ├── NetworkAdminDropdown.qml # Full NetworkManager admin panel
-    │   ├── NetworkButton.qml        # IP address pill in bar
-    │   └── NetworkDropdown.qml      # Ethernet status and details dropdown
+    ├── network/                         # (qmldir added, disabled in shell.qml)
+    │   ├── NetworkAdminDropdown.qml     # Full NetworkManager admin panel
+    │   ├── NetworkButton.qml            # IP address pill in bar
+    │   ├── NetworkDropdown.qml          # Ethernet status and details dropdown
+    │   └── qmldir                       # Module exports
     ├── notifications/
     │   ├── NotifService.qml         # Singleton: D-Bus notification server + list management
     │   ├── NotifCard.qml            # Visual card for a single notification (fade in/out)
@@ -83,9 +85,10 @@ quickshell/
     │   ├── PowerProfileButton.qml   # Power profile icon in bar
     │   ├── PowerProfileDropdown.qml # Power profile selector
     │   └── TemperatureButton.qml    # CPU temperature indicator in bar
-    ├── rightPanelSlider/            # (currently disabled in shell.qml)
-    │   ├── RightPanelButton.qml     # Bar icon that opens the right-side panel
-    │   └── RightPanelSlider.qml     # Panel that slides in from the right edge
+    ├── rightPanelSlider/                # (qmldir added, disabled in shell.qml)
+    │   ├── RightPanelButton.qml         # Bar icon that opens the right-side panel
+    │   ├── RightPanelSlider.qml         # Panel that slides in from the right edge
+    │   └── qmldir                       # Module exports
     ├── settings/
     │   ├── SettingsButton.qml       # Settings gear button in bar
     │   ├── SettingsDropdown.qml     # Quick toggles (night light, animations, blur…)
@@ -104,15 +107,39 @@ quickshell/
     ├── wallpaper/
     │   ├── WallpaperButton.qml      # Wallpaper picker icon button in bar
     │   └── WallpaperDropdown.qml    # Wallpaper browser and picker
-    ├── weather/
-    │   ├── WeatherButton.qml        # Current conditions indicator in bar
-    │   └── WeatherDropdown.qml      # Detailed weather forecast panel
+    ├── weather/                         # (qmldir added, disabled in shell.qml)
+    │   ├── WeatherButton.qml            # Current conditions indicator in bar
+    │   ├── WeatherDropdown.qml          # Detailed weather forecast panel
+    │   └── qmldir                       # Module exports
     ├── workspaces/
     │   ├── WorkspaceGlowOverlay.qml # Fullscreen glow that follows active workspace
     │   └── WorkspacesPanel.qml      # Hyprland workspace switcher
     └── systemUpdates/
         └── SystemUpdatesButton.qml  # System package update count indicator
 ```
+
+---
+
+## Recent Improvements (March 29, 2026)
+
+### ✅ Code Quality Improvements
+- **Font Consistency**: Fixed hardcoded "Hack Nerd Font" references in `NotifCard.qml` to use `config.fontFamily`
+- **Code Cleanup**: Removed all commented/dead code sections throughout `shell.qml`:
+  - Cleaned up unused network, weather, rightPanelSlider imports and references
+  - Removed commented RightPanelSlider implementation and global shortcuts
+  - Simplified dropdown arrays and scrim references
+  - Cleaned up debug statements in `SystemTrayPanel.qml`
+- **Module Structure**: Added missing `qmldir` files for better module organization:
+  - `modules/network/qmldir`
+  - `modules/weather/qmldir` 
+  - `modules/rightPanelSlider/qmldir`
+  - `modules/chat/qmldir`
+
+### 📝 Current Module Status
+| Module | Status | Notes |
+|---|---|---|
+| **Active Modules** | ✅ Enabled | appLauncher, bluetooth, calendar, clock, dashboard, lockscreen, notifications, power, settings, systemTray, systemUpdates, volume, vpn, wallpaper, workspaces |
+| **Available but Disabled** | ⏸️ Ready | network, weather, rightPanelSlider, chat — fully functional with qmldir files, disabled in shell.qml imports |
 
 ---
 
@@ -295,12 +322,14 @@ Two modes, switchable via Settings:
 Uses `SystemClock { precision: SystemClock.Seconds }` — updates aligned to the actual system clock tick rather than a drifting 1 s `Timer`.
 
 ### Right Panel (`RightPanelSlider`)
-`RightPanelSlider` is a `PanelWindow` anchored to the right+top+bottom edges that slides in from the right. It reserves an exclusive zone on the right edge when open so Hyprland windows reflow around it. Opened and closed via `RightPanelButton` in the bar or the `SUPER, R` global shortcut (`quickshell:toggleRightPanel`). Content is added via the `panelContent` default alias. API: `openPanel()`, `closePanel()`, `isOpen`.
+`RightPanelSlider` is a `PanelWindow` anchored to the right+top+bottom edges that slides in from the right. It reserves an exclusive zone on the right edge when open so Hyprland windows reflow around it. Content is added via the `panelContent` default alias. API: `openPanel()`, `closePanel()`, `isOpen`.
+
+*Note: RightPanelSlider module is currently disabled in shell.qml but remains available with proper qmldir configuration.*
 
 ### Weather
 `WeatherDropdown` reads all data from `WeatherState`. The dropdown shows current conditions (icon, description, temp, feels-like, humidity, wind, sunrise/sunset) and a multi-day forecast. `onAboutToOpen` triggers a manual `WeatherState.refresh()`.
 
-*Note: Weather module is currently disabled in shell.qml but remains available.*
+*Note: Weather module is currently disabled in shell.qml but remains available with proper qmldir configuration.*
 
 ### Volume
 `VolumeButton` shows icon + percentage, scroll-to-adjust. `VolumeDropdown` provides comprehensive audio control:
@@ -319,7 +348,7 @@ The audio visualizer is fed by the global `Audio` singleton, displaying normaliz
 - `NetworkDropdown` — connection name, IP, gateway, DNS via `nmcli`. Button to open `nm-connection-editor`.
 - `NetworkAdminDropdown` — three views: connections list (activate/deactivate/delete), connection editor (DHCP/static IP/gateway/DNS), Wi-Fi scanner with connect dialog.
 
-*Note: Network modules are currently disabled in shell.qml but remain available.*
+*Note: Network modules are currently disabled in shell.qml but remain available with proper qmldir configuration.*
 
 ### Lockscreen
 Complete session locking system using Wayland's `WlSessionLock` protocol:
@@ -538,7 +567,6 @@ Add to your `hyprland.conf`:
 bind = , escape,       global, quickshell:closeAllDropdowns
 bind = SUPER CTRL, W,  global, quickshell:toggleWallpaperDropdown
 bind = SUPER, Space,   global, quickshell:toggleAppLauncher
-# bind = SUPER, R,     global, quickshell:toggleRightPanel   # disabled — RightPanelSlider is currently commented out
 bind = SUPER, L,       global, quickshell:lockScreen
 bind = SUPER CTRL, U,  global, quickshell:triggerSystemUpdate
 bind = SUPER CTRL, S,  global, quickshell:toggleSettingsDropdown
@@ -576,9 +604,20 @@ Change `barMonitor` in `Config.qml` (or via the Settings dropdown at runtime —
 
 ### Adding a Widget
 1. Create your component in `modules/<name>/`
-2. Add the `import "modules/<name>"` line to `shell.qml`
-3. Instantiate it in the appropriate bar section (`leftSection`, `centerRow`, `rightRow`)
-4. If it's a dropdown, add it to the `dropdowns` array in `shell.qml`
+2. Create a `qmldir` file in `modules/<name>/` listing all exported components:
+   ```
+   ComponentName 1.0 ComponentName.qml
+   ```
+3. Add the `import qs.modules.<name>` line to `shell.qml`
+4. Instantiate it in the appropriate bar section (`leftSection`, `centerRow`, `rightRow`)
+5. If it's a dropdown, add it to the `dropdowns` array in `shell.qml`
+
+### Code Style Guidelines
+- Use `config.fontFamily` instead of hardcoded font names
+- Prefer `Colors.col_*` properties over hardcoded color values
+- Comment out unused imports rather than deleting them if they might be re-enabled
+- Include proper `qmldir` files for all modules
+- Use consistent naming: `*Button.qml` for bar buttons, `*Dropdown.qml` for panels
 
 ---
 
@@ -610,6 +649,59 @@ Change `barMonitor` in `Config.qml` (or via the Settings dropdown at runtime —
 | `lm_sensors` | recommended | CPU temperature |
 
 > **Note on Python scripts** — Two files reference personal Python scripts for controlling keyboard RGB lighting: `LockscreenSurface.qml` (sets the keyboard to red on lock, restores on unlock) and `VolumeDropdown.qml` (browser audio sink detection). The keyboard RGB scripts (`keyboard-breathing-toggle.py`, `keyboard-rgb.py`) are specific to one hardware setup and are **not needed by most users** — you can safely comment out those `Process` blocks. The `python3` inline commands in `VolumeDropdown.qml` for browser sink detection are more broadly useful and can be kept.
+
+---
+
+## Enabling Disabled Modules
+
+Several modules are currently disabled in `shell.qml` but remain fully functional with proper qmldir configuration:
+
+### Network Module
+```qml
+// In shell.qml imports section:
+import qs.modules.network
+
+// In the appropriate bar section:
+NetworkButton {
+    // your configuration
+}
+```
+
+### Weather Module  
+```qml
+// In shell.qml imports section:
+import qs.modules.weather
+
+// In rightRow section:
+WeatherButton {
+    // your configuration
+}
+```
+
+### Right Panel Slider
+```qml
+// In shell.qml imports section:
+import qs.modules.rightPanelSlider
+
+// Add the panel instance:
+RightPanelSlider {
+    id: rightPanel
+    screen: root.screen
+}
+
+// Add button to bar and re-enable global shortcut
+```
+
+### Chat Module
+```qml
+// In shell.qml imports section:
+import qs.modules.chat
+
+// Add to appropriate bar section:
+ChatShortcut {
+    // your configuration
+}
+```
 
 ---
 

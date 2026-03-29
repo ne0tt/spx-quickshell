@@ -141,7 +141,7 @@ Rectangle {
             Text {
                 text:             "󰂚"
                 color:            root.isCritical ? "#ff8080" : "#80d5d4"
-                font.family:      "Hack Nerd Font"
+                font.family:      config.fontFamily
                 font.pixelSize:   16
                 visible:          !root.hasAppIcon
                 Layout.alignment: Qt.AlignVCenter
@@ -153,7 +153,7 @@ Rectangle {
                                        ? root.modelData.appName
                                        : "Notification"
                 color:             root.isCritical ? "#ff9090" : "#80d5d4"
-                font.family:       "Hack Nerd Font"
+                font.family:       config.fontFamily
                 font.pixelSize:    14
                 font.bold:         true
                 elide:             Text.ElideRight
@@ -166,7 +166,7 @@ Rectangle {
             Text {
                 text:             "󰅖"
                 color:            closeMouseArea.containsMouse ? "#ffffff" : "#80d5d4"
-                font.family:      "Hack Nerd Font"
+                font.family:      config.fontFamily
                 font.pixelSize:   14
                 Layout.alignment: Qt.AlignVCenter
 
@@ -188,7 +188,7 @@ Rectangle {
         Text {
             text:                root.modelData.summary
             color:               "#e8f5f4"
-            font.family:         "Hack Nerd Font"
+            font.family:         config.fontFamily
             font.pixelSize:      13
             font.bold:           true
             wrapMode:            Text.WordWrap
@@ -201,7 +201,7 @@ Rectangle {
         Text {
             text:                root.modelData.body
             color:               "#a8cccb"
-            font.family:         "Hack Nerd Font"
+            font.family:         config.fontFamily
             font.pixelSize:      12
             wrapMode:            Text.WordWrap
             horizontalAlignment: Text.AlignLeft
@@ -240,7 +240,7 @@ Rectangle {
                         anchors.centerIn: parent
                         text:             actionBtn.modelData.text
                         color:            "#80d5d4"
-                        font.family:      "Hack Nerd Font"
+                        font.family:      config.fontFamily
                         font.pixelSize:   11
                     }
 
