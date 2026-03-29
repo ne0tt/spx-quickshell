@@ -1,4 +1,5 @@
 import Quickshell
+import Quickshell.Wayland
 import Quickshell.Services.UPower
 import QtQuick
 import "../../base"
@@ -11,6 +12,10 @@ import "../../base"
 DropdownBase {
     id: ppDrop
     reloadableId: "powerProfileDropdown"
+
+    WlrLayershell.keyboardFocus: ppDrop.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+    Item { focus: true; Keys.onEscapePressed: ppDrop.closePanel() }
 
     implicitHeight:  340
     panelFullHeight: 186

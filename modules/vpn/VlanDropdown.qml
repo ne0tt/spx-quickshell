@@ -1,4 +1,5 @@
 import Quickshell
+import Quickshell.Wayland
 import Quickshell.Io
 import QtQuick
 import "../../base"
@@ -11,6 +12,10 @@ import "../../base"
 DropdownBase {
     id: vlanDrop
     reloadableId: "vlanDropdown"
+
+    WlrLayershell.keyboardFocus: vlanDrop.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+    Item { focus: true; Keys.onEscapePressed: vlanDrop.closePanel() }
 
     // Card = 48 px tall + 8 px gap; padding top = 20 (footer handles bottom)
     readonly property int _cardH:  48

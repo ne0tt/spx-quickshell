@@ -1,4 +1,5 @@
 import Quickshell
+import Quickshell.Wayland
 import Quickshell.Io
 import QtQuick
 import "../../base"
@@ -10,6 +11,10 @@ import "../../base"
 DropdownBase {
     id: vpnDrop
     reloadableId: "vpnDropdown"
+
+    WlrLayershell.keyboardFocus: vpnDrop.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+    Item { focus: true; Keys.onEscapePressed: vpnDrop.closePanel() }
 
     panelWidth:      270
 

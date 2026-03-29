@@ -1,5 +1,6 @@
 // components/NetworkAdminDropdown.qml
 import Quickshell
+import Quickshell.Wayland
 import Quickshell.Io
 import QtQuick
 import QtQuick.Controls
@@ -18,6 +19,10 @@ import "../../base"
 DropdownBase {
     id: netAdmin
     reloadableId: "networkAdminDropdown"
+
+    WlrLayershell.keyboardFocus: netAdmin.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+    Item { focus: true; Keys.onEscapePressed: netAdmin.closePanel() }
 
     panelWidth:      320
     panelTitle:      "Network Manager"

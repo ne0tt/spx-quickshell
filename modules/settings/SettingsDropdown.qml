@@ -1,4 +1,5 @@
 import Quickshell
+import Quickshell.Wayland
 import Quickshell.Io
 import QtQuick
 import "../../base"
@@ -18,6 +19,10 @@ import "../../state"
 DropdownBase {
     id: settingsDrop
     reloadableId: "settingsDropdown"
+
+    WlrLayershell.keyboardFocus: settingsDrop.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+    Item { focus: true; Keys.onEscapePressed: settingsDrop.closePanel() }
 
     // Row geometry — bump _rowCount when adding/removing toggle rows.
     // Night Light and Bar Monitor cards are counted separately below.

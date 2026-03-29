@@ -1,4 +1,5 @@
 import Quickshell
+import Quickshell.Wayland
 import QtQuick
 import "../../base"
 import "../../state"
@@ -11,6 +12,10 @@ import "../../state"
 DropdownBase {
     id: wDrop
     reloadableId: "weatherDropdown"
+
+    WlrLayershell.keyboardFocus: wDrop.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+    Item { focus: true; Keys.onEscapePressed: wDrop.closePanel() }
 
     // ── Shared state (AppState singleton) ──────────────────────
     readonly property string wIcon:     AppState.wIcon

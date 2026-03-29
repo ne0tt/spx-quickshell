@@ -403,6 +403,10 @@ DropdownBase {
                         wpDrop.applyWallpaper(wpDrop.images[idx])
                     event.accepted = true
                     return
+                } else if (event.key === Qt.Key_Escape) {
+                    wpDrop.closePanel()
+                    event.accepted = true
+                    return
                 } else {
                     return
                 }

@@ -1,4 +1,5 @@
 import Quickshell
+import Quickshell.Wayland
 import Quickshell.Io
 import Quickshell.Services.Pipewire
 import QtQuick
@@ -13,6 +14,10 @@ import "../../state"
 DropdownBase {
     id: volDrop
     reloadableId: "volumeDropdown"
+
+    WlrLayershell.keyboardFocus: volDrop.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+    Item { focus: true; Keys.onEscapePressed: volDrop.closePanel() }
 
     implicitHeight:  volDrop.mediaAvailable ? 410 : 70  // adjusted to match footer gap with CAVA
     panelFullHeight: volDrop.mediaAvailable ? 296 : 70  // adjusted for consistent footer spacing  

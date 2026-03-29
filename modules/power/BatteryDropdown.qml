@@ -1,9 +1,15 @@
+import Quickshell
+import Quickshell.Wayland
 import QtQuick
 import "../../base"
 
 DropdownBase {
     id: batteryDrop
     reloadableId: "batteryDropdown"
+
+    WlrLayershell.keyboardFocus: batteryDrop.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+    Item { focus: true; Keys.onEscapePressed: batteryDrop.closePanel() }
 
     panelWidth: 300
     panelTitle: "Battery"

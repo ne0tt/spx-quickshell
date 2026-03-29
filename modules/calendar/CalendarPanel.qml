@@ -1,4 +1,5 @@
 import Quickshell
+import Quickshell.Wayland
 import QtQuick
 import QtQuick.Effects
 import "../../base"
@@ -10,6 +11,10 @@ import "../../base"
 DropdownBase {
     id: calPanel
     reloadableId: "calendarPanel"
+
+    WlrLayershell.keyboardFocus: calPanel.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+    Item { focus: true; Keys.onEscapePressed: calPanel.closePanel() }
 
     barHeight: 50
     // 10 top-pad + header(32) + gap(6) + dow-row + gap-to-grid(16) + rows×36 + 10 bottom-pad

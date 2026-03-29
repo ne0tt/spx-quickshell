@@ -40,6 +40,11 @@ Rectangle {
         }
     }
 
+    // Re-check available updates without launching a terminal (e.g., after upgrade from another panel)
+    function recheckUpdates() {
+        systemUpdateProc.running = true
+    }
+
     // Width expands to fit the word representation of the count
     width: innerRow.implicitWidth + 14
     height: 24

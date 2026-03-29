@@ -745,6 +745,7 @@ ShellRoot {
     DashboardDropdown {
         id: dashboardDropdown
         screen: root.screen
+        onUpgradeCompleted: systemUpdatesButton.recheckUpdates()
     }
 
     // NotifDropdown — notification history panel

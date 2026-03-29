@@ -1,4 +1,5 @@
 import Quickshell
+import Quickshell.Wayland
 import Quickshell.Io
 import QtQuick
 import "../../base"
@@ -11,6 +12,10 @@ import "../../base"
 DropdownBase {
     id: netDrop
     reloadableId: "networkDropdown"
+
+    WlrLayershell.keyboardFocus: netDrop.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+    Item { focus: true; Keys.onEscapePressed: netDrop.closePanel() }
 
     implicitHeight:  380
     panelFullHeight: 274

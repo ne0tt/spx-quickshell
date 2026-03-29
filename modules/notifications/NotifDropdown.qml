@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 
 import Quickshell
+import Quickshell.Wayland
 import QtQuick
 import "../../base"
 
@@ -14,6 +15,10 @@ DropdownBase {
     id: drop
 
     reloadableId: "notifDropdown"
+
+    WlrLayershell.keyboardFocus: drop.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+    Item { focus: true; Keys.onEscapePressed: drop.closePanel() }
 
     readonly property var _history: [...NotifService.list].filter(n => !n.closed)
     readonly property int _cardH: 48

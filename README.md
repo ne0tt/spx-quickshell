@@ -22,7 +22,7 @@ Once again, a massive shout out to the people on Discord for helping me out.
 
 ---
 
-**Last Updated**: March 27, 2026
+**Last Updated**: March 29, 2026
 
 ---
 
@@ -70,6 +70,9 @@ quickshell/
     │   └── CalendarPanel.qml        # Calendar dropdown (extends DropdownBase)
     ├── chat/
     │   └── ChatShortcut.qml         # Quick chat access button (currently unused)
+    ├── dashboard/
+    │   ├── DashboardButton.qml      # Dashboard icon button in bar
+    │   └── DashboardDropdown.qml    # Tabbed info panel (Dashboard / Media / Performance / Weather)
     ├── clock/
     │   └── ClockPanel.qml           # Time/date display (driven by SystemClock)
     ├── lockscreen/
@@ -233,6 +236,8 @@ All dropdown panels extend this. It handles the full panel lifecycle:
 ```
 
 Public API: `openPanel()`, `closePanel()`, `startOpenAnim()`, `resizePanel()`, `isOpen`, `aboutToOpen` signal.
+
+**Keyboard focus and Escape-to-close:** All dropdown panels set `WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive` while open so they receive keyboard events directly from the compositor. Each panel has a focused `Item` with `Keys.onEscapePressed` that calls `closePanel()`, meaning pressing Escape alone closes the open panel without needing a global shortcut. Focus is released back to `WlrKeyboardFocus.None` when the panel closes.
 
 ### `OverlayPanel.qml`
 Like `DropdownBase` but not anchored to the bar — centers on screen. Used for things that need to appear independently of bar position. API: `show()`, `hide()`, `toggle()`, `isOpen`.
@@ -428,6 +433,65 @@ The `--type` argument is configurable from inside the dropdown itself and persis
 
 > **Naming convention:** Bar button components are named `*Button` (e.g. `BluetoothButton`, `VolumeButton`). Dropdown panels that extend `DropdownBase` keep the `*Panel` or `*Dropdown` suffix. The four exceptions that use `*Panel` as bar items — `ClockPanel`, `CalendarPanel`, `SystemTrayPanel`, `WorkspacesPanel` — are more complex widgets with their own internal layout rather than simple icon buttons.
 
+### Dashboard (`DashboardButton` + `DashboardDropdown`)
+
+`DashboardButton` is a bar icon (`󱇘`) that opens `DashboardDropdown` — a tabbed panel with four tabs, navigable by clicking or with **Tab / Shift+Tab** on the keyboard.
+
+**Tabs:**
+
+| Tab | Icon | Contents |
+|---|---|---|
+| Dashboard | `󰕮` | Weather card, system info card, clock + inline calendar |
+| Media | `󰝚` | Full media player with album art |
+| Performance | `󰻠` | CPU / RAM / Disk circular gauges + load averages |
+| Weather | `󰖕` | Full weather: current + 12-hour strip + 7-day forecast |
+
+**Dashboard tab (Tab 0)** is the default on every open. It shows two side-by-side cards:
+
+- **Weather card** — current icon, temperature, and description from `AppState`
+- **System info card** — two columns:
+  - *Left*: kernel version (`uname -r`), Hyprland version (`hyprctl version`), uptime, and a package update row. When updates are available the row is clickable — clicking it closes the panel and launches a `kitty` terminal running `yay -Syu`. The row flashes white when the update count first increases.
+  - *Right*: CPU / RAM / Disk percentage as thin animated progress bars (turns red above 85%).
+
+Below the info cards sits a **clock + date + inline calendar** row:
+- Left side: large HH:MM display, full day name, and full date (e.g. `Sunday — 29 March 2026`), driven by a 1 second `Timer` while the tab is visible
+- Right side: a mini month calendar with prev/next month navigation arrows. Today's date has a pulsing filled circle; overflow days (previous/next month) are rendered at low opacity.
+
+**Media tab (Tab 1)** provides a full media player:
+- Album art (95×95, rounded corners) with an animated cycling border color while playing
+- Scrolling marquee for long track titles
+- Previous / Play-Pause / Next buttons via `playerctl`
+- Volume slider wired to `AppState.setVolume()` (same sink as the volume dropdown)
+
+**Performance tab (Tab 2)** shows three circular arc gauges (120×120 Canvas):
+
+| Gauge | Source | Subtitle |
+|---|---|---|
+| CPU | `vmstat 1 2` — all-core average | "All cores avg" |
+| RAM | `free -m` | Used / Total (human-readable GiB/TiB) |
+| Disk | `df /` | Used / Total GB |
+
+All gauges animate smoothly (600 ms `OutCubic`) and turn red when ≥ 85%. The tab re-fetches data immediately on becoming visible, then shares the 3 s polling timer.
+
+**Weather tab (Tab 3)** pulls all data from `AppState` (same source as the standalone WeatherDropdown):
+- Current conditions card: big icon, temp, feels-like, wind, humidity, sunrise
+- Hourly strip: next 12 hours from the current hour (horizontally scrollable Flickable, label "Next 12 hours")
+- 7-day weekly forecast grid: day name, date, icon, high/low temps. Today/Tomorrow are labelled explicitly.
+- Sunrise / Sunset / Wind summary row at the bottom
+
+**Data refresh:**
+- On open: all processes run immediately (`uptimeProc`, `mediaProc`, `perfProc`, `updatesProc`, `kernelProc`, `hyprlandVerProc`)
+- While open: a 3 s `Timer` re-polls uptime (tab 0), media (tab 1), and perf (tabs 0 & 2)
+- When the upgrade terminal closes: `updatesProc` re-runs locally **and** `upgradeCompleted` signal fires so `SystemUpdatesButton` re-checks the bar count too (see below)
+
+**Cross-panel update sync:** When `dashUpgradeProc` (the kitty upgrade terminal launched from the dashboard) finishes, it emits `upgradeCompleted()`. `shell.qml` connects this to `systemUpdatesButton.recheckUpdates()`, which re-runs the full `checkupdates + yay -Qua` check and updates the bar button count — so all three upgrade paths (bar button, dashboard, notifications) leave the system in a consistent state.
+
+**Keyboard:** Tab/Shift+Tab cycle tabs; Escape closes the panel (exclusive keyboard focus while open).
+
+**Global shortcut:** `SUPER CTRL, D` → `quickshell:toggleDashboardDropdown`
+
+---
+
 ### Workspaces
 `WorkspacesPanel` filters `Hyprland.workspaces` to the configured monitor. `WorkspaceGlowOverlay` is a separate `PanelWindow` that renders a glow behind the active workspace indicator, animating horizontally as workspaces change.
 
@@ -451,6 +515,8 @@ Override on the instance in `shell.qml`: `numberToText: false`
 - **Visual Feedback**: Pulses 10 times when updates first become available
 - **Hold Mode**: Terminal stays open after `yay -Syu` completes for review
 - **Notification panel**: The update count card in `NotifDropdown` suppresses the "No notifications" empty state when updates are pending
+- **Cross-panel sync**: All three upgrade paths (bar button `runUpgrade`, notification panel `upgradeRequested`, dashboard `dashUpgradeProc`) re-check the update count after the terminal closes. The dashboard path does this by emitting `upgradeCompleted()`, which `shell.qml` wires to `systemUpdatesButton.recheckUpdates()`. The bar button and notification paths both run through `runUpgrade` in `SystemUpdatesButton` directly.
+- **`recheckUpdates()` function**: Public method added to `SystemUpdatesButton` — re-runs `systemUpdateProc` without opening a terminal. Called by `shell.qml` when `dashboardDropdown.upgradeCompleted` fires.
 
 ---
 
@@ -465,6 +531,10 @@ bind = SUPER, Space,   global, quickshell:toggleAppLauncher
 bind = SUPER, R,       global, quickshell:toggleRightPanel
 bind = SUPER, L,       global, quickshell:lockScreen
 bind = SUPER CTRL, U,  global, quickshell:triggerSystemUpdate
+bind = SUPER CTRL, S,  global, quickshell:toggleSettingsDropdown
+bind = SUPER CTRL, V,  global, quickshell:toggleVolumeDropdown
+bind = SUPER CTRL, N,  global, quickshell:toggleNotifDropdown
+bind = SUPER CTRL, D,  global, quickshell:toggleDashboardDropdown
 
 # Volume keys (capped at 100%)
 bind = , XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ --limit 1.0

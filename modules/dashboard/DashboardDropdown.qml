@@ -118,6 +118,8 @@ DropdownBase {
         }
     }
 
+    signal upgradeCompleted()
+
     // ── Run upgrade in kitty ──────────────────────────────────
     Process {
         id: dashUpgradeProc
@@ -125,7 +127,12 @@ DropdownBase {
         command: ["kitty", "--config", Quickshell.env("HOME") + "/dotfiles/.config/kitty/kitty-qs-yay.conf",
                   "--title", "qs-kitty-yay", "sh", "-c",
                   "yay -Syu; echo ''; echo 'Press Enter to close...'; read"]
-        onRunningChanged: if (!running) updatesProc.running = true
+        onRunningChanged: {
+            if (!running) {
+                updatesProc.running = true
+                dash.upgradeCompleted()
+            }
+        }
     }
 
     // ── Kernel version ────────────────────────────────────────
@@ -142,7 +149,7 @@ DropdownBase {
     Process {
         id: hyprlandVerProc
         running: false
-        command: ["bash", "-c", "hyprctl version 2>/dev/null | awk '/^Hyprland/{gsub(/^v/,\"\",$2); print $2; exit}'"]
+        command: ["bash", "-c", "yay -Q hyprland 2>/dev/null | awk '{gsub(/-[0-9]+$/,\"\",$2); print $2}'"]
         stdout: SplitParser {
             onRead: data => {
                 var v = data.trim()

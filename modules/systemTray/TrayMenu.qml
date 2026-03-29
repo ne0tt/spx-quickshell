@@ -3,12 +3,17 @@
 // Subclasses DropdownBase so it inherits the standard panel look.
 
 import Quickshell
+import Quickshell.Wayland
 import QtQuick
 import "../../base"
 
 DropdownBase {
     id: _drop
     reloadableId: "trayMenu"
+
+    WlrLayershell.keyboardFocus: _drop.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+    Item { focus: true; Keys.onEscapePressed: _drop.closePanel() }
 
     panelWidth:  320
     // Height is bound dynamically to the column content

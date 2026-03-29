@@ -1,4 +1,5 @@
 import Quickshell
+import Quickshell.Wayland
 import Quickshell.Io
 import QtQuick
 import QtQuick.Controls
@@ -11,6 +12,10 @@ import "../../state"
 DropdownBase {
     id: btDrop
     reloadableId: "bluetoothDropdown"
+
+    WlrLayershell.keyboardFocus: btDrop.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+    Item { focus: true; Keys.onEscapePressed: btDrop.closePanel() }
 
     panelWidth:      260
     panelTitle:      "Bluetooth"
