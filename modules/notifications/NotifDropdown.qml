@@ -91,7 +91,10 @@ DropdownBase {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape:  Qt.PointingHandCursor
-                    onClicked:    NotifService.clearAll()
+                    onClicked: {
+                        NotifService.clearAll();
+                        drop.closePanel();
+                    }
                 }
             }
         }
