@@ -454,7 +454,7 @@ The `--type` argument is configurable from inside the dropdown itself and persis
   - *Right*: CPU / RAM / Disk percentage as thin animated progress bars (turns red above 85%).
 
 Below the info cards sits a **clock + date + inline calendar** row:
-- Left side: large HH:MM display, full day name, and full date (e.g. `Sunday — 29 March 2026`), driven by a 1 second `Timer` while the tab is visible
+- Left side: large HH:MM display, full day name, and full date (e.g. `Sunday — 29 March 2026`), driven by `SystemClock { precision: SystemClock.Minutes }` — reactive bindings with no manual `Timer`
 - Right side: a mini month calendar with prev/next month navigation arrows. Today's date has a pulsing filled circle; overflow days (previous/next month) are rendered at low opacity.
 
 **Media tab (Tab 1)** provides a full media player:

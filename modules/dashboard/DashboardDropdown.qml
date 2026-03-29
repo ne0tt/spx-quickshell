@@ -540,17 +540,9 @@ DropdownBase {
                 x: 0; y: 0
                 width: parent.halfW; height: parent.height
 
-                readonly property var _longMonthNames: [
-                    "January","February","March","April","May","June",
-                    "July","August","September","October","November","December"
-                ]
-                readonly property var _dayNames: [
-                    "Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"
-                ]
-
-                Timer {
-                    interval: 1000; running: dash.isOpen && dash._tab === 0; repeat: true
-                    onTriggered: { clockTime.text = Qt.formatTime(new Date(), "hh:mm") }
+                SystemClock {
+                    id: dashClock
+                    precision: SystemClock.Minutes
                 }
 
                 // Time display
@@ -561,7 +553,7 @@ DropdownBase {
 
                     Text {
                         id: clockTime
-                        text: Qt.formatTime(new Date(), "hh:mm")
+                        text: Qt.formatDateTime(dashClock.date, "hh:mm")
                         color: dash.textColor; font.pixelSize: 60; font.bold: true; font.family: config.fontFamily
                     }
                 }
@@ -573,12 +565,12 @@ DropdownBase {
 
                     Text {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        text: parent.parent._dayNames[new Date().getDay()]
+                        text: Qt.formatDateTime(dashClock.date, "dddd")
                         color: dash.accentColor; font.pixelSize: 22; font.bold: true; font.family: config.fontFamily
                     }
                     Text {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        text: new Date().getDate() + " " + parent.parent._longMonthNames[new Date().getMonth()] + " " + new Date().getFullYear()
+                        text: Qt.formatDateTime(dashClock.date, "d MMMM yyyy")
                         color: dash.dimColor; font.pixelSize: 19; font.family: config.fontFamily
                     }
                 }
