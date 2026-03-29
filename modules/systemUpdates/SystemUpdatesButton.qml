@@ -111,7 +111,7 @@ Rectangle {
 
     Process {
         id: systemUpdateProc
-        command: ["sh", "-c", "{ checkupdates 2>/dev/null; yay -Qua 2>/dev/null; } | wc -l"]
+        command: ["bash", "-c", "{ checkupdates 2>/dev/null; timeout 15 yay -Qua 2>/dev/null; } | wc -l || echo 0"]
         stdout: SplitParser {
             onRead: data => {
                 var count = parseInt(data.trim());
