@@ -46,8 +46,8 @@ DropdownBase {
 
     implicitHeight: panelFullHeight + 52
 
-    // ── Hourly: next 24 entries from current hour ──────────────
-    readonly property var _hourlyNext24: {
+    // ── Hourly: next 12 entries from current hour ──────────────
+    readonly property var _hourlyNext12: {
         var now = new Date()
         var nowStr = now.getFullYear() + "-" +
                      String(now.getMonth() + 1).padStart(2, "0") + "-" +
@@ -57,13 +57,15 @@ DropdownBase {
         for (var i = 0; i < AppState.wHourly.length; i++) {
             if (AppState.wHourly[i].time >= nowStr) { idx = i; break }
         }
-        return AppState.wHourly.slice(idx, idx + 24)
+        return AppState.wHourly.slice(idx, idx + 12)
     }
 
     // ── State ─────────────────────────────────────────────────
     property int    _tab:         0
 
-    property string _uptime:      "…"
+    property string _uptime:         "…"
+    property string _kernelVersion:  "…"
+    property string _hyprlandVersion: "…"
     property int    _updates:     -1  // -1 = loading, 0 = up to date, >0 = count
     property string _mediaTitle:  "No media playing"
     property string _mediaArtist: ""
@@ -97,10 +99,12 @@ DropdownBase {
         inlineCal.displayYear  = now.getFullYear()
         inlineCal.displayMonth = now.getMonth()
         AppState.refresh()
-        uptimeProc.running  = true
-        mediaProc.running   = true
-        perfProc.running    = true
-        updatesProc.running = true
+        uptimeProc.running       = true
+        mediaProc.running        = true
+        perfProc.running         = true
+        updatesProc.running      = true
+        kernelProc.running       = true
+        hyprlandVerProc.running  = true
     }
 
     Timer {
@@ -111,6 +115,39 @@ DropdownBase {
             if (dash._tab === 0) uptimeProc.running = true
             if (dash._tab === 1) mediaProc.running  = true
             if (dash._tab === 0 || dash._tab === 2) perfProc.running = true
+        }
+    }
+
+    // ── Run upgrade in kitty ──────────────────────────────────
+    Process {
+        id: dashUpgradeProc
+        running: false
+        command: ["kitty", "--config", Quickshell.env("HOME") + "/dotfiles/.config/kitty/kitty-qs-yay.conf",
+                  "--title", "qs-kitty-yay", "sh", "-c",
+                  "yay -Syu; echo ''; echo 'Press Enter to close...'; read"]
+        onRunningChanged: if (!running) updatesProc.running = true
+    }
+
+    // ── Kernel version ────────────────────────────────────────
+    Process {
+        id: kernelProc
+        running: false
+        command: ["uname", "-r"]
+        stdout: SplitParser {
+            onRead: data => dash._kernelVersion = data.trim()
+        }
+    }
+
+    // ── Hyprland version ──────────────────────────────────────
+    Process {
+        id: hyprlandVerProc
+        running: false
+        command: ["bash", "-c", "hyprctl version 2>/dev/null | awk '/^Hyprland/{gsub(/^v/,\"\",$2); print $2; exit}'"]
+        stdout: SplitParser {
+            onRead: data => {
+                var v = data.trim()
+                dash._hyprlandVersion = v !== "" ? v : "?"
+            }
         }
     }
 
@@ -362,64 +399,80 @@ DropdownBase {
             // Left: system info text
             Column {
                 anchors { left: parent.left; top: parent.top; bottom: parent.bottom; leftMargin: 14; topMargin: 14; bottomMargin: 14 }
-                width: parent.width * 0.45
+                width: parent.width * 0.42
                 spacing: 7
                 Row { spacing: 8
                     Text { text: "󰣇"; font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 14; color: dash.accentColor; anchors.verticalCenter: parent.verticalCenter }
-                    Text { text: "Arch Linux"; color: dash.textColor; font.pixelSize: 13; font.family: config.fontFamily; anchors.verticalCenter: parent.verticalCenter }
+                    Text { text: "Linux " + dash._kernelVersion; color: dash.textColor; font.pixelSize: 13; font.family: config.fontFamily; anchors.verticalCenter: parent.verticalCenter }
                 }
                 Row { spacing: 8
                     Text { text: "󱗃"; font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 14; color: dash.accentColor; anchors.verticalCenter: parent.verticalCenter }
-                    Text { text: "Hyprland"; color: dash.textColor; font.pixelSize: 13; font.family: config.fontFamily; anchors.verticalCenter: parent.verticalCenter }
+                    Text { text: "Hyprland " + dash._hyprlandVersion; color: dash.textColor; font.pixelSize: 13; font.family: config.fontFamily; anchors.verticalCenter: parent.verticalCenter }
                 }
                 Row { spacing: 8
                     Text { text: "󰔛"; font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 14; color: dash.accentColor; anchors.verticalCenter: parent.verticalCenter }
                     Text { text: dash._uptime; color: dash.textColor; font.pixelSize: 13; font.family: config.fontFamily; anchors.verticalCenter: parent.verticalCenter }
                 }
-                Row {
-                    spacing: 8
+                Item {
+                    width: updatesRow.implicitWidth
+                    height: updatesRow.implicitHeight
 
-                    Text {
-                        id: updatesIcon
-                        text: "󰏖"; font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 14
-                        color: dash._updates > 0 ? dash.accentColor : dash.dimColor
-                        anchors.verticalCenter: parent.verticalCenter
-                        Behavior on color { ColorAnimation { duration: 160 } }
-                    }
-                    Text {
-                        id: updatesLabel
-                        color: dash._updates > 0 ? dash.accentColor : dash.textColor
-                        font.pixelSize: 13; font.family: config.fontFamily; anchors.verticalCenter: parent.verticalCenter
-                        text: dash._updates < 0 ? "checking…"
-                            : dash._updates === 0 ? "system up to date"
-                            : dash._updates === 1 ? "1 update available"
-                            : dash._updates + " updates available"
-                        Behavior on color { ColorAnimation { duration: 160 } }
+                    Row {
+                        id: updatesRow
+                        spacing: 8
+
+                        Text {
+                            id: updatesIcon
+                            text: "󰏖"; font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 14
+                            color: dash._updates > 0 ? dash.accentColor : dash.dimColor
+                            anchors.verticalCenter: parent.verticalCenter
+                            Behavior on color { ColorAnimation { duration: 160 } }
+                        }
+                        Text {
+                            id: updatesLabel
+                            color: dash._updates > 0 ? dash.accentColor : dash.textColor
+                            font.pixelSize: 13; font.family: config.fontFamily; anchors.verticalCenter: parent.verticalCenter
+                            text: dash._updates < 0 ? "checking…"
+                                : dash._updates === 0 ? "system up to date"
+                                : dash._updates === 1 ? "1 update available"
+                                : dash._updates + " updates available"
+                            Behavior on color { ColorAnimation { duration: 160 } }
+                        }
+
+                        // Flash white when updates first appear
+                        SequentialAnimation {
+                            id: updateFlashAnim
+                            running: false
+                            loops: 6
+                            ParallelAnimation {
+                                ColorAnimation { target: updatesIcon;  property: "color"; to: "white";           duration: 300 }
+                                ColorAnimation { target: updatesLabel; property: "color"; to: "white";           duration: 300 }
+                            }
+                            ParallelAnimation {
+                                ColorAnimation { target: updatesIcon;  property: "color"; to: dash.accentColor; duration: 300 }
+                                ColorAnimation { target: updatesLabel; property: "color"; to: dash.accentColor; duration: 300 }
+                            }
+                            onStopped: {
+                                updatesIcon.color  = Qt.binding(() => dash._updates > 0 ? dash.accentColor : dash.dimColor)
+                                updatesLabel.color = Qt.binding(() => dash._updates > 0 ? dash.accentColor : dash.textColor)
+                            }
+                        }
+
+                        Connections {
+                            target: dash
+                            function on_UpdatesChanged() {
+                                if (dash._updates > 0) updateFlashAnim.restart()
+                            }
+                        }
                     }
 
-                    // Flash white when updates first appear
-                    SequentialAnimation {
-                        id: updateFlashAnim
-                        running: false
-                        loops: 6
-                        ParallelAnimation {
-                            ColorAnimation { target: updatesIcon;  property: "color"; to: "white";           duration: 300 }
-                            ColorAnimation { target: updatesLabel; property: "color"; to: "white";           duration: 300 }
-                        }
-                        ParallelAnimation {
-                            ColorAnimation { target: updatesIcon;  property: "color"; to: dash.accentColor; duration: 300 }
-                            ColorAnimation { target: updatesLabel; property: "color"; to: dash.accentColor; duration: 300 }
-                        }
-                        onStopped: {
-                            updatesIcon.color  = Qt.binding(() => dash._updates > 0 ? dash.accentColor : dash.dimColor)
-                            updatesLabel.color = Qt.binding(() => dash._updates > 0 ? dash.accentColor : dash.textColor)
-                        }
-                    }
-
-                    Connections {
-                        target: dash
-                        function on_UpdatesChanged() {
-                            if (dash._updates > 0) updateFlashAnim.restart()
+                    MouseArea {
+                        anchors.fill: parent
+                        enabled: dash._updates > 0
+                        cursorShape: dash._updates > 0 ? Qt.PointingHandCursor : Qt.ArrowCursor
+                        onClicked: {
+                            dash.closePanel()
+                            dashUpgradeProc.running = true
                         }
                     }
                 }
@@ -428,7 +481,7 @@ DropdownBase {
             // Right: CPU / RAM / Disk bars
             Column {
                 anchors { right: parent.right; top: parent.top; bottom: parent.bottom; rightMargin: 14; topMargin: 14; bottomMargin: 14 }
-                width: parent.width * 0.50
+                width: parent.width * 0.48 - 20
                 spacing: 10
                 Repeater {
                     model: [
@@ -497,12 +550,12 @@ DropdownBase {
                 Row {
                     id: clockRow
                     anchors { top: parent.top; topMargin: 20; horizontalCenter: parent.horizontalCenter }
-                    spacing: 2
+                    spacing: 4
 
                     Text {
                         id: clockTime
                         text: Qt.formatTime(new Date(), "hh:mm")
-                        color: dash.textColor; font.pixelSize: 58; font.bold: true; font.family: config.fontFamily
+                        color: dash.textColor; font.pixelSize: 60; font.bold: true; font.family: config.fontFamily
                     }
                 }
 
@@ -627,10 +680,19 @@ DropdownBase {
                             height: dayGrid.cellH
 
                             Rectangle {
+                                id: todayCircle
                                 anchors.centerIn: parent
+                                anchors.verticalCenterOffset: -1
                                 width: 20; height: 20; radius: 10
                                 color: modelData.isToday ? dash.accentColor : "transparent"
                                 visible: !modelData.overflow && modelData.isToday
+
+                                SequentialAnimation {
+                                    running: modelData.isToday && dash.isOpen
+                                    loops: Animation.Infinite
+                                    NumberAnimation { target: todayCircle; property: "opacity"; to: 0.4; duration: 800; easing.type: Easing.InOutSine }
+                                    NumberAnimation { target: todayCircle; property: "opacity"; to: 1.0; duration: 800; easing.type: Easing.InOutSine }
+                                }
                             }
                             Text {
                                 anchors.centerIn: parent
@@ -925,12 +987,12 @@ DropdownBase {
 
                     Canvas {
                         id: cpuCanvas
-                        width: 100; height: 100
+                        width: 120; height: 120
                         anchors { top: parent.top; topMargin: 10; horizontalCenter: parent.horizontalCenter }
                         onPaint: {
                             var ctx = getContext("2d")
                             ctx.clearRect(0, 0, width, height)
-                            var cx = 50, cy = 50, r = 38, lw = 9
+                            var cx = 60, cy = 60, r = 46, lw = 9
                             ctx.beginPath()
                             ctx.arc(cx, cy, r, 0, Math.PI * 2)
                             ctx.strokeStyle = Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.15).toString()
@@ -967,12 +1029,12 @@ DropdownBase {
 
                     Canvas {
                         id: ramCanvas
-                        width: 100; height: 100
+                        width: 120; height: 120
                         anchors { top: parent.top; topMargin: 10; horizontalCenter: parent.horizontalCenter }
                         onPaint: {
                             var ctx = getContext("2d")
                             ctx.clearRect(0, 0, width, height)
-                            var cx = 50, cy = 50, r = 38, lw = 9
+                            var cx = 60, cy = 60, r = 46, lw = 9
                             ctx.beginPath()
                             ctx.arc(cx, cy, r, 0, Math.PI * 2)
                             ctx.strokeStyle = Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.15).toString()
@@ -1009,12 +1071,12 @@ DropdownBase {
 
                     Canvas {
                         id: diskCanvas
-                        width: 100; height: 100
+                        width: 120; height: 120
                         anchors { top: parent.top; topMargin: 10; horizontalCenter: parent.horizontalCenter }
                         onPaint: {
                             var ctx = getContext("2d")
                             ctx.clearRect(0, 0, width, height)
-                            var cx = 50, cy = 50, r = 38, lw = 9
+                            var cx = 60, cy = 60, r = 46, lw = 9
                             ctx.beginPath()
                             ctx.arc(cx, cy, r, 0, Math.PI * 2)
                             ctx.strokeStyle = Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.15).toString()
@@ -1039,24 +1101,6 @@ DropdownBase {
                         spacing: 2
                         Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Disk"; color: dash.textColor; font.pixelSize: 13; font.weight: Font.Medium; font.family: config.fontFamily }
                         Text { anchors.horizontalCenter: parent.horizontalCenter; text: perfTab.fmtGB(dash._diskUsedGB) + " / " + perfTab.fmtGB(dash._diskTotalGB); color: dash.dimColor; font.pixelSize: 10; font.family: config.fontFamily }
-                    }
-                }
-            }
-
-            // Refresh link
-            Item {
-                width: parent.width; height: 28
-
-                Text {
-                    anchors { right: parent.right; verticalCenter: parent.verticalCenter }
-                    text: "↻  Refresh"
-                    color: rfHov.containsMouse ? dash.accentColor : dash.dimColor
-                    font.pixelSize: 12; font.family: config.fontFamily
-                    Behavior on color { ColorAnimation { duration: 120 } }
-                    MouseArea {
-                        id: rfHov
-                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                        onClicked: perfProc.running = true
                     }
                 }
             }
@@ -1129,7 +1173,7 @@ DropdownBase {
 
                 Text {
                     id: hourlyLabel
-                    text: "Next 24 hours"
+                    text: "Next 12 hours"
                     color: dash.dimColor; font.pixelSize: 10; font.family: config.fontFamily
                     anchors { top: parent.top; left: parent.left }
                 }
@@ -1145,7 +1189,7 @@ DropdownBase {
                         spacing: 4
                         Repeater {
                             id: hourlyRepeater
-                            model: ScriptModel { values: dash._hourlyNext24 }
+                            model: ScriptModel { values: dash._hourlyNext12 }
                             delegate: Rectangle {
                                 required property var modelData
                                 width: 56; height: 80; radius: 8
