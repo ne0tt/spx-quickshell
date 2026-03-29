@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell.Io
+import "../.."
 
 Item {
     id: root
@@ -12,9 +13,9 @@ Item {
     property int    fontWeight: config.fontWeight
 
     property bool   isActive:   false
-    property color  accentColor: colors.col_primary
-    property color  activeColor: colors.col_source_color
-    property color  hoverColor:  colors.col_source_color
+    property color  accentColor: Colors.col_primary
+    property color  activeColor: Colors.col_source_color
+    property color  hoverColor:  Colors.col_source_color
     property color  dimColor:    Qt.rgba(1, 1, 1, 0.4)
 
     property bool   _hovered:   false

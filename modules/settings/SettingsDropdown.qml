@@ -20,7 +20,7 @@ DropdownBase {
     id: settingsDrop
     reloadableId: "settingsDropdown"
 
-    WlrLayershell.keyboardFocus: settingsDrop.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    keyboardFocusEnabled: true
 
     Item { focus: true; Keys.onEscapePressed: settingsDrop.closePanel() }
 
@@ -47,7 +47,7 @@ DropdownBase {
     property bool nightLight:  false   // reflected from pgrep on open
 
     // Shared bluetooth state (AppState singleton)
-    readonly property bool btPowered: AppState.btPowered
+    readonly property bool btPowered: BluetoothState.btPowered
 
     // Busy guards — prevent double-clicks during command execution
     property bool _nightLightBusy: false
@@ -80,7 +80,7 @@ DropdownBase {
     // Refresh queryable states whenever the panel opens
     onAboutToOpen: {
         nightLightCheck.running = true
-        AppState._btCheckProc.running = true
+        BluetoothState._btCheckProc.running = true
     }
 
     // ═══════════════════════════════════════════════════════
@@ -196,7 +196,7 @@ DropdownBase {
     // BLUETOOTH POWER — delegated to AppState
     // ═══════════════════════════════════════════════════════
 
-    function toggleBluetooth() { AppState.togglePower() }
+    function toggleBluetooth() { BluetoothState.togglePower() }
 
     // ═══════════════════════════════════════════════════════
     // LOCKSCREEN — launch as separate process

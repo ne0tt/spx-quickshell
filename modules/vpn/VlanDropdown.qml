@@ -13,7 +13,7 @@ DropdownBase {
     id: vlanDrop
     reloadableId: "vlanDropdown"
 
-    WlrLayershell.keyboardFocus: vlanDrop.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    keyboardFocusEnabled: true
 
     Item { focus: true; Keys.onEscapePressed: vlanDrop.closePanel() }
 

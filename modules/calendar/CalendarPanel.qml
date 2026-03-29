@@ -12,7 +12,7 @@ DropdownBase {
     id: calPanel
     reloadableId: "calendarPanel"
 
-    WlrLayershell.keyboardFocus: calPanel.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    keyboardFocusEnabled: true
 
     Item { focus: true; Keys.onEscapePressed: calPanel.closePanel() }
 

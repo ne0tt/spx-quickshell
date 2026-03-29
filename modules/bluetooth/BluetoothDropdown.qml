@@ -13,7 +13,7 @@ DropdownBase {
     id: btDrop
     reloadableId: "bluetoothDropdown"
 
-    WlrLayershell.keyboardFocus: btDrop.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    keyboardFocusEnabled: true
 
     Item { focus: true; Keys.onEscapePressed: btDrop.closePanel() }
 
@@ -31,7 +31,7 @@ DropdownBase {
     implicitHeight:  400
 
     // ── State (AppState singleton) ───────────────────────────────
-    readonly property bool btPowered: AppState.btPowered
+    readonly property bool btPowered: BluetoothState.btPowered
     property var  pairedDevices: []
     property var  _devBuf:       []
 
@@ -58,7 +58,7 @@ DropdownBase {
         statusProc.running = true
     }
 
-    function togglePower() { AppState.togglePower() }
+    function togglePower() { BluetoothState.togglePower() }
 
     function connectDevice(addr) {
         deviceProc.command = ["bluetoothctl", "connect", addr]

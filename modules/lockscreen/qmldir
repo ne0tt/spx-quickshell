@@ -1,5 +1,4 @@
-Colors 1.0 Colors.qml
-LockscreenButton 1.0 LockscreenButton.qml
+singleton Colors 1.0 Colors.qml
 LockscreenContext 1.0 LockscreenContext.qml
 LockscreenSurface 1.0 LockscreenSurface.qml
 LockscreenService 1.0 LockscreenService.qml

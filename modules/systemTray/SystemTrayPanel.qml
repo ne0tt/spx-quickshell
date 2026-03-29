@@ -6,6 +6,7 @@ import Quickshell.Services.SystemTray
 
 import QtQuick
 import QtQuick.Controls
+import "../.."
 
 Item {
     id: root
@@ -22,8 +23,8 @@ Item {
 
     property string fontFamily: config.fontFamily
     property int    iconSize:   15  // Match other panel icons
-    property color  accentColor: colors.col_primary
-    property color  hoverColor:  colors.col_source_color
+    property color  accentColor: Colors.col_primary
+    property color  hoverColor:  Colors.col_source_color
     property var    menuWindow:  null  // set to TrayMenu instance from shell.qml
 
     // ============================================================
@@ -160,7 +161,7 @@ Item {
         width: trayRow.implicitWidth + 12
         height: 24
         radius: 7
-        color: colors.col_background
+        color: Colors.col_background
         border.color: "black"
         border.width: 1
 

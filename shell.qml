@@ -35,13 +35,6 @@ import qs.modules.dashboard
 ShellRoot {
 
     // ============================================================
-    // CONFIG — THEME COLORS (written by matugen on wallpaper change)
-    // ============================================================
-    Colors {
-        id: colors
-    }
-
-    // ============================================================
     // CONFIG — SHELL-WIDE SETTINGS (font family, etc.)
     // ============================================================
     Config {
@@ -61,24 +54,24 @@ ShellRoot {
     //   bind = , escape,       global, quickshell:closeAllDropdowns
     //   bind = SUPER CTRL, W,  global, quickshell:toggleWallpaperDropdown
     //   bind = SUPER, Space,   global, quickshell:toggleAppLauncher
-    //   bind = SUPER, R,       global, quickshell:toggleRightPanel
+    //   //bind = SUPER, R,     global, quickshell:toggleRightPanel   (RightPanelSlider disabled)
     //   bind = SUPER, L,       global, quickshell:lockScreen
     //   bind = SUPER CTRL, S,  global, quickshell:toggleSettingsDropdown
     //   bind = SUPER CTRL, V,  global, quickshell:toggleVolumeDropdown
     //   bind = SUPER CTRL, N,  global, quickshell:toggleNotifDropdown
     //   bind = SUPER CTRL, D,  global, quickshell:toggleDashboardDropdown
     // ============================================================
-    GlobalShortcut {
-        name: "toggleRightPanel"
-        description: "Open/close the right panel slider"
-        onPressed: {
-            if (rightPanel.isOpen) {
-                rightPanel.closePanel();
-            } else {
-                root.switchPanel(() => rightPanel.openPanel());
-            }
-        }
-    }
+    //GlobalShortcut {
+    //    name: "toggleRightPanel"
+    //    description: "Open/close the right panel slider"
+    //    onPressed: {
+    //        if (rightPanel.isOpen) {
+    //            rightPanel.closePanel();
+    //        } else {
+    //            root.switchPanel(() => rightPanel.openPanel());
+    //        }
+    //    }
+    //}
 
     GlobalShortcut {
         name: "closeAllDropdowns"
@@ -249,7 +242,7 @@ ShellRoot {
         property int fontWeight: config.fontWeight
 
         // Semi-transparent primary colour used for dim/inactive states
-        readonly property color dimPrimary: Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.4)
+        readonly property color dimPrimary: Qt.rgba(Colors.col_primary.r, Colors.col_primary.g, Colors.col_primary.b, 0.4)
 
         // Cached focused screen lookup (avoids repeated array searches)
         readonly property var focusedScreen: Quickshell.screens.find(s => s.name === Hyprland.focusedMonitor?.name) ?? root.screen
@@ -353,7 +346,7 @@ ShellRoot {
                 anchors.fill: parent
                 radius: 10
                 // Qt.rgba keeps children fully opaque — unlike `opacity` which cascades
-                color: colors.col_main
+                color: Colors.col_main
                 opacity: 1
 
                 // Close any open dropdown when the bare bar is clicked
@@ -385,7 +378,7 @@ ShellRoot {
                         width: 75
                         height: 24
                         radius: 7
-                        color: colors.col_background
+                        color: Colors.col_background
                         border.color: "black"
                         border.width: 1
 
@@ -396,7 +389,7 @@ ShellRoot {
                             font.family: root.fontFamily
                             font.pixelSize: 17
                             font.weight: Font.Bold
-                            color: appLaunchDropdown.isOpen || appLauncher.isOpen || launcherBtnArea.containsMouse ? colors.col_source_color : colors.col_primary
+                            color: appLaunchDropdown.isOpen || appLauncher.isOpen || launcherBtnArea.containsMouse ? Colors.col_source_color : Colors.col_primary
                             Behavior on color {
                                 ColorAnimation {
                                     duration: 160
@@ -461,8 +454,8 @@ ShellRoot {
                     BluetoothButton {
                         id: btButton
                         anchors.verticalCenterOffset: 1
-                        visible: AppState.btPowered
-                        btPowered: AppState.btPowered
+                        visible: BluetoothState.btPowered
+                        btPowered: BluetoothState.btPowered
                         isActive: bluetoothDropdown.isOpen
                         onClicked: function (clickX) {
                             bluetoothDropdown.panelX = Math.max(0, clickX - bluetoothDropdown.panelWidth / 2 - 16);
@@ -618,7 +611,7 @@ ShellRoot {
                         anchors.verticalCenterOffset: 0
                         fontSize: 12
                         fontBold: true
-                        textColor: calendarPanel.isOpen ? colors.col_source_color : colors.col_primary
+                        textColor: calendarPanel.isOpen ? Colors.col_source_color : Colors.col_primary
                         borderColor: "black"
                         onClicked: function (clickX, clickY) {
                             // Right-align the calendar under the clock's right edge

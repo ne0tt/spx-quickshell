@@ -3,6 +3,7 @@ import Quickshell.Wayland
 import QtQuick
 import QtQuick.Effects
 import QtQuick.Controls
+import "../.."
 
 // ============================================================
 // APP LAUNCHER — rofi-style centred launcher panel.
@@ -153,7 +154,7 @@ PanelWindow {
         y: Math.round((parent.height - height) / 2)
 
         radius: 14
-        color:  colors.col_main
+        color:  Colors.col_main
         border.color: Qt.rgba(0, 0, 0, 0.7)
         border.width: 1
 
@@ -187,7 +188,7 @@ PanelWindow {
             Rectangle {
                 anchors.fill: parent
                 radius: 8
-                color: colors.col_background
+                color: Colors.col_background
             }
 
             // Dim static border shown when unfocused
@@ -195,7 +196,7 @@ PanelWindow {
                 anchors.fill: parent
                 radius: 8
                 color: "transparent"
-                border.color: Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.25)
+                border.color: Qt.rgba(Colors.col_primary.r, Colors.col_primary.g, Colors.col_primary.b, 0.25)
                 border.width: 1
                 visible: !searchField.activeFocus
             }
@@ -218,7 +219,7 @@ PanelWindow {
                     var w = width - bw; var h = height - bw
                     var cx = width/2; var cy = height/2
                     var grad = ctx.createConicalGradient(cx, cy, angle)
-                    var sc = colors.col_source_color
+                    var sc = Colors.col_source_color
                     var c1 = Qt.rgba(sc.r, sc.g, sc.b, 1.0).toString()
                     grad.addColorStop(0,    c1)        // source_color half
                     grad.addColorStop(0.5,  "#C47FD5") // purple half — chasing
@@ -248,8 +249,8 @@ PanelWindow {
                 font.family: launcher.fontFamily
                 font.pixelSize: 16
                 color: searchField.activeFocus
-                       ? colors.col_source_color
-                       : Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.8)
+                       ? Colors.col_source_color
+                       : Qt.rgba(Colors.col_primary.r, Colors.col_primary.g, Colors.col_primary.b, 0.8)
                 Behavior on color { ColorAnimation { duration: 200 } }
             }
 
@@ -258,7 +259,7 @@ PanelWindow {
                 anchors { left: _searchIcon.right; leftMargin: 8; right: parent.right; rightMargin: 10; verticalCenter: parent.verticalCenter }
                 visible: searchField.text.length === 0
                 text: "Search applications…"
-                color: Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.2)
+                color: Qt.rgba(Colors.col_primary.r, Colors.col_primary.g, Colors.col_primary.b, 0.2)
                 font.pixelSize: 15
                 font.family: launcher.fontFamily
             }
@@ -271,10 +272,10 @@ PanelWindow {
                     right: parent.right;     rightMargin: 10
                     verticalCenter: parent.verticalCenter
                 }
-                color: colors.col_source_color
+                color: Colors.col_source_color
                 font.pixelSize: 15
                 font.family: launcher.fontFamily
-                selectionColor: Qt.rgba(colors.col_source_color.r, colors.col_source_color.g, colors.col_source_color.b, 0.3)
+                selectionColor: Qt.rgba(Colors.col_source_color.r, Colors.col_source_color.g, Colors.col_source_color.b, 0.3)
                 clip: true
 
                 onTextChanged: launcher._filter(text)
@@ -309,13 +310,13 @@ PanelWindow {
                 width: _countText.implicitWidth + 14
                 height: 20
                 radius: 10
-                color: Qt.rgba(colors.col_source_color.r, colors.col_source_color.g, colors.col_source_color.b, 0.12)
+                color: Qt.rgba(Colors.col_source_color.r, Colors.col_source_color.g, Colors.col_source_color.b, 0.12)
 
                 Text {
                     id: _countText
                     anchors.centerIn: parent
                     text: filteredApps.count
-                    color: Qt.rgba(colors.col_source_color.r, colors.col_source_color.g, colors.col_source_color.b, 0.7)
+                    color: Qt.rgba(Colors.col_source_color.r, Colors.col_source_color.g, Colors.col_source_color.b, 0.7)
                     font.pixelSize: 11
                     font.family: launcher.fontFamily
                     font.weight: Font.Bold
@@ -329,7 +330,7 @@ PanelWindow {
             visible: filteredApps.count > 0
             anchors { top: _header.bottom; topMargin: 8; left: parent.left; right: parent.right; leftMargin: 16; rightMargin: 16 }
             height: 1
-            color: Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.12)
+            color: Qt.rgba(Colors.col_primary.r, Colors.col_primary.g, Colors.col_primary.b, 0.12)
         }
 
         // ── Empty state ──────────────────────────────────────
@@ -340,7 +341,7 @@ PanelWindow {
             Text {
                 anchors.centerIn: parent
                 text: "No apps matching \"" + searchField.text + "\""
-                color: Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.35)
+                color: Qt.rgba(Colors.col_primary.r, Colors.col_primary.g, Colors.col_primary.b, 0.35)
                 font.pixelSize: 14
                 font.family: launcher.fontFamily
             }
@@ -365,7 +366,7 @@ PanelWindow {
                 contentItem: Rectangle {
                     implicitWidth: 4
                     radius: 2
-                    color: Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.35)
+                    color: Qt.rgba(Colors.col_primary.r, Colors.col_primary.g, Colors.col_primary.b, 0.35)
                 }
                 background: Rectangle { color: "transparent" }
             }
@@ -380,9 +381,9 @@ PanelWindow {
                 height: 38
                 radius: 6
                 color: appList.currentIndex === index
-                       ? Qt.rgba(colors.col_source_color.r, colors.col_source_color.g, colors.col_source_color.b, 0.13)
+                       ? Qt.rgba(Colors.col_source_color.r, Colors.col_source_color.g, Colors.col_source_color.b, 0.13)
                        : (rHover.containsMouse
-                          ? Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.07)
+                          ? Qt.rgba(Colors.col_primary.r, Colors.col_primary.g, Colors.col_primary.b, 0.07)
                           : "transparent")
 
                 Behavior on color { ColorAnimation { duration: 80 } }
@@ -394,7 +395,7 @@ PanelWindow {
                     width:  3
                     height: 18
                     radius: 2
-                    color:  colors.col_source_color
+                    color:  Colors.col_source_color
 
                     Behavior on opacity { NumberAnimation { duration: 80 } }
                 }
@@ -409,8 +410,8 @@ PanelWindow {
                     text:  _row.name
                     elide: Text.ElideRight
                     color: appList.currentIndex === _row.index
-                           ? colors.col_source_color
-                           : colors.col_primary
+                           ? Colors.col_source_color
+                           : Colors.col_primary
                     font.pixelSize: 14
                     font.family:    launcher.fontFamily
 

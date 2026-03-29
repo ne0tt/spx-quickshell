@@ -4,24 +4,6 @@
 
 A highly customized Wayland status bar and system interface built with [Quickshell](https://quickshell.outfoxxed.me/) for Hyprland.
 
-## Disclaimer
-
-This was created as a fun learning project — inspiration taken from end_4, Noctalia, etc. Love those drawer animations!
-This is in no way to be taken as a "this is how to do a thing..." it is purely "this is how I have done a thing..."
-
-I found there was a lack of tutorials and trying to learn by reverse engineering some other dotfiles was a little overwhelming.
-
-Much of the code was initially created using Claude AI. I then ventured into the Quickshell Discord and sought some help and advice.
-Since then I have learnt quite a bit (still more to learn!) 
-
-I'm putting this out there in the hope it may help or inspire people.
-
-Feel free to use however you want, Just give me a shout out (SiSPX_ on reddit) if you find it helpful.
-
-Once again, a massive shout out to the people on Discord for helping me out.
-
----
-
 **Last Updated**: March 29, 2026
 
 ---
@@ -47,8 +29,10 @@ quickshell/
 ├── cava.conf                        # CAVA audio visualizer configuration
 │
 ├── state/
-│   ├── AppState.qml                 # Global singleton: volume, weather, bluetooth
-│   └── Audio.qml                    # Global singleton: CAVA audio visualizer service
+│   ├── VolumeState.qml              # Singleton: PipeWire default-sink volume & mute
+│   ├── WeatherState.qml             # Singleton: open-meteo weather fetch & forecast data
+│   ├── BluetoothState.qml           # Singleton: rfkill power control + bluetoothctl monitor
+│   └── Audio.qml                    # Singleton: CAVA audio visualizer service
 │
 ├── base/                            # Shared primitives used across modules
 │   ├── DropdownBase.qml             # Base for all dropdown panels
@@ -99,7 +83,7 @@ quickshell/
     │   ├── PowerProfileButton.qml   # Power profile icon in bar
     │   ├── PowerProfileDropdown.qml # Power profile selector
     │   └── TemperatureButton.qml    # CPU temperature indicator in bar
-    ├── rightPanelSlider/
+    ├── rightPanelSlider/            # (currently disabled in shell.qml)
     │   ├── RightPanelButton.qml     # Bar icon that opens the right-side panel
     │   └── RightPanelSlider.qml     # Panel that slides in from the right edge
     ├── settings/
@@ -145,14 +129,40 @@ Entry point. Hosts the `PanelWindow` (70px tall, 50px exclusive zone), instantia
 
 The `dropdowns` array is the single registry for all panels — add a new dropdown there and both `closeAllDropdowns` and `isAnyPanelOpen` handle it automatically.
 
-### `state/AppState.qml`
-A `Singleton` that owns all shared reactive state. Components read from it directly (`AppState.volume`, `AppState.wTemp`, etc.) rather than spawning their own processes.
+### State Singletons (`state/`)
+Reactive state is split into one `Singleton` per concern. All three are registered in the `qs.state` module and accessed directly by name from any file that imports `"../../state"` or `qs.state`.
 
-| Domain | Implementation |
+#### `VolumeState.qml`
+Reactive `Quickshell.Services.Pipewire` binding — zero polling, updates instantly on any PipeWire sink change. Volume capped at 100.
+
+| Property / Function | Description |
 |---|---|
-| **Volume** | Reactive `Quickshell.Services.Pipewire` binding — zero polling, updates instantly on any PipeWire sink change. Volume capped at 100. Provides `toggleMute()`, `volumeUp()`, `volumeDown()`, `setVolume(v)` functions. |
-| **Weather** | `open-meteo` API (no key required). Auto-detects location via `ipinfo.io`. Fetched once on startup then refreshed hourly by `SystemClock`. Provides detailed properties: `wIcon`, `wDesc`, `wTemp`, `wFeels`, `wHumidity`, `wWind`, `wSunrise`, `wSunset`. |
-| **Bluetooth** | `rfkill` for power control, `bluetoothctl monitor` as long-lived process for live state updates, debounced 600ms. Provides `btPowered` property and `togglePower()` function. |
+| `volume` | Current sink volume 0–100 |
+| `muted` | Whether the default sink is muted |
+| `toggleMute()` | Toggle mute on the default sink |
+| `volumeUp()` / `volumeDown()` | ±5% step |
+| `setVolume(v)` | Set volume to 0–100, clamped |
+
+#### `WeatherState.qml`
+`open-meteo` API (no key required). Auto-detects location via `ipinfo.io`. Fetched once on `Component.onCompleted`, then refreshed hourly via `SystemClock { precision: SystemClock.Hours }`.
+
+| Property | Description |
+|---|---|
+| `wIcon`, `wDesc`, `wTemp`, `wFeels` | Current conditions |
+| `wHumidity`, `wWind`, `wSunrise`, `wSunset` | Extra current detail |
+| `wForecast` | 7-day array `{date, icon, desc, min, max}` |
+| `wHourly` | 24-hour array `{time, temp, icon}` |
+| `wLoading` | `true` while the fetch is in-flight |
+| `refresh()` | Force an immediate re-fetch |
+
+#### `BluetoothState.qml`
+`rfkill` for power control, `bluetoothctl monitor` as a long-lived process for live state updates, power re-read debounced 600 ms. A 400 ms delay after `rfkill unblock` gives the adapter time to initialize.
+
+| Property / Function | Description |
+|---|---|
+| `btPowered` | `true` when the BT adapter is on |
+| `togglePower()` | On ↔ Off |
+| `powerOn()` / `powerOff()` | Explicit transitions |
 
 ### `state/Audio.qml`
 A separate `Singleton` that manages CAVA audio visualizer integration. Provides real-time audio spectrum data for visual effects.
@@ -165,7 +175,7 @@ A separate `Singleton` that manages CAVA audio visualizer integration. Provides 
 | **Data Format** | Raw CAVA output parsed from semicolon-delimited values, normalized to 0-1 range |
 
 ### `Colors.qml`
-Four color tokens used everywhere. Auto-regenerated by [matugen](https://github.com/InioX/matugen) on wallpaper change — manual edits may be overwritten.
+A `pragma Singleton` registered in the root `qmldir`. Four color tokens used everywhere, accessed directly as `Colors.col_*` from any file (no instantiation needed). Auto-regenerated by [matugen](https://github.com/InioX/matugen) on wallpaper change — manual edits may be overwritten.
 
 | Property | Default | Role |
 |---|---|---|
@@ -175,7 +185,7 @@ Four color tokens used everywhere. Auto-regenerated by [matugen](https://github.
 | `col_main` | `#1b3534` | Bar background |
 
 ### `NumbersToText.qml`
-A global `QtObject` instantiated as `numbersToText` in `shell.qml`, accessible from any component in the tree.
+Registered in the root `qmldir`. A `QtObject` instantiated as `numbersToText` in `shell.qml`, accessible from any component in the tree.
 
 Provides a single `convert(n)` function that converts an integer to sentence-cased English words:
 
@@ -191,7 +201,7 @@ Handles 0–999,999. Falls back to the raw number string for values ≥ 1,000,00
 Usage from any QML file: `numbersToText.convert(someNumber)`
 
 ### `Config.qml`
-Shell-wide non-color settings with persistent storage. All persisted settings are read from and written to `modules/settings/settings.json` via `FileView` inotify. A 750 ms debounce timer coalesces rapid changes into single file writes.
+Registered in the root `qmldir`. Shell-wide non-color settings with persistent storage. All persisted settings are read from and written to `modules/settings/settings.json` via `FileView` inotify. A 750 ms debounce timer coalesces rapid changes into single file writes.
 
 | Property | Default | Purpose |
 |---|---|---|
@@ -237,7 +247,7 @@ All dropdown panels extend this. It handles the full panel lifecycle:
 
 Public API: `openPanel()`, `closePanel()`, `startOpenAnim()`, `resizePanel()`, `isOpen`, `aboutToOpen` signal.
 
-**Keyboard focus and Escape-to-close:** All dropdown panels set `WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive` while open so they receive keyboard events directly from the compositor. Each panel has a focused `Item` with `Keys.onEscapePressed` that calls `closePanel()`, meaning pressing Escape alone closes the open panel without needing a global shortcut. Focus is released back to `WlrKeyboardFocus.None` when the panel closes.
+**Keyboard focus and Escape-to-close:** `DropdownBase` owns a `keyboardFocusEnabled: bool` property (default `false`). When set to `true`, it binds `WlrLayershell.keyboardFocus` to `WlrKeyboardFocus.Exclusive` while the panel is open, giving it keyboard events directly from the compositor, and releases to `WlrKeyboardFocus.None` on close. All current dropdown subclasses set `keyboardFocusEnabled: true`. Each panel also has a focused `Item` with `Keys.onEscapePressed` that calls `closePanel()` so Escape alone closes the open panel without a global shortcut.
 
 ### `OverlayPanel.qml`
 Like `DropdownBase` but not anchored to the bar — centers on screen. Used for things that need to appear independently of bar position. API: `show()`, `hide()`, `toggle()`, `isOpen`.
@@ -288,7 +298,7 @@ Uses `SystemClock { precision: SystemClock.Seconds }` — updates aligned to the
 `RightPanelSlider` is a `PanelWindow` anchored to the right+top+bottom edges that slides in from the right. It reserves an exclusive zone on the right edge when open so Hyprland windows reflow around it. Opened and closed via `RightPanelButton` in the bar or the `SUPER, R` global shortcut (`quickshell:toggleRightPanel`). Content is added via the `panelContent` default alias. API: `openPanel()`, `closePanel()`, `isOpen`.
 
 ### Weather
-`WeatherDropdown` reads all data from `AppState`. The dropdown shows current conditions (icon, description, temp, feels-like, humidity, wind, sunrise/sunset) and a multi-day forecast. `onAboutToOpen` triggers a manual refresh.
+`WeatherDropdown` reads all data from `WeatherState`. The dropdown shows current conditions (icon, description, temp, feels-like, humidity, wind, sunrise/sunset) and a multi-day forecast. `onAboutToOpen` triggers a manual `WeatherState.refresh()`.
 
 *Note: Weather module is currently disabled in shell.qml but remains available.*
 
@@ -298,7 +308,7 @@ Uses `SystemClock { precision: SystemClock.Seconds }` — updates aligned to the
 - **System Volume**: Main PipeWire sink volume slider 
 - **Media Player Control**: Full media player integration via `playerctl` with browser detection
 - **Browser Support**: Explicit browser sink detection (Chrome, Firefox, Brave, Vivaldi, Opera)
-- **Media Volume**: Separate volume control for active media players with sync capability
+- **Media Volume**: Separate volume control for active media players with sync capability; slider calls `VolumeState.setVolume()`
 - **Audio Visualizer**: Real-time 20-bar CAVA spectrum display with gradient coloring and smooth animation
 - **Smart Polling**: Refreshes on open, 800ms polling while active, disabled when closed
 - **Dynamic Height**: Adapts from 70px (no media) to 410px (media active) based on content
@@ -337,7 +347,7 @@ Components:
 - `VlanDropdown` — lists VLANs with active state. Runs `nmcli monitor` while open for live updates.
 
 ### Bluetooth
-Power controlled via `rfkill`. Live state from `bluetoothctl monitor` parsed in `AppState`, debounced 600 ms. A 400 ms delay after `rfkill unblock` gives the adapter time to initialize before re-reading state.
+Power controlled via `rfkill`. Live state from `bluetoothctl monitor` parsed in `BluetoothState`, debounced 600 ms. A 400 ms delay after `rfkill unblock` gives the adapter time to initialize before re-reading state.
 
 ### Power & Temperature
 `PowerProfileDropdown` uses `power-profiles-daemon` (selectable cards). `TemperatureButton` reads CPU temp from system sensors with color coding. `BatteryButton` shows a dynamic icon and percentage in the bar; `BatteryDropdown` provides full battery detail including charge state and ETA.
@@ -362,7 +372,7 @@ Power controlled via `rfkill`. Live state from `bluetoothctl monitor` parsed in 
 |---|---|---|
 | 1 | Animations | `config.animations` → `hyprctl keyword animations:enabled` |
 | 2 | Blur | `config.blur` → `hyprctl keyword decoration:blur:enabled` |
-| 3 | Bluetooth | `AppState.btPowered` → `rfkill` |
+| 3 | Bluetooth | `BluetoothState.btPowered` → `rfkill` |
 | 4 | Floating Launcher | `config.launcherFloating` (fullscreen vs dropdown) |
 | 5 | Workspace Glow | `config.workspaceGlow` |
 
@@ -461,7 +471,7 @@ Below the info cards sits a **clock + date + inline calendar** row:
 - Album art (95×95, rounded corners) with an animated cycling border color while playing
 - Scrolling marquee for long track titles
 - Previous / Play-Pause / Next buttons via `playerctl`
-- Volume slider wired to `AppState.setVolume()` (same sink as the volume dropdown)
+- Volume slider wired to `VolumeState.setVolume()` (same sink as the volume dropdown)
 
 **Performance tab (Tab 2)** shows three circular arc gauges (120×120 Canvas):
 
@@ -473,7 +483,7 @@ Below the info cards sits a **clock + date + inline calendar** row:
 
 All gauges animate smoothly (600 ms `OutCubic`) and turn red when ≥ 85%. The tab re-fetches data immediately on becoming visible, then shares the 3 s polling timer.
 
-**Weather tab (Tab 3)** pulls all data from `AppState` (same source as the standalone WeatherDropdown):
+**Weather tab (Tab 3)** pulls all data from `WeatherState` (same source as the standalone WeatherDropdown):
 - Current conditions card: big icon, temp, feels-like, wind, humidity, sunrise
 - Hourly strip: next 12 hours from the current hour (horizontally scrollable Flickable, label "Next 12 hours")
 - 7-day weekly forecast grid: day name, date, icon, high/low temps. Today/Tomorrow are labelled explicitly.
@@ -528,7 +538,7 @@ Add to your `hyprland.conf`:
 bind = , escape,       global, quickshell:closeAllDropdowns
 bind = SUPER CTRL, W,  global, quickshell:toggleWallpaperDropdown
 bind = SUPER, Space,   global, quickshell:toggleAppLauncher
-bind = SUPER, R,       global, quickshell:toggleRightPanel
+# bind = SUPER, R,     global, quickshell:toggleRightPanel   # disabled — RightPanelSlider is currently commented out
 bind = SUPER, L,       global, quickshell:lockScreen
 bind = SUPER CTRL, U,  global, quickshell:triggerSystemUpdate
 bind = SUPER CTRL, S,  global, quickshell:toggleSettingsDropdown
@@ -636,5 +646,21 @@ This configuration is part of the SiSPX dotfiles collection. Built with [Quicksh
 **Color Generation**: matugen
 
 ---
+
+## Disclaimer
+
+This was created as a fun learning project — inspiration taken from end_4, Noctalia, etc. Love those drawer animations!
+This is in no way to be taken as a "this is how to do a thing..." it is purely "this is how I have done a thing..."
+
+I found there was a lack of tutorials and trying to learn by reverse engineering some other dotfiles was a little overwhelming.
+
+Much of the code was initially created using Claude AI. I then ventured into the Quickshell Discord and sought some help and advice.
+Since then I have learnt quite a bit (still more to learn!)
+
+I'm putting this out there in the hope it may help or inspire people.
+
+Feel free to use however you want, just give me a shout out (SiSPX_ on reddit) if you find it helpful.
+
+Once again, a massive shout out to the people on Discord for helping me out.
 
 

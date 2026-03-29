@@ -20,7 +20,7 @@ DropdownBase {
     id: netAdmin
     reloadableId: "networkAdminDropdown"
 
-    WlrLayershell.keyboardFocus: netAdmin.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    keyboardFocusEnabled: true
 
     Item { focus: true; Keys.onEscapePressed: netAdmin.closePanel() }
 

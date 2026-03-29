@@ -19,8 +19,7 @@ DropdownBase {
     id: dash
     reloadableId: "dashboardDropdown"
 
-    // Receive keyboard events while open so Tab can cycle tabs
-    WlrLayershell.keyboardFocus: dash.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    keyboardFocusEnabled: true
 
     panelWidth: 560
 
@@ -54,10 +53,10 @@ DropdownBase {
                      String(now.getDate()).padStart(2, "0") + "T" +
                      String(now.getHours()).padStart(2, "0") + ":00"
         var idx = 0
-        for (var i = 0; i < AppState.wHourly.length; i++) {
-            if (AppState.wHourly[i].time >= nowStr) { idx = i; break }
+        for (var i = 0; i < WeatherState.wHourly.length; i++) {
+            if (WeatherState.wHourly[i].time >= nowStr) { idx = i; break }
         }
-        return AppState.wHourly.slice(idx, idx + 12)
+        return WeatherState.wHourly.slice(idx, idx + 12)
     }
 
     // ── State ─────────────────────────────────────────────────
@@ -98,7 +97,7 @@ DropdownBase {
         var now = new Date()
         inlineCal.displayYear  = now.getFullYear()
         inlineCal.displayMonth = now.getMonth()
-        AppState.refresh()
+        WeatherState.refresh()
         uptimeProc.running       = true
         mediaProc.running        = true
         perfProc.running         = true
@@ -372,7 +371,7 @@ DropdownBase {
 
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: AppState.wIcon
+                    text: WeatherState.wIcon
                     font.family: config.fontFamily
                     font.styleName: "Solid"
                     font.pixelSize: 44
@@ -380,14 +379,14 @@ DropdownBase {
                 }
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: AppState.wTemp
+                    text: WeatherState.wTemp
                     color: dash.textColor
                     font.pixelSize: 22
                     font.bold: true
                 }
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: AppState.wDesc
+                    text: WeatherState.wDesc
                     color: dash.dimColor
                     font.pixelSize: 11
                 }
@@ -722,7 +721,7 @@ DropdownBase {
         visible: dash._tab === 1
 
         property int _mediaDragVol: -1
-        readonly property int _mediaDisplayVol: _mediaDragVol >= 0 ? _mediaDragVol : AppState.volume
+        readonly property int _mediaDisplayVol: _mediaDragVol >= 0 ? _mediaDragVol : VolumeState.volume
 
         Rectangle {
             anchors.fill: parent; radius: 10
@@ -892,7 +891,7 @@ DropdownBase {
             Text {
                 id: mediaVolPct
                 anchors { right: parent.right; verticalCenter: parent.verticalCenter }
-                text: (AppState.muted ? 0 : mediaVolContainer.parent._mediaDisplayVol) + "%"
+                text: (VolumeState.muted ? 0 : mediaVolContainer.parent._mediaDisplayVol) + "%"
                 color: dash.accentColor; font.pixelSize: 14; font.family: config.fontFamily
                 width: 38; horizontalAlignment: Text.AlignRight
             }
@@ -907,9 +906,9 @@ DropdownBase {
                     color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.15)
 
                     Rectangle {
-                        width: parent.width * (AppState.muted ? 0 : mediaVolContainer.parent._mediaDisplayVol / 100)
+                        width: parent.width * (VolumeState.muted ? 0 : mediaVolContainer.parent._mediaDisplayVol / 100)
                         height: parent.height; radius: 3
-                        color: AppState.muted ? dash.dimColor : dash.accentColor
+                        color: VolumeState.muted ? dash.dimColor : dash.accentColor
                     }
                 }
 
@@ -922,7 +921,7 @@ DropdownBase {
                     anchors.verticalCenter: parent.verticalCenter
                     x: Math.max(0, Math.min(
                         parent.width - width,
-                        (AppState.muted ? 0 : mediaVolContainer.parent._mediaDisplayVol / 100) * (parent.width - width)
+                        (VolumeState.muted ? 0 : mediaVolContainer.parent._mediaDisplayVol / 100) * (parent.width - width)
                     ))
                 }
 
@@ -936,7 +935,7 @@ DropdownBase {
                             mx / (parent.width - mediaVolHandle.width) * 100
                         )))
                         mediaVolContainer.parent._mediaDragVol = newVol
-                        AppState.setVolume(newVol)
+                        VolumeState.setVolume(newVol)
                     }
 
                     onPressed:         mouse => setFromX(mouse.x)
@@ -1117,13 +1116,13 @@ DropdownBase {
         visible: dash._tab === 3
 
         Text {
-            visible: AppState.wLoading
+            visible: WeatherState.wLoading
             anchors.centerIn: parent
             text: "Fetching weather…"; color: dash.dimColor; font.pixelSize: 13; font.family: config.fontFamily
         }
 
         Column {
-            visible: !AppState.wLoading
+            visible: !WeatherState.wLoading
             anchors.fill: parent
             spacing: 10
 
@@ -1137,31 +1136,31 @@ DropdownBase {
                 Text {
                     id: bigWIcon
                     anchors { left: parent.left; leftMargin: 18; verticalCenter: parent.verticalCenter }
-                    text: AppState.wIcon
+                    text: WeatherState.wIcon
                     font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 64
                     color: dash.accentColor
                 }
                 Column {
                     anchors { left: bigWIcon.right; leftMargin: 12; verticalCenter: parent.verticalCenter }
                     spacing: 4
-                    Text { text: AppState.wTemp;  color: dash.textColor; font.pixelSize: 24; font.bold: true }
-                    Text { text: AppState.wDesc;  color: dash.dimColor;  font.pixelSize: 13 }
-                    Text { text: "Feels like " + AppState.wFeels; color: dash.dimColor; font.pixelSize: 12 }
+                    Text { text: WeatherState.wTemp;  color: dash.textColor; font.pixelSize: 24; font.bold: true }
+                    Text { text: WeatherState.wDesc;  color: dash.dimColor;  font.pixelSize: 13 }
+                    Text { text: "Feels like " + WeatherState.wFeels; color: dash.dimColor; font.pixelSize: 12 }
                 }
                 Column {
                     anchors { right: parent.right; rightMargin: 18; verticalCenter: parent.verticalCenter }
                     spacing: 6
                     Row { spacing: 6
                         Text { text: "󰖝"; font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 12; color: dash.accentColor }
-                        Text { text: AppState.wWind; color: dash.dimColor; font.pixelSize: 12 }
+                        Text { text: WeatherState.wWind; color: dash.dimColor; font.pixelSize: 12 }
                     }
                     Row { spacing: 6
                         Text { text: ""; font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 12; color: dash.accentColor }
-                        Text { text: AppState.wHumidity; color: dash.dimColor; font.pixelSize: 12 }
+                        Text { text: WeatherState.wHumidity; color: dash.dimColor; font.pixelSize: 12 }
                     }
                     Row { spacing: 6
                         Text { text: "󰖛"; font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 12; color: dash.accentColor }
-                        Text { text: AppState.wSunrise; color: dash.dimColor; font.pixelSize: 12 }
+                        Text { text: WeatherState.wSunrise; color: dash.dimColor; font.pixelSize: 12 }
                     }
                 }
             }
@@ -1236,7 +1235,7 @@ DropdownBase {
                     spacing: 4
 
                     Repeater {
-                        model: ScriptModel { values: AppState.wForecast.slice(0, 7) }
+                        model: ScriptModel { values: WeatherState.wForecast.slice(0, 7) }
                         delegate: Rectangle {
                             id: dayCard
                             required property var modelData
@@ -1301,15 +1300,15 @@ DropdownBase {
                     anchors.centerIn: parent; spacing: 40
 
                     Column { spacing: 4
-                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "󰖛  " + AppState.wSunrise; color: dash.textColor; font.pixelSize: 12; font.family: config.fontFamily }
+                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "󰖛  " + WeatherState.wSunrise; color: dash.textColor; font.pixelSize: 12; font.family: config.fontFamily }
                         Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Sunrise"; color: dash.dimColor; font.pixelSize: 10; font.family: config.fontFamily }
                     }
                     Column { spacing: 4
-                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "󰖜  " + AppState.wSunset; color: dash.textColor; font.pixelSize: 12; font.family: config.fontFamily }
+                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "󰖜  " + WeatherState.wSunset; color: dash.textColor; font.pixelSize: 12; font.family: config.fontFamily }
                         Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Sunset"; color: dash.dimColor; font.pixelSize: 10; font.family: config.fontFamily }
                     }
                     Column { spacing: 4
-                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "󰖝  " + AppState.wWind; color: dash.textColor; font.pixelSize: 12; font.family: config.fontFamily }
+                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "󰖝  " + WeatherState.wWind; color: dash.textColor; font.pixelSize: 12; font.family: config.fontFamily }
                         Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Wind"; color: dash.dimColor; font.pixelSize: 10; font.family: config.fontFamily }
                     }
                 }

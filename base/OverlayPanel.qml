@@ -2,7 +2,7 @@ import Quickshell
 import Quickshell.Wayland
 import QtQuick
 import QtQuick.Effects
-
+import ".."
 // ============================================================
 // OVERLAY PANEL — a generic floating panel at WlrLayer.Overlay.
 //
@@ -67,7 +67,7 @@ PanelWindow {
 
     // ─── Theme ───────────────────────────────────────────────────
     property string fontFamily:  config.fontFamily
-    property color  panelColor:  colors.col_main
+    property color  panelColor:  Colors.col_main
     property color  borderColor: "black"
     property real   borderWidth: 1
     property int    panelRadius: 12

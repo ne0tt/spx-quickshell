@@ -1,0 +1,3 @@
+singleton Colors 1.0 Colors.qml
+Config 1.0 Config.qml
+NumbersToText 1.0 NumbersToText.qml

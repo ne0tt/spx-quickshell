@@ -4,6 +4,7 @@ import Quickshell.Hyprland
 import QtQuick
 import QtQuick.Effects
 import qs.base
+import "../.."
 
 // ============================================================
 // RIGHT PANEL SLIDER — a panel that slides in from the right edge.
@@ -83,9 +84,9 @@ PanelWindow {
     //property int    panelHeight: _screenHeight - 32 // next to the bar, for a more seamless look
     property int    openDuration:  300
     property int    closeDuration: 220
-    property color  panelColor:    colors.col_background
-    property color  accentColor:   colors.col_source_color
-    property color  textColor:     colors.col_primary
+    property color  panelColor:    Colors.col_background
+    property color  accentColor:   Colors.col_source_color
+    property color  textColor:     Colors.col_primary
     property string panelTitle:    "Panel"
     property string panelIcon:     "󰹍"
     property string fontFamily:    config.fontFamily
@@ -217,7 +218,7 @@ PanelWindow {
             color:  _panel.panelColor
             radius: 8
             border.width: 2
-            border.color: _wrapper.containsMouse ? _panel.accentColor : colors.col_main
+            border.color: _wrapper.containsMouse ? _panel.accentColor : Colors.col_main
             Behavior on border.color { ColorAnimation { duration: 200 } }
             opacity: _wrapper.containsMouse ? 0.95 : 0.85
             Behavior on opacity { NumberAnimation { duration: 200 } }

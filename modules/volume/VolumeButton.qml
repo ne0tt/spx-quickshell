@@ -2,6 +2,7 @@
 
 import QtQuick
 import "../../state"
+import "../.."
 
 Item {
     id: root
@@ -17,9 +18,9 @@ Item {
     property int    fontWeight: config.fontWeight
 
     property bool   isActive:   false
-    property color  accentColor: colors.col_primary
-    property color  activeColor: colors.col_source_color
-    property color  hoverColor:  colors.col_source_color
+    property color  accentColor: Colors.col_primary
+    property color  activeColor: Colors.col_source_color
+    property color  hoverColor:  Colors.col_source_color
     property color  dimColor:    Qt.rgba(1, 1, 1, 0.4)
 
     property bool   _hovered:   false
@@ -27,8 +28,8 @@ Item {
     signal clicked(real clickX)
 
     // ── Shared state (AppState singleton) ──────────────────────
-    readonly property int  volume: AppState.volume
-    readonly property bool muted:  AppState.muted
+    readonly property int  volume: VolumeState.volume
+    readonly property bool muted:  VolumeState.muted
 
     // ============================================================
     // USER INTERACTION
@@ -47,8 +48,8 @@ Item {
         }
 
         onWheel: event => {
-            if (event.angleDelta.y > 0) AppState.volumeUp()
-            else                        AppState.volumeDown()
+            if (event.angleDelta.y > 0) VolumeState.volumeUp()
+            else                        VolumeState.volumeDown()
         }
     }
 

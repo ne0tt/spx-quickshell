@@ -1,4 +1,5 @@
 import QtQuick
+import "../.."
 
 // ============================================================
 // BLUETOOTH BUTTON — bar icon showing BT power state.
@@ -13,10 +14,10 @@ Item {
     property bool   btPowered:  false
     property bool   isActive:   false   // true when the dropdown is open
 
-    property color  accentColor: colors.col_primary      // powered + dropdown closed
-    property color  activeColor: colors.col_source_color  // dropdown open
-    property color  hoverColor:  colors.col_source_color  // mouse hover
-    property color  dimColor:    Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.4)  // BT off
+    property color  accentColor: Colors.col_primary
+    property color  activeColor: Colors.col_source_color
+    property color  hoverColor:  Colors.col_source_color
+    property color  dimColor:    Qt.rgba(Colors.col_primary.r, Colors.col_primary.g, Colors.col_primary.b, 0.4)
 
     property bool   _hovered:   false
 

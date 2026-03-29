@@ -1,6 +1,7 @@
 import Quickshell
 import Quickshell.Io
 import QtQuick
+import "../.."
 
 Rectangle {
     id: vpnModule
@@ -35,12 +36,12 @@ Rectangle {
     property int    fontWeight: config.fontWeight
 
     property bool   isActive:   false
-    property color  accentColor: colors.col_primary
-    property color  activeColor: colors.col_source_color
-    property color  hoverColor:  colors.col_source_color
+    property color  accentColor: Colors.col_primary
+    property color  activeColor: Colors.col_source_color
+    property color  hoverColor:  Colors.col_source_color
     property color  dimColor:    Qt.rgba(1, 1, 1, 0.4)
 
-    property color  backgroundColor: colors.col_background
+    property color  backgroundColor: Colors.col_background
     property bool   _hovered:   false
     property string vpnIp: ""
     property bool showVpnIp: false

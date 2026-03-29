@@ -3,6 +3,7 @@ import Quickshell.Wayland
 import QtQuick
 import "../../base"
 import "../../state"
+import "../.."
 
 // ============================================================
 // WEATHER DROPDOWN — extends DropdownBase.
@@ -13,21 +14,21 @@ DropdownBase {
     id: wDrop
     reloadableId: "weatherDropdown"
 
-    WlrLayershell.keyboardFocus: wDrop.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    keyboardFocusEnabled: true
 
     Item { focus: true; Keys.onEscapePressed: wDrop.closePanel() }
 
     // ── Shared state (AppState singleton) ──────────────────────
-    readonly property string wIcon:     AppState.wIcon
-    readonly property string wDesc:     AppState.wDesc
-    readonly property string wTemp:     AppState.wTemp
-    readonly property string wFeels:    AppState.wFeels
-    readonly property string wHumidity: AppState.wHumidity
-    readonly property string wWind:     AppState.wWind
-    readonly property string wSunrise:  AppState.wSunrise
-    readonly property string wSunset:   AppState.wSunset
-    readonly property var    wForecast: AppState.wForecast
-    readonly property bool   wLoading:  AppState.wLoading
+    readonly property string wIcon:     WeatherState.wIcon
+    readonly property string wDesc:     WeatherState.wDesc
+    readonly property string wTemp:     WeatherState.wTemp
+    readonly property string wFeels:    WeatherState.wFeels
+    readonly property string wHumidity: WeatherState.wHumidity
+    readonly property string wWind:     WeatherState.wWind
+    readonly property string wSunrise:  WeatherState.wSunrise
+    readonly property string wSunset:   WeatherState.wSunset
+    readonly property var    wForecast: WeatherState.wForecast
+    readonly property bool   wLoading:  WeatherState.wLoading
 
     // ── Panel geometry ────────────────────────────────────────
     readonly property int _cardH: 52
@@ -36,10 +37,10 @@ DropdownBase {
     panelFullHeight: 16 + 140 + _gapH + 44 + _gapH + 3 * _cardH + 2 * _gapH
     implicitHeight: panelFullHeight + 58
     panelWidth: 330
-    panelColor: colors.col_main
+    panelColor: Colors.col_main
 
     // ── Refresh on open ───────────────────────────────────────────
-    onAboutToOpen: AppState.refresh()
+    onAboutToOpen: WeatherState.refresh()
 
 
     // ── UI ────────────────────────────────────────────────────

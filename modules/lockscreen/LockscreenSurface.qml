@@ -72,11 +72,6 @@ Rectangle {
         mediaControlProc.running = true
     }
     
-    // Dynamic colors that update with theme changes (symlinked to main Colors.qml)
-    Colors {
-        id: themeColors
-    }
-    
     // Settings file reader
     property string currentWallpaper: ""
     property string originalWallpaper: ""
@@ -162,7 +157,7 @@ Rectangle {
     }
     
     // Use theme colors for consistency (fallback color)
-    color: themeColors.col_background
+    color: Colors.col_background
 
     // Show login form only on primary monitor, others stay black
     property bool showLoginForm: isPrimary
@@ -183,7 +178,7 @@ Rectangle {
         // Native font rendering for large sizes
         renderType: Text.NativeRendering
         font.pointSize: 80
-        color: themeColors.col_primary
+        color: Colors.col_primary
 
         // Update clock every second
         Timer {
@@ -213,7 +208,7 @@ Rectangle {
     //    }
     //    
     //    font.pointSize: 18
-    //    color: root.context.showFailure ? "#cc3353" : themeColors.col_primary
+    //    color: root.context.showFailure ? "#cc3353" : Colors.col_primary
     //    
     //    // Smooth color transition
     //    Behavior on color { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
@@ -247,8 +242,8 @@ Rectangle {
             height: 150
             opacity: 0.8
             
-            color: root.context.showFailure ? "#4d1f1f" : themeColors.col_main  // Dark red when error
-            border.color: root.context.showFailure ? root.errorColor : themeColors.col_source_color  // Bright red border when error
+            color: root.context.showFailure ? "#4d1f1f" : Colors.col_main  // Dark red when error
+            border.color: root.context.showFailure ? root.errorColor : Colors.col_source_color  // Bright red border when error
             border.width: 2
             radius: 9
             
@@ -347,7 +342,7 @@ Rectangle {
                     anchors.rightMargin: 0
                     height: 38
                     
-                    color: root.context.showFailure ? root.errorColor : themeColors.col_source_color  // Red header when error
+                    color: root.context.showFailure ? root.errorColor : Colors.col_source_color  // Red header when error
                     radius: 9
                     
                     // Smooth color transition
@@ -359,7 +354,7 @@ Rectangle {
                         anchors.right: parent.right
                         anchors.bottom: parent.bottom
                         height: 9
-                        color: root.context.showFailure ? root.errorColor : themeColors.col_source_color  // Match header color
+                        color: root.context.showFailure ? root.errorColor : Colors.col_source_color  // Match header color
                         
                         // Smooth color transition
                         Behavior on color { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
@@ -375,14 +370,14 @@ Rectangle {
                             text: ""
                             font.pointSize: 15
                             font.family: "Jetbrains Mono Nerd Font"
-                            color: themeColors.col_background
+                            color: Colors.col_background
                         }
                         
                         Label {
                             text: root.context.showFailure ? "ACCESS DENIED" : "ENTER PASSWORD"
                             font.pointSize: 9
                             font.weight: Font.Medium
-                            color: themeColors.col_background
+                            color: Colors.col_background
                             
                             // Smooth text transition
                             Behavior on text { }
@@ -404,7 +399,7 @@ Rectangle {
                     padding: 11
                     
                     // Theme colors for input field - red when error
-                    color: root.context.showFailure ? root.errorColor : themeColors.col_source_color
+                    color: root.context.showFailure ? root.errorColor : Colors.col_source_color
                     
                     // Smooth color transition
                     Behavior on color { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
@@ -414,12 +409,12 @@ Rectangle {
                     echoMode: TextInput.Password
                     inputMethodHints: Qt.ImhSensitiveData
                     placeholderText: "Password"
-                    placeholderTextColor: themeColors.col_background
+                    placeholderTextColor: Colors.col_background
 
                     // Custom styling for better appearance
                     background: Rectangle {
-                        color: themeColors.col_background
-                        border.color: root.context.showFailure ? root.errorColor : (passwordBox.focus ? themeColors.col_source_color : themeColors.col_primary)
+                        color: Colors.col_background
+                        border.color: root.context.showFailure ? root.errorColor : (passwordBox.focus ? Colors.col_source_color : Colors.col_primary)
                         border.width: 2
                         radius: 6
                         
@@ -475,8 +470,8 @@ Rectangle {
         
         // Custom styling for bypass button
         background: Rectangle {
-            color: bypassButton.pressed ? themeColors.col_main : "transparent"
-            border.color: themeColors.col_primary
+            color: bypassButton.pressed ? Colors.col_main : "transparent"
+            border.color: Colors.col_primary
             border.width: 1
             radius: 6                
             opacity: 0.0
@@ -485,7 +480,7 @@ Rectangle {
         contentItem: Text {
             text: bypassButton.text
             font: bypassButton.font
-            color: themeColors.col_primary
+            color: Colors.col_primary
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             opacity: 0.0
@@ -511,7 +506,7 @@ Rectangle {
         text: "Hyprland on Arch Linux • Screen Locked"
         
         font.pointSize: 10
-        color: root.context.showFailure ? root.errorColor : themeColors.col_primary
+        color: root.context.showFailure ? root.errorColor : Colors.col_primary
         opacity: 0.7
         
         // Smooth color transition

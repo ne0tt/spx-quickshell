@@ -3,6 +3,7 @@ import Quickshell.Io
 import Quickshell.Wayland
 import QtQuick
 import "../../base"
+import "../.."
 // ============================================================
 // WALLPAPER DROPDOWN — scrollable thumbnail grid
 // Finds all images under ~/wallpaper/ recursively.
@@ -20,9 +21,7 @@ DropdownBase {
     headerHeight:    34
     panelZ:          1   // same z-order as app launcher dropdown
 
-    // Exclusively grab keyboard input while the panel is open so arrow-key
-    // navigation works without the user needing to mouse over the window first.
-    WlrLayershell.keyboardFocus: panelVisible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    keyboardFocusEnabled: true
 
     // --------------------------------------------------------
     // STATE  
@@ -249,7 +248,7 @@ DropdownBase {
                     text: ""
                     font.family: wpDrop.fontFamily
                     font.pixelSize: 14
-                    color: colors.col_source_color
+                    color: Colors.col_source_color
                 }
 
                 Text {

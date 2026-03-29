@@ -1,4 +1,5 @@
 import QtQuick
+import "../.."
 
 // ============================================================
 // NOTIF BUTTON — bar bell icon that opens the notification
@@ -13,9 +14,9 @@ Item {
 
     property bool   isActive:    false
 
-    property color  accentColor: colors.col_primary
-    property color  activeColor: colors.col_source_color
-    property color  hoverColor:  colors.col_source_color
+    property color  accentColor: Colors.col_primary
+    property color  activeColor: Colors.col_source_color
+    property color  hoverColor:  Colors.col_source_color
 
     property bool   _hovered:    false
 
@@ -77,7 +78,7 @@ Item {
         width:  badgeText.implicitWidth + 4
         height: 12
         radius: 6
-        color:  colors.col_source_color
+        color:  Colors.col_source_color
 
         Text {
             id: badgeText
@@ -86,7 +87,7 @@ Item {
             font.family:    root.fontFamily
             font.pixelSize: 8
             font.bold:      true
-            color:          colors.col_background
+            color:          Colors.col_background
         }
     }
 

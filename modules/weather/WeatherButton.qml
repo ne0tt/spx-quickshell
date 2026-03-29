@@ -1,5 +1,6 @@
 import QtQuick
 import "../../state"
+import "../.."
 
 // ============================================================
 // WEATHER BUTTON — bar pill showing icon + temperature.
@@ -14,9 +15,9 @@ Rectangle {
     property int    fontWeight:      config.fontWeight
 
     property bool   isActive:        false
-    property color  accentColor:     colors.col_primary
-    property color  activeColor:     colors.col_source_color
-    property color  hoverColor:      colors.col_source_color
+    property color  accentColor:     Colors.col_primary
+    property color  activeColor:     Colors.col_source_color
+    property color  hoverColor:      Colors.col_source_color
     property color  dimColor:        Qt.rgba(1, 1, 1, 0.4)
 
     property color  backgroundColor: "transparent"
@@ -40,8 +41,8 @@ Rectangle {
         spacing: 5
 
         Text {
-            visible: AppState.wIcon !== "" && AppState.wIcon !== "…"
-            text:    AppState.wIcon
+            visible: WeatherState.wIcon !== "" && WeatherState.wIcon !== "…"
+            text:    WeatherState.wIcon
             color:   root.isActive ? root.activeColor : btnArea.containsMouse ? root.hoverColor : root.accentColor
             font.family:    root.fontFamily
             font.styleName: "Solid"
@@ -52,8 +53,8 @@ Rectangle {
 
         Text {
             text: {
-                if (AppState.wLoading) return "…"
-                return AppState.wTemp !== "" ? AppState.wTemp : "…"
+                if (WeatherState.wLoading) return "…"
+                return WeatherState.wTemp !== "" ? WeatherState.wTemp : "…"
             }
             color: root.isActive ? root.activeColor : btnArea.containsMouse ? root.hoverColor : root.accentColor
             font.family:    root.fontFamily

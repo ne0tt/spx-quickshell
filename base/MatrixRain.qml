@@ -20,7 +20,7 @@
 //   density        — fraction of columns active (0.0–1.0, default 1.0)
 
 import QtQuick
-
+import ".."
 Item {
     id: root
 
@@ -28,7 +28,7 @@ Item {
     // PUBLIC PROPERTIES
     // ============================================================
     property bool   running:        true
-    property color  charColor:      colors.col_source_color   // bright leading glyph
+    property color  charColor:      Colors.col_source_color   // bright leading glyph
     property int    tailMin:        26           // shortest trail (rows)
     property int    tailMax:        48          // longest  trail (rows)
     property real   cascadeSpeed:   0.5      // base rows advanced per tick

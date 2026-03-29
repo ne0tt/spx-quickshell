@@ -16,7 +16,7 @@ DropdownBase {
 
     reloadableId: "notifDropdown"
 
-    WlrLayershell.keyboardFocus: drop.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    keyboardFocusEnabled: true
 
     Item { focus: true; Keys.onEscapePressed: drop.closePanel() }
 

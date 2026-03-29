@@ -2,7 +2,7 @@ import Quickshell
 import Quickshell.Wayland
 import QtQuick
 import QtQuick.Effects
-
+import ".."
 // ============================================================
 // DROPDOWN BASE — shared boilerplate for all drop-down panels.
 //
@@ -59,6 +59,7 @@ PanelWindow {
     // Sit above the Top-layer main bar so dropdowns always render over it
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.exclusionMode: ExclusionMode.Ignore
+    WlrLayershell.keyboardFocus: keyboardFocusEnabled && isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
     // When a panel is open the mask covers only below the bar so bar buttons
     // remain clickable. When closed, restrict to _wrapper (height 0).
     Item {
@@ -74,11 +75,12 @@ PanelWindow {
     // ─── Configurable props ───────────────────────────────
     // Theme defaults mirror shell.qml's colors object — override per-instance
     // only when a dropdown genuinely differs from the shell theme.
+    property bool keyboardFocusEnabled: false
     property int barHeight: 50
     property int openDuration: 280   // roll-up animation speed (ms)
     property int closeDuration: 280  // roll-down animation speed (ms)
     property string fontFamily: config.fontFamily
-    property color panelColor: colors.col_main
+    property color panelColor: Colors.col_main
     property int panelFullHeight: 200
     property int panelWidth: 260
     property int panelZ: 2000  // above the main bar (1000) but below the workspace glow (3000)
@@ -86,9 +88,9 @@ PanelWindow {
     property bool isOpen: _wrapper.visible
     property color borderColor: "black"
     property real borderWidth: 0
-    property color accentColor: colors.col_source_color
-    property color textColor: colors.col_primary
-    property color dimColor: Qt.rgba(colors.col_source_color.r, colors.col_source_color.g, colors.col_source_color.b, 0.45)
+    property color accentColor: Colors.col_source_color
+    property color textColor: Colors.col_primary
+    property color dimColor: Qt.rgba(Colors.col_source_color.r, Colors.col_source_color.g, Colors.col_source_color.b, 0.45)
 
     // Lets subclasses that control animation timing arm isOpen
     property alias panelVisible: _wrapper.visible
@@ -451,11 +453,11 @@ PanelWindow {
                 width: parent.width - 30
                 height: 12
                 z: 100
-                backgroundColor: colors.col_background
+                backgroundColor: Colors.col_background
                 borderColor: "black"
                 glowColor: _base.accentColor
                 trailColor: _base.accentColor
-                ambientColor: colors.col_main
+                ambientColor: Colors.col_main
                 sweepDuration: 1000
             }
 

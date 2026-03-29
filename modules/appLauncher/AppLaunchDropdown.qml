@@ -3,6 +3,7 @@ import Quickshell.Wayland
 import QtQuick
 import QtQuick.Controls
 import "../../base"
+import "../.."
 
 // ============================================================
 // APP LAUNCH DROPDOWN — inline app search panel that drops down
@@ -23,11 +24,7 @@ DropdownBase {
     id: _drop
     reloadableId: "appLaunchDropdown"
 
-    // Keyboard focus while open ─────────────────────────────
-    // Exclusive so typing works immediately without clicking the search field first.
-    WlrLayershell.keyboardFocus: _drop.isOpen
-                                 ? WlrKeyboardFocus.Exclusive
-                                 : WlrKeyboardFocus.None
+    keyboardFocusEnabled: true
 
     // ── Geometry ────────────────────────────────────────────
     panelZ:       1   // above all other dropdowns and the main bar
@@ -151,7 +148,7 @@ DropdownBase {
         Rectangle {
             anchors.fill: parent
             radius: 8
-            color: colors.col_background
+            color: Colors.col_background
         }
 
         // Unfocused border overlay
@@ -159,7 +156,7 @@ DropdownBase {
             anchors.fill: parent
             radius: 8
             color: "transparent"
-            border.color: Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.25)
+            border.color: Qt.rgba(Colors.col_primary.r, Colors.col_primary.g, Colors.col_primary.b, 0.25)
             border.width: 1
             visible: !searchField.activeFocus
         }
@@ -185,7 +182,7 @@ DropdownBase {
 
                 // Conical gradient sweeping clockwise from current angle
                 var grad = ctx.createConicalGradient(cx, cy, angle)
-                var sc = colors.col_source_color
+                var sc = Colors.col_source_color
                 var c1 = Qt.rgba(sc.r, sc.g, sc.b, 1.0).toString()
                 grad.addColorStop(0,    c1)        // source_color half
                 grad.addColorStop(0.5,  "#C47FD5") // purple half — chasing
@@ -218,8 +215,8 @@ DropdownBase {
             font.family: _drop.fontFamily
             font.pixelSize: 16
             color: searchField.activeFocus
-                   ? colors.col_source_color
-                   : Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.8)
+                   ? Colors.col_source_color
+                   : Qt.rgba(Colors.col_primary.r, Colors.col_primary.g, Colors.col_primary.b, 0.8)
             Behavior on color { ColorAnimation { duration: 200 } }
         }
 
@@ -228,7 +225,7 @@ DropdownBase {
             anchors { left: _searchIcon.right; leftMargin: 8; right: parent.right; rightMargin: 10; verticalCenter: parent.verticalCenter }
             visible: searchField.text.length === 0
             text: "Search applications…"
-            color: Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.25)
+            color: Qt.rgba(Colors.col_primary.r, Colors.col_primary.g, Colors.col_primary.b, 0.25)
             font.pixelSize: 14
             font.family: _drop.fontFamily
         }
@@ -237,10 +234,10 @@ DropdownBase {
         TextInput {
             id: searchField
             anchors { left: _searchIcon.right; leftMargin: 8; right: _countPill.left; rightMargin: 8; verticalCenter: parent.verticalCenter }
-            color: colors.col_source_color
+            color: Colors.col_source_color
             font.pixelSize: 14
             font.family: _drop.fontFamily
-            selectionColor: Qt.rgba(colors.col_source_color.r, colors.col_source_color.g, colors.col_source_color.b, 0.3)
+            selectionColor: Qt.rgba(Colors.col_source_color.r, Colors.col_source_color.g, Colors.col_source_color.b, 0.3)
             clip: true
 
             onTextChanged: _drop._filter(text)
@@ -268,13 +265,13 @@ DropdownBase {
             anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
             width:  _countText.implicitWidth + 14
             height: 20; radius: 10
-            color: Qt.rgba(colors.col_source_color.r, colors.col_source_color.g, colors.col_source_color.b, 0.12)
+            color: Qt.rgba(Colors.col_source_color.r, Colors.col_source_color.g, Colors.col_source_color.b, 0.12)
 
             Text {
                 id: _countText
                 anchors.centerIn: parent
                 text: filteredApps.count
-                color: Qt.rgba(colors.col_source_color.r, colors.col_source_color.g, colors.col_source_color.b, 0.7)
+                color: Qt.rgba(Colors.col_source_color.r, Colors.col_source_color.g, Colors.col_source_color.b, 0.7)
                 font.pixelSize: 11
                 font.family: _drop.fontFamily
                 font.weight: Font.Bold
@@ -289,7 +286,7 @@ DropdownBase {
         width:   _drop.panelWidth - 20
         height:  1
         visible: _drop._hasQuery
-        color:   Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.12)
+        color:   Qt.rgba(Colors.col_primary.r, Colors.col_primary.g, Colors.col_primary.b, 0.12)
     }
 
     // ── Empty state label ────────────────────────────────────
@@ -300,7 +297,7 @@ DropdownBase {
         visible: _drop._hasQuery && filteredApps.count === 0
         text: "No apps matching \"" + searchField.text + "\""
         horizontalAlignment: Text.AlignHCenter
-        color: Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.35)
+        color: Qt.rgba(Colors.col_primary.r, Colors.col_primary.g, Colors.col_primary.b, 0.35)
         font.pixelSize: 13
         font.family: _drop.fontFamily
     }
@@ -324,7 +321,7 @@ DropdownBase {
             policy: ScrollBar.AsNeeded
             contentItem: Rectangle {
                 implicitWidth: 4; radius: 2
-                color: Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.35)
+                color: Qt.rgba(Colors.col_primary.r, Colors.col_primary.g, Colors.col_primary.b, 0.35)
             }
             background: Rectangle { color: "transparent" }
         }
@@ -339,9 +336,9 @@ DropdownBase {
             height: _drop._rowH
             radius: 6
             color: appList.currentIndex === index
-                   ? Qt.rgba(colors.col_source_color.r, colors.col_source_color.g, colors.col_source_color.b, 0.13)
+                   ? Qt.rgba(Colors.col_source_color.r, Colors.col_source_color.g, Colors.col_source_color.b, 0.13)
                    : (rHover.containsMouse
-                      ? Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.07)
+                      ? Qt.rgba(Colors.col_primary.r, Colors.col_primary.g, Colors.col_primary.b, 0.07)
                       : "transparent")
             Behavior on color { ColorAnimation { duration: 80 } }
 
@@ -350,14 +347,14 @@ DropdownBase {
                 visible: appList.currentIndex === _row.index
                 anchors { left: parent.left; leftMargin: 2; verticalCenter: parent.verticalCenter }
                 width: 3; height: 18; radius: 2
-                color: colors.col_source_color
+                color: Colors.col_source_color
             }
 
             Text {
                 anchors { left: parent.left; leftMargin: 16; right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
                 text:  _row.name
                 elide: Text.ElideRight
-                color: appList.currentIndex === _row.index ? colors.col_source_color : colors.col_primary
+                color: appList.currentIndex === _row.index ? Colors.col_source_color : Colors.col_primary
                 font.pixelSize: 14
                 font.family:    _drop.fontFamily
                 Behavior on color { ColorAnimation { duration: 80 } }

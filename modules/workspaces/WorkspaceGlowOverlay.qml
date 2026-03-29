@@ -3,6 +3,7 @@ import Quickshell.Wayland
 import Quickshell.Hyprland
 import QtQuick
 import QtQuick.Effects
+import "../.."
 
 // ============================================================
 // WORKSPACE GLOW OVERLAY — re-renders the active workspace glow
@@ -92,7 +93,7 @@ PanelWindow {
             width:  overlay._wsItemW
             height: overlay._wsItemH
             radius: 6
-            color:  colors.col_source_color
+            color:  Colors.col_source_color
         }
 
         MultiEffect {

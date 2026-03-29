@@ -7,6 +7,7 @@ import QtQuick.Controls
 import QtQuick.Effects
 import "../../base"
 import "../../state"
+import "../.."
 
 // ============================================================
 // VOLUME DROPDOWN — extends DropdownBase (no boilerplate duplication)
@@ -15,7 +16,7 @@ DropdownBase {
     id: volDrop
     reloadableId: "volumeDropdown"
 
-    WlrLayershell.keyboardFocus: volDrop.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    keyboardFocusEnabled: true
 
     Item { focus: true; Keys.onEscapePressed: volDrop.closePanel() }
 
@@ -30,8 +31,8 @@ DropdownBase {
     // ── Shared state (AppState singleton) ──────────────────────
     // _dragVolume overrides volume display while the slider is being dragged
     property int _dragVolume: -1
-    readonly property int  volume: _dragVolume >= 0 ? _dragVolume : AppState.volume
-    readonly property bool muted:  AppState.muted
+    readonly property int  volume: _dragVolume >= 0 ? _dragVolume : VolumeState.volume
+    readonly property bool muted:  VolumeState.muted
 
     // ── Media state ─────────────────────────────────────────
     property string mediaTitle: "No media playing"
@@ -264,7 +265,7 @@ DropdownBase {
                 width: parent.width
                 height: 6
                 radius: 3
-                color: colors.col_background
+                color: Colors.col_background
 
                 Rectangle {
                     width: parent.width * (volDrop.muted ? 0 : volDrop.volume / 100)
@@ -281,7 +282,7 @@ DropdownBase {
                 radius: 9
                 color: volDrop.accentColor
                 border.width: 1
-                border.color: colors.col_background
+                border.color: Colors.col_background
                 anchors.verticalCenter: parent.verticalCenter
                 x: Math.max(0, Math.min(
                        parent.width - width,
@@ -299,7 +300,7 @@ DropdownBase {
                         mx / (parent.width - handle.width) * 100
                     )))
                     volDrop._dragVolume = newVol
-                    AppState.setVolume(newVol)
+                    VolumeState.setVolume(newVol)
                 }
 
                 onPressed:         mouse => setFromX(mouse.x)

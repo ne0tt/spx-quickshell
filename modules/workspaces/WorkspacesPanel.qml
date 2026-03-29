@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell.Hyprland
 import QtQuick.Effects
+import "../.."
 
 Item {
     id: workspacesPanel
@@ -60,8 +61,8 @@ Item {
                 border.color: "black"
                 border.width: 1
                 color: Hyprland.focusedWorkspace?.id === parent.wsId
-                       ? colors.col_source_color
-                       : colors.col_background
+                       ? Colors.col_source_color
+                       : Colors.col_background
 
             }
 

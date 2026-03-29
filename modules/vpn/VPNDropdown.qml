@@ -12,7 +12,7 @@ DropdownBase {
     id: vpnDrop
     reloadableId: "vpnDropdown"
 
-    WlrLayershell.keyboardFocus: vpnDrop.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    keyboardFocusEnabled: true
 
     Item { focus: true; Keys.onEscapePressed: vpnDrop.closePanel() }
 

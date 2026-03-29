@@ -13,7 +13,7 @@ DropdownBase {
     id: netDrop
     reloadableId: "networkDropdown"
 
-    WlrLayershell.keyboardFocus: netDrop.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    keyboardFocusEnabled: true
 
     Item { focus: true; Keys.onEscapePressed: netDrop.closePanel() }
 

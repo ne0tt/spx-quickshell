@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import "../.."
 
 Rectangle {
     id: clockPanel
@@ -12,7 +13,7 @@ Rectangle {
     property int fontWeight: config.fontWeight
     property bool fontBold: false
     property color textColor: "white"
-    property color backgroundColor: colors.col_background
+    property color backgroundColor: Colors.col_background
     property color borderColor: "black"
 
     signal clicked(real clickX, real clickY)

@@ -7,7 +7,7 @@ DropdownBase {
     id: batteryDrop
     reloadableId: "batteryDropdown"
 
-    WlrLayershell.keyboardFocus: batteryDrop.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    keyboardFocusEnabled: true
 
     Item { focus: true; Keys.onEscapePressed: batteryDrop.closePanel() }
 

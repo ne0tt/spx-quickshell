@@ -1,6 +1,7 @@
 // components/NetworkButton.qml
 
 import QtQuick
+import "../.."
 
 // ============================================================
 // NETWORK BUTTON — bar pill showing the active Ethernet IP.
@@ -17,10 +18,10 @@ Item {
     property string ip:              ""
 
     property bool   isActive:        false
-    property color  accentColor:     colors.col_primary
-    property color  activeColor:     colors.col_source_color
-    property color  hoverColor:      colors.col_source_color
-    property color  backgroundColor: colors.col_background
+    property color  accentColor:     Colors.col_primary
+    property color  activeColor:     Colors.col_source_color
+    property color  hoverColor:      Colors.col_source_color
+    property color  backgroundColor: Colors.col_background
 
     property bool   _hovered: false
 

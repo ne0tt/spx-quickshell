@@ -6,12 +6,13 @@ import Quickshell
 import Quickshell.Wayland
 import QtQuick
 import "../../base"
+import "../.."
 
 DropdownBase {
     id: _drop
     reloadableId: "trayMenu"
 
-    WlrLayershell.keyboardFocus: _drop.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    keyboardFocusEnabled: true
 
     Item { focus: true; Keys.onEscapePressed: _drop.closePanel() }
 
@@ -76,7 +77,7 @@ DropdownBase {
                         anchors.leftMargin: 4
                         anchors.rightMargin: 4
                         height: 1
-                        color: colors.col_primary
+                        color: Colors.col_primary
                         opacity: 0.2
                     }
                 }
@@ -88,7 +89,7 @@ DropdownBase {
                     height: 30
                     radius: 4
                     color: _itemArea.containsMouse && (modelData.enabled || modelData.hasChildren)
-                           ? Qt.rgba(colors.col_source_color.r, colors.col_source_color.g, colors.col_source_color.b, 0.15)
+                           ? Qt.rgba(Colors.col_source_color.r, Colors.col_source_color.g, Colors.col_source_color.b, 0.15)
                            : "transparent"
                     Behavior on color { ColorAnimation { duration: 80 } }
 
@@ -103,8 +104,8 @@ DropdownBase {
                         font.pixelSize: 12
                         elide: Text.ElideRight
                         color: (!modelData.enabled && !modelData.hasChildren)
-                               ? Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.35)
-                               : _itemArea.containsMouse ? colors.col_source_color : colors.col_primary
+                               ? Qt.rgba(Colors.col_primary.r, Colors.col_primary.g, Colors.col_primary.b, 0.35)
+                               : _itemArea.containsMouse ? Colors.col_source_color : Colors.col_primary
                         Behavior on color { ColorAnimation { duration: 80 } }
                     }
 
@@ -116,7 +117,7 @@ DropdownBase {
                         anchors.rightMargin: 10
                         text: _entryDelegate.expanded ? "▾" : "▸"
                         font.pixelSize: 10
-                        color: _itemArea.containsMouse ? colors.col_source_color : colors.col_primary
+                        color: _itemArea.containsMouse ? Colors.col_source_color : Colors.col_primary
                         Behavior on color { ColorAnimation { duration: 80 } }
                     }
 
@@ -161,7 +162,7 @@ DropdownBase {
                                 anchors.leftMargin: 24
                                 anchors.rightMargin: 4
                                 height: 1
-                                color: colors.col_primary
+                                color: Colors.col_primary
                                 opacity: 0.2
                             }
 
@@ -170,7 +171,7 @@ DropdownBase {
                                 anchors.fill: parent
                                 radius: 4
                                 color: _subArea.containsMouse && modelData.enabled
-                                       ? Qt.rgba(colors.col_source_color.r, colors.col_source_color.g, colors.col_source_color.b, 0.15)
+                                       ? Qt.rgba(Colors.col_source_color.r, Colors.col_source_color.g, Colors.col_source_color.b, 0.15)
                                        : "transparent"
                                 Behavior on color { ColorAnimation { duration: 80 } }
 
@@ -185,8 +186,8 @@ DropdownBase {
                                     font.pixelSize: 12
                                     elide: Text.ElideRight
                                     color: !modelData.enabled
-                                           ? Qt.rgba(colors.col_primary.r, colors.col_primary.g, colors.col_primary.b, 0.35)
-                                           : _subArea.containsMouse ? colors.col_source_color : colors.col_primary
+                                           ? Qt.rgba(Colors.col_primary.r, Colors.col_primary.g, Colors.col_primary.b, 0.35)
+                                           : _subArea.containsMouse ? Colors.col_source_color : Colors.col_primary
                                     Behavior on color { ColorAnimation { duration: 80 } }
                                 }
 

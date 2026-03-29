@@ -38,10 +38,8 @@ Rectangle {
 
     radius:       8
     color:        isCritical ? "#2d1a1a" : "#1b3534"
-    border.color: isCritical ? "#7a2020" : themeColors.col_source_color
+    border.color: isCritical ? "#7a2020" : Colors.col_source_color
     border.width: 2
-
-    Colors { id: themeColors }
 
     // ── Fade in on appear ────────────────────────────────────────────────
     opacity: 0
