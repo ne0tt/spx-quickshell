@@ -14,6 +14,7 @@ import "../../state"
 //   Tab 1 — Media     : full-size media player
 //   Tab 2 — Performance: CPU + RAM usage bars
 //   Tab 3 — Weather   : current conditions + 3-day forecast
+//   Tab 4 — Network   : active interface, IP, gateway, DNS
 // ============================================================
 DropdownBase {
     id: dash
@@ -21,7 +22,7 @@ DropdownBase {
 
     keyboardFocusEnabled: true
 
-    panelWidth: 560
+    panelWidth: 640
 
     // Content y-offsets (ears 16 + top-pad 10 + tab-bar 36 + gap 8 = 70)
     readonly property int _tabBarY: 16 + 10          // tab bar top inside _contentArea
@@ -32,6 +33,7 @@ DropdownBase {
     readonly property int _mediaH:   _contentY + 179 + 12
     readonly property int _perfH:    _contentY + 194 + 12
     readonly property int _weatherH: _contentY + 455 + 12  // current + hourly + weekly + sunrise
+    readonly property int _networkH: _contentY + 280 + 12   // vpn list + map + nm button
 
     panelFullHeight: {
         switch (dash._tab) {
@@ -39,6 +41,7 @@ DropdownBase {
             case 1: return dash._mediaH
             case 2: return dash._perfH
             case 3: return dash._weatherH
+            case 4: return dash._networkH
             default: return dash._mediaH
         }
     }
@@ -86,9 +89,31 @@ DropdownBase {
     property string _load5:       "0.00"
     property string _load15:      "0.00"
 
-    // Tab bar width helpers (content width - 3 gaps of 6px)
+    // Network tab state
+    property string _netIface:    ""
+    property string _netIp:       "—"
+    property string _netGateway:  "—"
+    property string _netDns:      "—"
+    readonly property string _netVlanId: {
+        var parts = _netIp.split(".")
+        if (parts.length >= 3) {
+            var octet = parseInt(parts[2])
+            return isNaN(octet) ? "—" : "VLAN" + octet
+        }
+        return "—"
+    }
+
+    // VPN connections (WireGuard)
+    property var    _vpnConnections: []
+    property var    _vpnActiveSet:   ({})
+    property var    _vpnBuf:         []
+
+    // Map colorization is handled by matugen before quickshell reloads
+    readonly property string _mapPath: "file://" + Quickshell.env("HOME") + "/.config/quickshell/assets/map_colorized_latest.png"
+
+    // Tab bar width helpers (content width - 4 gaps of 6px)
     readonly property int _cw: panelWidth - 28
-    readonly property real _tabW: (_cw - 18) / 4
+    readonly property real _tabW: (_cw - 24) / 5
 
     // ── Lifecycle ─────────────────────────────────────────────
     onAboutToOpen: {
@@ -99,7 +124,6 @@ DropdownBase {
         inlineCal.displayMonth = now.getMonth()
         WeatherState.refresh()
         uptimeProc.running       = true
-        mediaProc.running        = true
         perfProc.running         = true
         updatesProc.running      = true
         kernelProc.running       = true
@@ -114,6 +138,8 @@ DropdownBase {
             if (dash._tab === 0) uptimeProc.running = true
             if (dash._tab === 1) mediaProc.running  = true
             if (dash._tab === 0 || dash._tab === 2) perfProc.running = true
+            if (dash._tab === 4) _netIfaceProc.running = true
+            if (dash._tab === 4) { dash._vpnBuf = []; _vpnProc.running = true }
         }
     }
 
@@ -167,6 +193,77 @@ DropdownBase {
                 var n = parseInt(data.trim())
                 dash._updates = isNaN(n) ? 0 : n
             }
+        }
+    }
+
+    // ── Network info ──────────────────────────────────────────
+    Process {
+        id: _netIfaceProc
+        running: false
+        command: ["sh", "-c",
+            "nmcli -t -f DEVICE,TYPE,STATE dev | awk -F: '$2==\"vlan\" && $3==\"connected\"{print $1; exit}'"]
+        stdout: SplitParser {
+            onRead: data => {
+                var s = data.trim()
+                if (s) dash._netIface = s
+            }
+        }
+        onExited: (code, status) => {
+            if (dash._netIface !== "") {
+                _netDetailsProc.running = true
+            } else {
+                dash._netIp      = "\u2014"
+                dash._netGateway = "\u2014"
+                dash._netDns     = "\u2014"
+            }
+        }
+    }
+
+    Process {
+        id: _netDetailsProc
+        running: false
+        command: ["sh", "-c",
+            "nmcli dev show \"" + dash._netIface + "\" | " +
+            "awk '/^IP4\\.ADDRESS\\[1\\]/{split($0,a,\": *\"); split(a[2],b,\"/\"); printf \"ip=%s\\n\",b[1]} " +
+                  "/^IP4\\.GATEWAY:/{split($0,a,\": *\"); printf \"gw=%s\\n\",a[2]} " +
+                  "/^IP4\\.DNS/{split($0,a,\": *\"); dns=(dns?dns\" \":\"\")a[2]} " +
+                  "END{printf \"dns=%s\\n\",dns}'"]
+        stdout: SplitParser {
+            onRead: data => {
+                var line = data.trim()
+                var eq = line.indexOf("=")
+                if (eq < 0) return
+                var key = line.substring(0, eq)
+                var val = line.substring(eq + 1).trim()
+                if      (key === "ip")  dash._netIp      = val || "\u2014"
+                else if (key === "gw")  dash._netGateway = val || "\u2014"
+                else if (key === "dns") dash._netDns     = val || "\u2014"
+            }
+        }
+    }
+
+    // ── VPN (WireGuard) connections ───────────────────────────
+    Process {
+        id: _vpnProc
+        running: false
+        command: ["sh", "-c",
+            "nmcli -t -f NAME,TYPE,ACTIVE con show | " +
+            "awk -F: '$2==\"wireguard\"{print $1 \"|\" ($3==\"yes\"?\"active\":\"inactive\")}'"]
+        stdout: SplitParser {
+            onRead: data => {
+                var line = data.trim()
+                if (!line) return
+                var sep = line.lastIndexOf("|")
+                if (sep < 0) return
+                dash._vpnBuf.push({ name: line.substring(0, sep), active: line.substring(sep + 1) === "active" })
+            }
+        }
+        onExited: {
+            var newSet = {}
+            dash._vpnBuf.forEach(x => { if (x.active) newSet[x.name] = true })
+            dash._vpnConnections = dash._vpnBuf.map(x => x.name)
+            dash._vpnActiveSet   = newSet
+            dash._vpnBuf         = []
         }
     }
 
@@ -263,8 +360,8 @@ DropdownBase {
     // ── Tab key navigation ──────────────────────────────────
     Item {
         focus: true
-        Keys.onTabPressed:    { dash._tab = (dash._tab + 1) % 4; dash.triggerHex() }
-        Keys.onBacktabPressed: { dash._tab = (dash._tab + 3) % 4; dash.triggerHex() }
+        Keys.onTabPressed:    { dash._tab = (dash._tab + 1) % 5; dash.triggerHex() }
+        Keys.onBacktabPressed: { dash._tab = (dash._tab + 4) % 5; dash.triggerHex() }
         Keys.onEscapePressed: dash.closePanel()
     }
 
@@ -283,7 +380,8 @@ DropdownBase {
                 { icon: "󰕮", label: "Dashboard"   },
                 { icon: "󰝚", label: "Media"        },
                 { icon: "󰻠", label: "Performance"  },
-                { icon: "󰖕", label: "Weather"      }
+                { icon: "󰖕", label: "Weather"      },
+                { icon: "󰈀", label: "Network"      }
             ]
             delegate: Rectangle {
                 id: tabItem
@@ -440,8 +538,7 @@ DropdownBase {
                             font.pixelSize: 13; font.family: config.fontFamily; anchors.verticalCenter: parent.verticalCenter
                             text: dash._updates < 0 ? "checking…"
                                 : dash._updates === 0 ? "system up to date"
-                                : dash._updates === 1 ? "1 update available"
-                                : dash._updates + " updates available"
+                                : numbersToText.convert(dash._updates) + (dash._updates === 1 ? " update available" : " updates available")
                             Behavior on color { ColorAnimation { duration: 160 } }
                         }
 
@@ -751,7 +848,7 @@ DropdownBase {
             property real _artAngle: 0
             Timer {
                 interval: 50
-                running: dash._mediaStatus === "Playing" && dash.isOpen
+                running: dash._mediaStatus === "Playing" && dash.isOpen && dash._tab === 1
                 repeat: true
                 onTriggered: bigArt._artAngle = (bigArt._artAngle + 3) % 360
             }
@@ -1314,5 +1411,210 @@ DropdownBase {
                 }
             }
         }
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // TAB 4: NETWORK
+    // ══════════════════════════════════════════════════════════
+    Item {
+        x:       16 + 14
+        y:       dash._contentY
+        width:   dash._cw
+        height:  280
+        visible: dash._tab === 4
+
+        readonly property real _colGap:  10
+        readonly property real _leftW:   Math.round((width - _colGap) * 0.45) - 100
+        readonly property real _rightW:  width - _leftW - _colGap
+
+        // ── Left: VPN connections ─────────────────────────────
+        Column {
+            id: _vpnCol
+            anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
+            width: parent._leftW
+            spacing: 8
+
+            // Header label
+            Text {
+                text: "WireGuard"
+                font.pixelSize: 10; font.bold: true; font.letterSpacing: 1
+                color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.7)
+                font.family: config.fontFamily
+                leftPadding: 4
+            }
+
+            // Connection cards
+            Repeater {
+                model: dash._vpnConnections
+
+                Rectangle {
+                    id: _vpnCard
+                    required property string modelData
+                    required property int    index
+
+                    width:  _vpnCol.width
+                    height: 44
+                    radius: 8
+                    property bool _isActive: dash._vpnActiveSet[modelData] === true
+                    property bool _isBusy:   false
+
+                    color: _isActive
+                        ? Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.15)
+                        : _vpnCardArea.containsMouse
+                            ? Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.08)
+                            : Qt.rgba(1, 1, 1, 0.04)
+                    border.color: _isActive
+                        ? Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.45)
+                        : Qt.rgba(1, 1, 1, 0.10)
+                    border.width: 1
+                    Behavior on color { ColorAnimation { duration: 160 } }
+
+                    Row {
+                        anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter }
+                        spacing: 8
+
+                        Text {
+                            text: ""
+                            font.family: config.fontFamily; font.pixelSize: 14
+                            color: _vpnCard._isActive ? dash.accentColor : dash.dimColor
+                            anchors.verticalCenter: parent.verticalCenter
+                            Behavior on color { ColorAnimation { duration: 160 } }
+                        }
+                        Column {
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 2
+                            Text {
+                                text: _vpnCard.modelData
+                                font.pixelSize: 12; font.bold: true
+                                color: _vpnCard._isActive ? dash.accentColor : dash.textColor
+                                font.family: config.fontFamily
+                                Behavior on color { ColorAnimation { duration: 160 } }
+                            }
+                            Text {
+                                text: _vpnCard._isBusy ? "connecting…"
+                                    : _vpnCard._isActive ? "active" : "inactive"
+                                font.pixelSize: 10
+                                color: _vpnCard._isActive ? Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.7)
+                                                          : dash.dimColor
+                                font.family: config.fontFamily
+                                Behavior on color { ColorAnimation { duration: 160 } }
+                            }
+                        }
+                    }
+
+                    // ── Right: status dot ────────────────────────────
+                    Rectangle {
+                        id: _vpnDot
+                        anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
+                        width: 8; height: 8; radius: 4
+                        color: _vpnCard._isActive ? dash.accentColor : Qt.rgba(1, 1, 1, 0.10)
+                        Behavior on color { ColorAnimation { duration: 260 } }
+
+                        SequentialAnimation {
+                            running: _vpnCard._isActive && dash.isOpen
+                            loops: Animation.Infinite
+                            NumberAnimation { target: _vpnDot; property: "opacity"; to: 0.25; duration: 900; easing.type: Easing.InOutSine }
+                            NumberAnimation { target: _vpnDot; property: "opacity"; to: 1.0;  duration: 900; easing.type: Easing.InOutSine }
+                            onStopped: _vpnDot.opacity = 1.0
+                        }
+                    }
+
+                    MouseArea {
+                        id: _vpnCardArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        enabled: !_vpnCard._isBusy
+                        onClicked: {
+                            _vpnCard._isBusy = true
+                            _vpnToggleProc.command = _vpnCard._isActive
+                                ? ["nmcli", "con", "down", _vpnCard.modelData]
+                                : ["nmcli", "con", "up",   _vpnCard.modelData]
+                            _vpnToggleProc.running = true
+                        }
+                    }
+                }
+            }
+
+            // Empty state
+            Text {
+                visible: dash._vpnConnections.length === 0
+                text: "No WireGuard\nconnections found"
+                color: dash.dimColor; font.pixelSize: 12
+                font.family: config.fontFamily
+                lineHeight: 1.4
+                leftPadding: 4
+            }
+        }
+
+        // ── Right: map image ──────────────────────────────────
+        Image {
+            anchors {
+                right: parent.right; rightMargin: 15
+                top: parent.top; topMargin: 15
+                bottom: parent.bottom; bottomMargin: 48 + 15  // 48 for nm-editor button + 15 margin
+            }
+            width:  parent._rightW - 30  // 15px margin each side
+            source: Object.keys(dash._vpnActiveSet).length > 0 ? dash._mapPath : "../../assets/map_colorized_latest_dark.png"
+            fillMode: Image.PreserveAspectFit
+            smooth: true
+            asynchronous: true
+            opacity: 0.85
+        }
+
+        // ── nm-connection-editor button (full width, bottom) ───
+        Rectangle {
+            anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+            height: 38
+            radius: 10
+            color: _nmBtnArea.containsMouse
+                ? Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.22)
+                : Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.10)
+            border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.35)
+            border.width: 1
+            Behavior on color { ColorAnimation { duration: 160 } }
+
+            Row {
+                anchors.centerIn: parent
+                spacing: 8
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "󱘖"; font.family: config.fontFamily; font.pixelSize: 16
+                    color: dash.accentColor
+                }
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Connection Editor"
+                    font.pixelSize: 12; font.bold: true
+                    color: dash.textColor; font.family: config.fontFamily
+                }
+            }
+
+            MouseArea {
+                id: _nmBtnArea
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                hoverEnabled: true
+                onClicked: {
+                    _nmConnEditor.running = true
+                    dash.closePanel()
+                }
+            }
+        }
+    }
+
+    Process {
+        id: _vpnToggleProc
+        running: false
+        onExited: {
+            dash._vpnBuf = []
+            _vpnProc.running = true
+        }
+    }
+
+    Process {
+        id: _nmConnEditor
+        running: false
+        command: ["nm-connection-editor"]
     }
 }

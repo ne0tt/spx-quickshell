@@ -14,7 +14,7 @@ Item {
     // ============================================================
     property string fontFamily: config.fontFamily
     property int    fontSize:   config.fontSize
-    property int    iconSize:   16
+    property int    iconSize:   13
     property int    fontWeight: config.fontWeight
 
     property bool   isActive:   false

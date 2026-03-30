@@ -189,7 +189,7 @@ PanelWindow {
         property: "opacity"
         from: 1; to: 0
         duration: _base.closeDuration
-        easing.type: Easing.InCubic
+        easing.type: Easing.InOutCubic
     }
 
     NumberAnimation {
@@ -207,7 +207,7 @@ PanelWindow {
         property: "opacity"
         from: 1; to: 0
         duration: closeDuration
-        easing.type: Easing.InCubic
+        easing.type: Easing.InOutCubic
     }
 
     // Live resize when panelFullHeight or footerHeight changes while the panel is open
@@ -247,7 +247,7 @@ PanelWindow {
         property: "height"
         to: 0
         duration: _base.closeDuration
-        easing.type: Easing.InCubic
+        easing.type: Easing.InOutCubic
         onFinished: _wrapper.visible = false
     }
 
@@ -287,7 +287,7 @@ PanelWindow {
             bottomRightRadius: 19
             color: "black"
             opacity: 0.6
-            layer.enabled: true
+            layer.enabled: !_openAnim.running && !_closeAnim.running
             layer.effect: MultiEffect {
                 blurEnabled: true
                 blur:    0.6
