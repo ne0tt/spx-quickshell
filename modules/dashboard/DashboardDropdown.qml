@@ -472,7 +472,7 @@ DropdownBase {
                     text: WeatherState.wIcon
                     font.family: config.fontFamily
                     font.styleName: "Solid"
-                    font.pixelSize: 44
+                    font.pixelSize: 64
                     color: dash.accentColor
                 }
                 Text {
@@ -1232,32 +1232,32 @@ DropdownBase {
 
                 Text {
                     id: bigWIcon
-                    anchors { left: parent.left; leftMargin: 18; verticalCenter: parent.verticalCenter }
+                    anchors { left: parent.left; leftMargin: 24; verticalCenter: parent.verticalCenter }
                     text: WeatherState.wIcon
-                    font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 64
+                    font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 94
                     color: dash.accentColor
                 }
                 Column {
-                    anchors { left: bigWIcon.right; leftMargin: 12; verticalCenter: parent.verticalCenter }
-                    spacing: 4
-                    Text { text: WeatherState.wTemp;  color: dash.textColor; font.pixelSize: 24; font.bold: true }
-                    Text { text: WeatherState.wDesc;  color: dash.dimColor;  font.pixelSize: 13 }
-                    Text { text: "Feels like " + WeatherState.wFeels; color: dash.dimColor; font.pixelSize: 12 }
+                    anchors { left: bigWIcon.right; leftMargin: 28; verticalCenter: parent.verticalCenter }
+                    spacing: 1
+                    Text { text: WeatherState.wTemp;  color: dash.textColor; font.pixelSize: 32; font.bold: true }
+                    Text { text: WeatherState.wDesc;  color: dash.dimColor;  font.pixelSize: 22 }
+                    Text { text: "Feels like " + WeatherState.wFeels; color: dash.dimColor; font.pixelSize: 18 }
                 }
                 Column {
                     anchors { right: parent.right; rightMargin: 18; verticalCenter: parent.verticalCenter }
                     spacing: 6
                     Row { spacing: 6
-                        Text { text: "󰖝"; font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 12; color: dash.accentColor }
-                        Text { text: WeatherState.wWind; color: dash.dimColor; font.pixelSize: 12 }
+                        Text { text: "󰖝"; font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 13; color: dash.accentColor }
+                        Text { text: WeatherState.wWind; color: dash.dimColor; font.pixelSize: 13 }
                     }
                     Row { spacing: 6
-                        Text { text: ""; font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 12; color: dash.accentColor }
-                        Text { text: WeatherState.wHumidity; color: dash.dimColor; font.pixelSize: 12 }
+                        Text { text: ""; font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 13; color: dash.accentColor }
+                        Text { text: WeatherState.wHumidity; color: dash.dimColor; font.pixelSize: 13 }
                     }
                     Row { spacing: 6
-                        Text { text: "󰖛"; font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 12; color: dash.accentColor }
-                        Text { text: WeatherState.wSunrise; color: dash.dimColor; font.pixelSize: 12 }
+                        Text { text: "󰖛"; font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 13; color: dash.accentColor }
+                        Text { text: WeatherState.wSunrise; color: dash.dimColor; font.pixelSize: 13 }
                     }
                 }
             }

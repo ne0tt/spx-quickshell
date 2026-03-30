@@ -77,8 +77,8 @@ PanelWindow {
     // only when a dropdown genuinely differs from the shell theme.
     property bool keyboardFocusEnabled: false
     property int barHeight: 50
-    property int openDuration: 280   // roll-up animation speed (ms)
-    property int closeDuration: 280  // roll-down animation speed (ms)
+    property int openDuration: 380   // roll-up animation speed (ms)
+    property int closeDuration: 380  // roll-down animation speed (ms)
     property string fontFamily: config.fontFamily
     property color panelColor: Colors.col_main
     property int panelFullHeight: 200
