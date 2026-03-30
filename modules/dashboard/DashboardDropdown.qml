@@ -293,11 +293,11 @@ DropdownBase {
                 var p = data.trim().split("|")
                 if (p.length >= 3) {
                     dash._mediaStatus = p[0] || "Stopped"
-                    dash._mediaTitle  = p[1] || "No media playing"
-                    dash._mediaArtist = p[2] || ""
-                    dash._mediaArtUrl = p.length > 3 ? p[3] : ""
                     dash._mediaAvail  = (dash._mediaStatus === "Playing" || dash._mediaStatus === "Paused")
-                                        && dash._mediaTitle !== "" && dash._mediaTitle !== "No media playing"
+                                        && (p[1] || "") !== ""
+                    dash._mediaTitle  = dash._mediaAvail ? p[1] : ""
+                    dash._mediaArtist = dash._mediaAvail ? (p[2] || "") : ""
+                    dash._mediaArtUrl = dash._mediaAvail && p.length > 3 ? p[3] : ""
                 }
             }
         }
