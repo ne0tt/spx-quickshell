@@ -1559,7 +1559,7 @@ DropdownBase {
             fillMode: Image.PreserveAspectFit
             smooth: true
             asynchronous: true
-            opacity: 0.85
+            opacity: 0.55
         }
 
         // ── nm-connection-editor button (full width, bottom) ───
