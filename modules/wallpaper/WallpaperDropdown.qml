@@ -184,7 +184,7 @@ DropdownBase {
         awwwProc.command    = ["awww", "img", path,
             "--transition-type", "fade",
             "--transition-angle", "0",
-            "--transition-duration", "0.5"]
+            "--transition-duration", "0.3"]
         matugenProc.command = ["matugen", "image", path,
             "--source-color-index", "0",
             "--type", config.matugenType]
