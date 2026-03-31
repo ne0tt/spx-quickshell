@@ -118,7 +118,8 @@ DropdownBase {
     property int    _netKbdFireIdx: -1   // pulses to trigger per-card toggle by index
 
     // Map colorization is handled by matugen before quickshell reloads
-    readonly property string _mapPath: "file://" + Quickshell.env("HOME") + "/.config/quickshell/assets/map_colorized_latest.png"
+    property int     _mapRefreshCounter: 0  // incremented to force map reload
+    readonly property string _mapPath: "file://" + Quickshell.env("HOME") + "/.config/quickshell/assets/map_colorized_latest.png?v=" + _mapRefreshCounter
 
     // Tab bar width helpers (content width - 4 gaps of 6px)
     readonly property int _cw: panelWidth - 28
@@ -139,6 +140,7 @@ DropdownBase {
         hyprlandVerProc.running  = true
         // Prime the VPN state so tab 4 has data without waiting for the timer
         _vpnBuf = []
+        _mapRefreshCounter++  // Force map image reload
         _vpnProc.running = true
     }
 
@@ -146,6 +148,7 @@ DropdownBase {
         if (_tab === 4) {
             _netIfaceProc.running = true
             _vpnBuf = []
+            _mapRefreshCounter++  // Force map image reload
             _vpnProc.running = true
         } else {
             _netFocusIdx = -1
@@ -161,7 +164,7 @@ DropdownBase {
             if (dash._tab === 1) mediaProc.running  = true
             if (dash._tab === 0 || dash._tab === 2) perfProc.running = true
             if (dash._tab === 4) _netIfaceProc.running = true
-            if (dash._tab === 4) { dash._vpnBuf = []; _vpnProc.running = true }
+            if (dash._tab === 4) { dash._vpnBuf = []; dash._mapRefreshCounter++; _vpnProc.running = true }
         }
     }
 
