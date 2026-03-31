@@ -4,7 +4,7 @@
 
 A highly customized Wayland status bar and system interface built with [Quickshell](https://quickshell.outfoxxed.me/) for Hyprland.
 
-**Last Updated**: March 29, 2026 — ✅ Code cleanup and improvements completed
+**Last Updated**: March 31, 2026 — Network tab, Settings keyboard nav, and documentation improvements
 
 ---
 
@@ -57,7 +57,7 @@ quickshell/
     │   └── qmldir                       # Module exports
     ├── dashboard/
     │   ├── DashboardButton.qml      # Dashboard icon button in bar
-    │   └── DashboardDropdown.qml    # Tabbed info panel (Dashboard / Media / Performance / Weather)
+    │   └── DashboardDropdown.qml    # Tabbed info panel (Dashboard / Media / Performance / Weather / Network)
     ├── clock/
     │   └── ClockPanel.qml           # Time/date display (driven by SystemClock)
     ├── lockscreen/
@@ -372,8 +372,10 @@ Components:
 > **🦕 Audio** — On lock, a sound clip of Dennis Nedry from *Jurassic Park* plays ("Ah ah ah, you didn't say the magic word!", Because I am a man child.). The audio file is included in the `assets/` directory.
 
 ### VPN / VLAN
-- `VPNDropdown` — lists all WireGuard connections via `nmcli`, click to bring up/down. `VPNModule` shows a status pill that hides 5 s after the VPN IP clears.
+- `VPNDropdown` — lists all WireGuard connections via `nmcli`, click to bring up/down. `VPNModule` shows a status pill that hides 5 s after the VPN IP clears. Cards flash with a color animation on first activation. An `nmcli monitor` process watches for state changes while the dropdown is open, debounced 800 ms. Pre-loads connection state on startup so the panel height is correct before first open. Keyboard: Escape closes the panel.
 - `VlanDropdown` — lists VLANs with active state. Runs `nmcli monitor` while open for live updates.
+
+> **WireGuard in the Dashboard**: The Dashboard's Network tab (Tab 4) also surfaces WireGuard connections with keyboard navigation and a real-time geo-located world map. See [Network tab (Tab 4)](#dashboard-dashboardbutton--dashboarddropdown) above.
 
 ### Bluetooth
 Power controlled via `rfkill`. Live state from `bluetoothctl monitor` parsed in `BluetoothState`, debounced 600 ms. A 400 ms delay after `rfkill unblock` gives the adapter time to initialize before re-reading state.
@@ -408,6 +410,34 @@ Power controlled via `rfkill`. Live state from `bluetoothctl monitor` parsed in 
 **Action rows:** Change Wallpaper (opens `WallpaperDropdown`) and Lock Screen.
 
 **Bar Monitor card** (expandable): lists all detected Wayland outputs; click to reassign `config.barMonitor`.
+
+**Settings keyboard navigation:** The panel has full keyboard control with exclusive focus while open.
+
+| Key | Context | Action |
+|---|---|---|
+| Up / Down | Normal nav | Move focus between the 9 rows (0=Night Light … 8=Lock Screen) |
+| Enter | Normal nav | Activate / toggle the focused row; for expandable cards (Night Light, Bar Monitor) opens the sub-nav |
+| Space | Night Light focused | Toggle the Night Light on/off immediately |
+| Left / Right | Night Light sub-nav | Move the strength slider (Soft → Warm → Hot → Max) |
+| Enter | Night Light sub-nav | Apply the highlighted strength and collapse |
+| Up / Down | Bar Monitor sub-nav | Move focus between detected monitors |
+| Enter | Bar Monitor sub-nav | Apply the selected monitor as `config.barMonitor` and close |
+| Escape | Sub-nav open | Exit sub-nav and collapse the expanded card |
+| Escape | Normal nav | Close the settings panel |
+
+Card index reference for keyboard nav:
+
+| Index | Card |
+|---|---|
+| 0 | Night Light (expandable) |
+| 1 | Animations |
+| 2 | Blur |
+| 3 | Bluetooth |
+| 4 | Floating Launcher |
+| 5 | Workspace Glow |
+| 6 | Wallpaper (opens picker) |
+| 7 | Bar Monitor (expandable) |
+| 8 | Lock Screen |
 
 All state is persisted via the debounced JSON write in `Config.qml`; `FileView` inotify ensures changes are picked up immediately on the next reload.
 
@@ -474,7 +504,7 @@ The `--type` argument is configurable from inside the dropdown itself and persis
 
 ### Dashboard (`DashboardButton` + `DashboardDropdown`)
 
-`DashboardButton` is a bar icon (`󱇘`) that opens `DashboardDropdown` — a tabbed panel with four tabs, navigable by clicking or with **Tab / Shift+Tab** on the keyboard.
+`DashboardButton` is a bar icon (`󱇘`) that opens `DashboardDropdown` — a tabbed panel with five tabs, navigable by clicking or with **Tab / Shift+Tab** on the keyboard.
 
 **Tabs:**
 
@@ -482,8 +512,9 @@ The `--type` argument is configurable from inside the dropdown itself and persis
 |---|---|---|
 | Dashboard | `󰕮` | Weather card, system info card, clock + inline calendar |
 | Media | `󰝚` | Full media player with album art |
-| Performance | `󰻠` | CPU / RAM / Disk circular gauges + load averages |
+| Performance | `󰻠` | CPU / RAM / Disk circular gauges |
 | Weather | `󰖕` | Full weather: current + 12-hour strip + 7-day forecast |
+| Network | `󰈀` | VLAN IP/gateway/DNS info + WireGuard VPN cards + world map |
 
 **Dashboard tab (Tab 0)** is the default on every open. It shows two side-by-side cards:
 
@@ -525,7 +556,24 @@ All gauges animate smoothly (600 ms `OutCubic`) and turn red when ≥ 85%. The t
 
 **Cross-panel update sync:** When `dashUpgradeProc` (the kitty upgrade terminal launched from the dashboard) finishes, it emits `upgradeCompleted()`. `shell.qml` connects this to `systemUpdatesButton.recheckUpdates()`, which re-runs the full `checkupdates + yay -Qua` check and updates the bar button count — so all three upgrade paths (bar button, dashboard, notifications) leave the system in a consistent state.
 
-**Keyboard:** Tab/Shift+Tab cycle tabs; Escape closes the panel (exclusive keyboard focus while open).
+**Network tab (Tab 4)** shows the current VLAN network connection alongside WireGuard VPN management:
+
+- **Network info**: detects the active VLAN interface via `nmcli`, shows IP address, gateway, and DNS servers. The VLAN ID is derived from the third IP octet (e.g. `192.168.10.x` → `VLAN10`).
+- **WireGuard VPN cards**: lists all `nmcli` WireGuard connections as `SelectableCard` items. Click (or keyboard Enter) to bring a connection up or down. Cards flash on activation; busy spinner while toggling.
+- **World map**: a colorized equirectangular world map fills the right column. When no VPN is active a darker map variant is shown. When a VPN is active the map switches to the colorized version and a **pulsing geo-dot** appears at the VPN server's location (three staggered ripple rings + inner white dot). The server location is resolved via `http://ip-api.com/json` using the current external IP — when a full-tunnel VPN is active this automatically resolves to the VPN server's geographic location without needing root access.
+- **Connection Editor button**: a full-width button at the bottom opens `nm-connection-editor`.
+- **Data refresh**: network info and VPN list re-fetch immediately on switching to this tab and every 3 s while the tab is visible.
+
+**Network tab keyboard navigation:**
+
+| Key | Action |
+|---|---|
+| Up / Down | Move focus ring between VPN connection cards and the Connection Editor button |
+| Enter | Toggle focused VPN (up/down) or open `nm-connection-editor` if the button is focused |
+| Tab / Shift+Tab | Switch to next/previous tab |
+| Escape | Close the panel |
+
+**Keyboard:** Tab/Shift+Tab cycle all five tabs; Escape closes the panel (exclusive keyboard focus while open).
 
 **Global shortcut:** `SUPER CTRL, D` → `quickshell:toggleDashboardDropdown`
 
