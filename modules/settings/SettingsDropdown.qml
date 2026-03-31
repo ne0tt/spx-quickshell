@@ -22,7 +22,90 @@ DropdownBase {
 
     keyboardFocusEnabled: true
 
-    Item { focus: true; Keys.onEscapePressed: settingsDrop.closePanel() }
+    Item {
+        focus: true
+        Keys.onPressed: function(event) {
+            // ── Escape: exit sub-nav or close panel ──────────────
+            if (event.key === Qt.Key_Escape) {
+                if (settingsDrop._inSubNav) {
+                    settingsDrop._inSubNav = false
+                    if (settingsDrop._navFocus === 0) {
+                        settingsDrop._nlExpanded = false
+                        if (settingsDrop.isOpen) settingsDrop.resizePanel()
+                    } else if (settingsDrop._navFocus === 7) {
+                        settingsDrop._monExpanded = false
+                        if (settingsDrop.isOpen) settingsDrop.resizePanel()
+                    }
+                } else {
+                    settingsDrop.closePanel()
+                }
+                event.accepted = true
+                return
+            }
+
+            // ── Space: toggle the switch on expandable cards ──────
+            if (event.key === Qt.Key_Space) {
+                if (settingsDrop._navFocus === 0) {
+                    settingsDrop.toggleNightLight()
+                    event.accepted = true
+                    return
+                }
+            }
+
+            // ── Left / Right: slider control (Night Light sub-nav) ─
+            if (event.key === Qt.Key_Left || event.key === Qt.Key_Right) {
+                if (settingsDrop._inSubNav && settingsDrop._navFocus === 0) {
+                    var sdir = (event.key === Qt.Key_Right) ? 1 : -1
+                    settingsDrop._nlSubFocus = Math.max(0, Math.min(3, settingsDrop._nlSubFocus + sdir))
+                    event.accepted = true
+                    return
+                }
+            }
+
+            // ── Up / Down: move focus ─────────────────────────────
+            if (event.key === Qt.Key_Up || event.key === Qt.Key_Down) {
+                var dir = (event.key === Qt.Key_Down) ? 1 : -1
+                if (settingsDrop._inSubNav) {
+                    if (settingsDrop._navFocus === 0) {
+                        settingsDrop._nlSubFocus = Math.max(0, Math.min(3, settingsDrop._nlSubFocus + dir))
+                    } else if (settingsDrop._navFocus === 7) {
+                        settingsDrop._monSubFocus = Math.max(0, Math.min(
+                            Quickshell.screens.length - 1, settingsDrop._monSubFocus + dir))
+                    }
+                } else {
+                    var next = settingsDrop._navFocus + dir
+                    if (settingsDrop._navFocus < 0) next = (dir > 0) ? 0 : 8
+                    settingsDrop._navFocus = Math.max(0, Math.min(8, next))
+                }
+                event.accepted = true
+                return
+            }
+
+            // ── Enter / Return: activate ──────────────────────────
+            if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                if (settingsDrop._inSubNav) {
+                    if (settingsDrop._navFocus === 0) {
+                        settingsDrop.setNightLightStrength(
+                            ["soft","warm","hot","max"][settingsDrop._nlSubFocus])
+                        settingsDrop._inSubNav = false
+                        settingsDrop._nlExpanded = false
+                        if (settingsDrop.isOpen) settingsDrop.resizePanel()
+                    } else if (settingsDrop._navFocus === 7) {
+                        var screens = []
+                        for (var i = 0; i < Quickshell.screens.length; i++)
+                            screens.push(Quickshell.screens[i].name)
+                        var chosen = screens[settingsDrop._monSubFocus]
+                        settingsDrop.closePanel()
+                        config.barMonitor = chosen
+                    }
+                } else if (settingsDrop._navFocus >= 0) {
+                    settingsDrop._activateCard(settingsDrop._navFocus)
+                }
+                event.accepted = true
+                return
+            }
+        }
+    }
 
     // Row geometry — bump _rowCount when adding/removing toggle rows.
     // Night Light and Bar Monitor cards are counted separately below.
@@ -58,6 +141,35 @@ DropdownBase {
     // Bar monitor list expand/collapse state
     property bool _monExpanded: false
 
+    // Optimistic local mirrors — flip immediately so pills animate before
+    // the underlying command/config write finishes.
+    property bool _nlPending:       nightLight
+    property bool _animPending:     config.animations
+    property bool _blurPending:     config.blur
+    property bool _btPending:       BluetoothState.btPowered
+    property bool _launcherPending: config.launcherFloating
+    property bool _glowPending:     config.workspaceGlow
+
+    onNightLightChanged:                   _nlPending       = nightLight
+    onBtPoweredChanged:                    _btPending       = BluetoothState.btPowered
+    Connections {
+        target: config
+        function onAnimationsChanged()     { settingsDrop._animPending     = config.animations }
+        function onBlurChanged()           { settingsDrop._blurPending     = config.blur }
+        function onLauncherFloatingChanged(){ settingsDrop._launcherPending = config.launcherFloating }
+        function onWorkspaceGlowChanged()  { settingsDrop._glowPending     = config.workspaceGlow }
+    }
+
+    // ── Keyboard navigation state ─────────────────────────
+    // _navFocus: -1 = nothing focused, 0-8 = card index
+    //   0=NightLight  1=Animations  2=Blur  3=Bluetooth
+    //   4=LauncherFloat  5=WorkspaceGlow  6=Wallpaper
+    //   7=BarMonitor  8=LockScreen
+    property int  _navFocus:    -1
+    property bool _inSubNav:    false   // navigating items inside an expanded card
+    property int  _nlSubFocus:  0       // 0=soft 1=warm 2=hot 3=max
+    property int  _monSubFocus: 0       // index into Quickshell.screens
+
     // Apply Hyprland settings for any non-default value once Config finishes
     // loading from disk. Component.onCompleted handles the hot-reload case
     // (Config already loaded); Connections handles cold start (Config loads
@@ -81,6 +193,8 @@ DropdownBase {
     onAboutToOpen: {
         nightLightCheck.running = true
         BluetoothState._btCheckProc.running = true
+        _navFocus = -1
+        _inSubNav = false
     }
 
     // ═══════════════════════════════════════════════════════
@@ -141,6 +255,7 @@ DropdownBase {
     function toggleNightLight() {
         if (settingsDrop._nightLightBusy) return
         settingsDrop._nightLightBusy = true
+        settingsDrop._nlPending = !settingsDrop._nlPending
         if (settingsDrop.nightLight) {
             nightLightDisable.running = true
         } else {
@@ -169,9 +284,10 @@ DropdownBase {
     }
 
     function toggleAnimations() {
-        config.animations      = !config.animations
-        animationsProc.target  = config.animations
-        animationsProc.running = true
+        settingsDrop._animPending = !settingsDrop._animPending
+        config.animations         = settingsDrop._animPending
+        animationsProc.target     = settingsDrop._animPending
+        animationsProc.running    = true
     }
 
     // ═══════════════════════════════════════════════════════
@@ -187,16 +303,55 @@ DropdownBase {
     }
 
     function toggleBlur() {
-        config.blur          = !config.blur
-        blurProc.target      = config.blur
-        blurProc.running     = true
+        settingsDrop._blurPending = !settingsDrop._blurPending
+        config.blur               = settingsDrop._blurPending
+        blurProc.target           = settingsDrop._blurPending
+        blurProc.running          = true
     }
 
     // ═══════════════════════════════════════════════════════
     // BLUETOOTH POWER — delegated to AppState
     // ═══════════════════════════════════════════════════════
 
-    function toggleBluetooth() { BluetoothState.togglePower() }
+    function toggleBluetooth() {
+        settingsDrop._btPending = !settingsDrop._btPending
+        BluetoothState.togglePower()
+    }
+
+    // ── Keyboard activation dispatch ──────────────────────
+    function _activateCard(idx) {
+        switch (idx) {
+            case 0: // Night Light — expand + enter sub-nav for strength
+                if (!_nlExpanded) { _nlExpanded = true; if (isOpen) resizePanel() }
+                _inSubNav = true
+                var nlKeys = ["soft","warm","hot","max"]
+                var nlIdx = nlKeys.indexOf(config.nightLightStrength)
+                _nlSubFocus = nlIdx < 0 ? 1 : nlIdx
+                break
+            case 1: toggleAnimations(); break
+            case 2: toggleBlur(); break
+            case 3: toggleBluetooth(); break
+            case 4: settingsDrop._launcherPending = !settingsDrop._launcherPending; config.launcherFloating = settingsDrop._launcherPending; break
+            case 5: settingsDrop._glowPending = !settingsDrop._glowPending; config.workspaceGlow = settingsDrop._glowPending; break
+            case 6:
+                closePanel()
+                Qt.callLater(function() {
+                    wpDropdown.panelX = Math.max(0, (root.screen.width / 2) - (wpDropdown.panelWidth / 2) - 16)
+                    root.switchPanel(() => wpDropdown.openPanel())
+                })
+                break
+            case 7: // Bar Monitor — expand + enter sub-nav for monitor list
+                if (!_monExpanded) { _monExpanded = true; if (isOpen) resizePanel() }
+                _inSubNav = true
+                var mIdx = 0
+                for (var i = 0; i < Quickshell.screens.length; i++) {
+                    if (Quickshell.screens[i].name === config.barMonitor) { mIdx = i; break }
+                }
+                _monSubFocus = mIdx
+                break
+            case 8: activateLockscreen(); break
+        }
+    }
 
     // ═══════════════════════════════════════════════════════
     // LOCKSCREEN — launch as separate process
@@ -243,10 +398,10 @@ DropdownBase {
                 width:  parent.width
                 height: parent.height
                 radius: 10
-                color: settingsDrop.nightLight
+                color: settingsDrop._nlPending
                     ? Qt.rgba(settingsDrop.accentColor.r, settingsDrop.accentColor.g, settingsDrop.accentColor.b, 0.10)
                     : Qt.rgba(0, 0, 0, 0.18)
-                border.color: settingsDrop.nightLight
+                border.color: settingsDrop._nlPending
                     ? Qt.rgba(settingsDrop.accentColor.r, settingsDrop.accentColor.g, settingsDrop.accentColor.b, 0.36)
                     : Qt.rgba(1, 1, 1, 0.06)
                 border.width: 1
@@ -272,10 +427,10 @@ DropdownBase {
                     id: _nlIconCircle
                     anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter }
                     width: 32; height: 32; radius: 16
-                    color: settingsDrop.nightLight
+                    color: settingsDrop._nlPending
                         ? Qt.rgba(settingsDrop.accentColor.r, settingsDrop.accentColor.g, settingsDrop.accentColor.b, 0.22)
                         : Qt.rgba(1, 1, 1, 0.05)
-                    border.color: settingsDrop.nightLight
+                    border.color: settingsDrop._nlPending
                         ? Qt.rgba(settingsDrop.accentColor.r, settingsDrop.accentColor.g, settingsDrop.accentColor.b, 0.55)
                         : Qt.rgba(1, 1, 1, 0.10)
                     border.width: 1
@@ -287,7 +442,7 @@ DropdownBase {
                         font.family:    config.fontFamily
                         font.styleName: "Solid"
                         font.pixelSize: 15
-                        color: settingsDrop.nightLight ? settingsDrop.accentColor : settingsDrop.dimColor
+                        color: settingsDrop._nlPending ? settingsDrop.accentColor : settingsDrop.dimColor
                         Behavior on color { ColorAnimation { duration: 260 } }
                     }
                 }
@@ -310,7 +465,7 @@ DropdownBase {
                         text:   settingsDrop._nlStrengthLabel
                         font.family:    config.fontFamily
                         font.pixelSize: 10
-                        color:  settingsDrop.nightLight ? settingsDrop.accentColor : settingsDrop.dimColor
+                        color:  settingsDrop._nlPending ? settingsDrop.accentColor : settingsDrop.dimColor
                         Behavior on color { ColorAnimation { duration: 260 } }
                     }
                 }
@@ -320,15 +475,15 @@ DropdownBase {
                     id: _nlTogglePill
                     anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
                     width: 38; height: 20; radius: 10
-                    color: settingsDrop.nightLight
+                    color: settingsDrop._nlPending
                         ? Qt.rgba(settingsDrop.accentColor.r, settingsDrop.accentColor.g, settingsDrop.accentColor.b, 0.82)
                         : Qt.rgba(1, 1, 1, 0.15)
                     Behavior on color { ColorAnimation { duration: 200 } }
                     Rectangle {
                         width: 14; height: 14; radius: 7
                         anchors.verticalCenter: parent.verticalCenter
-                        x: settingsDrop.nightLight ? parent.width - width - 3 : 3
-                        color: settingsDrop.nightLight ? "white" : Qt.rgba(1, 1, 1, 0.55)
+                        x: settingsDrop._nlPending ? parent.width - width - 3 : 3
+                        color: settingsDrop._nlPending ? "white" : Qt.rgba(1, 1, 1, 0.55)
                         Behavior on x     { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
                         Behavior on color { ColorAnimation  { duration: 180 } }
                     }
@@ -396,8 +551,10 @@ DropdownBase {
                         id: _nlKnob
                         width: 14; height: 14; radius: 7
                         y: 0
-                        x: _sliderArea.parent._snapIdx * (_sliderArea.width - 14) / 3
-                        color: settingsDrop.nightLight ? settingsDrop.accentColor : Qt.rgba(1, 1, 1, 0.75)
+                        x: (settingsDrop._inSubNav && settingsDrop._navFocus === 0)
+                           ? settingsDrop._nlSubFocus * (_sliderArea.width - 14) / 3
+                           : _sliderArea.parent._snapIdx * (_sliderArea.width - 14) / 3
+                        color: settingsDrop._nlPending ? settingsDrop.accentColor : Qt.rgba(1, 1, 1, 0.75)
                         border.color: "black"
                         border.width: 1
                         Behavior on x     { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
@@ -409,8 +566,10 @@ DropdownBase {
                         anchors { left: parent.left; top: _trackBg.bottom; topMargin: 6 }
                         text: "Soft"; font.family: config.fontFamily; font.pixelSize: 10
                         color: config.nightLightStrength === "soft"
-                            ? (settingsDrop.nightLight ? settingsDrop.accentColor : settingsDrop.textColor)
-                            : settingsDrop.dimColor
+                            ? (settingsDrop._nlPending ? settingsDrop.accentColor : settingsDrop.textColor)
+                            : (settingsDrop._inSubNav && settingsDrop._navFocus === 0 && settingsDrop._nlSubFocus === 0)
+                                ? settingsDrop.textColor
+                                : settingsDrop.dimColor
                         Behavior on color { ColorAnimation { duration: 120 } }
                     }
                     Text {
@@ -418,8 +577,10 @@ DropdownBase {
                         anchors { top: _trackBg.bottom; topMargin: 6 }
                         text: "Warm"; font.family: config.fontFamily; font.pixelSize: 10
                         color: config.nightLightStrength === "warm"
-                            ? (settingsDrop.nightLight ? settingsDrop.accentColor : settingsDrop.textColor)
-                            : settingsDrop.dimColor
+                            ? (settingsDrop._nlPending ? settingsDrop.accentColor : settingsDrop.textColor)
+                            : (settingsDrop._inSubNav && settingsDrop._navFocus === 0 && settingsDrop._nlSubFocus === 1)
+                                ? settingsDrop.textColor
+                                : settingsDrop.dimColor
                         Behavior on color { ColorAnimation { duration: 120 } }
                     }
                     Text {
@@ -427,16 +588,20 @@ DropdownBase {
                         anchors { top: _trackBg.bottom; topMargin: 6 }
                         text: "Hot"; font.family: config.fontFamily; font.pixelSize: 10
                         color: config.nightLightStrength === "hot"
-                            ? (settingsDrop.nightLight ? settingsDrop.accentColor : settingsDrop.textColor)
-                            : settingsDrop.dimColor
+                            ? (settingsDrop._nlPending ? settingsDrop.accentColor : settingsDrop.textColor)
+                            : (settingsDrop._inSubNav && settingsDrop._navFocus === 0 && settingsDrop._nlSubFocus === 2)
+                                ? settingsDrop.textColor
+                                : settingsDrop.dimColor
                         Behavior on color { ColorAnimation { duration: 120 } }
                     }
                     Text {
                         anchors { right: parent.right; top: _trackBg.bottom; topMargin: 6 }
                         text: "Max"; font.family: config.fontFamily; font.pixelSize: 10
                         color: config.nightLightStrength === "max"
-                            ? (settingsDrop.nightLight ? settingsDrop.accentColor : settingsDrop.textColor)
-                            : settingsDrop.dimColor
+                            ? (settingsDrop._nlPending ? settingsDrop.accentColor : settingsDrop.textColor)
+                            : (settingsDrop._inSubNav && settingsDrop._navFocus === 0 && settingsDrop._nlSubFocus === 3)
+                                ? settingsDrop.textColor
+                                : settingsDrop.dimColor
                         Behavior on color { ColorAnimation { duration: 120 } }
                     }
 
@@ -454,66 +619,89 @@ DropdownBase {
                     }
                 }
             }
+
+            // ── Keyboard focus ring ──────────────────────────────
+            Rectangle {
+                anchors.fill: parent
+                radius: 10
+                color: "transparent"
+                border.color: settingsDrop._navFocus === 0
+                    ? Qt.rgba(settingsDrop.accentColor.r, settingsDrop.accentColor.g, settingsDrop.accentColor.b,
+                              settingsDrop._inSubNav ? 0.80 : 0.60)
+                    : "transparent"
+                border.width: 1.5
+                Behavior on border.color { ColorAnimation { duration: 150 } }
+            }
         }
 
         SettingsToggleRow {
+            id:          _animRow
             width:       parent.width
             cardIcon:    "󰝥"
             label:       "Animations"
             subtitle:    "Hyprland motion effects"
-            checked:     config.animations
+            checked:     settingsDrop._animPending
             accentColor: settingsDrop.accentColor
             textColor:   settingsDrop.textColor
             dimColor:    settingsDrop.dimColor
+            keyFocused:  settingsDrop._navFocus === 1 && !settingsDrop._inSubNav
             onToggled:   settingsDrop.toggleAnimations()
         }
 
         SettingsToggleRow {
+            id:          _blurRow
             width:       parent.width
             cardIcon:    "󰻑"
             label:       "Blur"
             subtitle:    "Compositor blur effect"
-            checked:     config.blur
+            checked:     settingsDrop._blurPending
             accentColor: settingsDrop.accentColor
             textColor:   settingsDrop.textColor
             dimColor:    settingsDrop.dimColor
+            keyFocused:  settingsDrop._navFocus === 2 && !settingsDrop._inSubNav
             onToggled:   settingsDrop.toggleBlur()
         }
 
         SettingsToggleRow {
+            id:          _btRow
             width:       parent.width
             cardIcon:    "󰂯"
             label:       "Bluetooth"
             subtitle:    "Adapter power"
-            checked:     settingsDrop.btPowered
+            checked:     settingsDrop._btPending
             accentColor: settingsDrop.accentColor
             textColor:   settingsDrop.textColor
             dimColor:    settingsDrop.dimColor
+            keyFocused:  settingsDrop._navFocus === 3 && !settingsDrop._inSubNav
             onToggled:   settingsDrop.toggleBluetooth()
         }
 
         SettingsToggleRow {
+            id:          _launcherRow
             width:       parent.width
             cardIcon:    "󰀻"
             label:       "Floating Launcher"
             subtitle:    "Use popup instead of dropdown"
-            checked:     config.launcherFloating
+            checked:     settingsDrop._launcherPending
             accentColor: settingsDrop.accentColor
             textColor:   settingsDrop.textColor
             dimColor:    settingsDrop.dimColor
-            onToggled:   config.launcherFloating = !config.launcherFloating
+            keyFocused:  settingsDrop._navFocus === 4 && !settingsDrop._inSubNav
+            onToggled:   { settingsDrop._launcherPending = !settingsDrop._launcherPending; config.launcherFloating = settingsDrop._launcherPending }
         }
 
         SettingsToggleRow {
+            id:          _glowRow
             width:       parent.width
             cardIcon:    "󱃄"
             label:       "Workspace Glow"
             subtitle:    "Highlight active workspace"
-            checked:     config.workspaceGlow
+            checked:     settingsDrop._glowPending
             accentColor: settingsDrop.accentColor
             textColor:   settingsDrop.textColor
             dimColor:    settingsDrop.dimColor
-            onToggled:   config.workspaceGlow = !config.workspaceGlow
+            keyFocused:  settingsDrop._navFocus === 5 && !settingsDrop._inSubNav
+            onToggled:   { settingsDrop._glowPending = !settingsDrop._glowPending; config.workspaceGlow = settingsDrop._glowPending }
         }
 
         // WALLPAPER ACTION BUTTON
@@ -606,6 +794,18 @@ DropdownBase {
                             root.switchPanel(() => wpDropdown.openPanel())
                         })
                     }
+                }
+
+                // Keyboard focus ring
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 10
+                    color: "transparent"
+                    border.color: settingsDrop._navFocus === 6
+                        ? Qt.rgba(settingsDrop.accentColor.r, settingsDrop.accentColor.g, settingsDrop.accentColor.b, 0.60)
+                        : "transparent"
+                    border.width: 1.5
+                    Behavior on border.color { ColorAnimation { duration: 150 } }
                 }
             }
         }
@@ -729,11 +929,13 @@ DropdownBase {
                             radius: 6
                             color: _monDelegate._hov
                                    ? Qt.rgba(1, 1, 1, 0.10)
-                                   : _monDelegate.isCurrent
-                                     ? Qt.rgba(settingsDrop.accentColor.r,
-                                               settingsDrop.accentColor.g,
-                                               settingsDrop.accentColor.b, 0.14)
-                                     : "transparent"
+                                   : (settingsDrop._inSubNav && settingsDrop._navFocus === 7 && index === settingsDrop._monSubFocus)
+                                     ? Qt.rgba(1, 1, 1, 0.16)
+                                     : _monDelegate.isCurrent
+                                       ? Qt.rgba(settingsDrop.accentColor.r,
+                                                 settingsDrop.accentColor.g,
+                                                 settingsDrop.accentColor.b, 0.14)
+                                       : "transparent"
                             Behavior on color { ColorAnimation { duration: 120 } }
 
                             Text {
@@ -768,6 +970,19 @@ DropdownBase {
                         }
                     }
                 }
+            }
+
+            // ── Keyboard focus ring ──────────────────────────────
+            Rectangle {
+                anchors.fill: parent
+                radius: 10
+                color: "transparent"
+                border.color: settingsDrop._navFocus === 7
+                    ? Qt.rgba(settingsDrop.accentColor.r, settingsDrop.accentColor.g, settingsDrop.accentColor.b,
+                              settingsDrop._inSubNav ? 0.80 : 0.60)
+                    : "transparent"
+                border.width: 1.5
+                Behavior on border.color { ColorAnimation { duration: 150 } }
             }
         }
 
@@ -854,6 +1069,18 @@ DropdownBase {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
                     onClicked: settingsDrop.activateLockscreen()
+                }
+
+                // Keyboard focus ring
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 10
+                    color: "transparent"
+                    border.color: settingsDrop._navFocus === 8
+                        ? Qt.rgba(settingsDrop.accentColor.r, settingsDrop.accentColor.g, settingsDrop.accentColor.b, 0.60)
+                        : "transparent"
+                    border.width: 1.5
+                    Behavior on border.color { ColorAnimation { duration: 150 } }
                 }
             }
         }

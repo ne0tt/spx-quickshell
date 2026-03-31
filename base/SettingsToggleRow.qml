@@ -36,6 +36,8 @@ Item {
 
     signal toggled(bool newState)
 
+    property bool keyFocused: false
+
     // ── Card background ───────────────────────────────────────
     Rectangle {
         anchors.fill: parent
@@ -143,6 +145,18 @@ Item {
             cursorShape:  Qt.PointingHandCursor
             enabled:      !row.isBusy
             onClicked:    row.toggled(!row.checked)
+        }
+
+        // ── Keyboard focus ring ───────────────────────────────
+        Rectangle {
+            anchors.fill: parent
+            radius: 10
+            color: "transparent"
+            border.color: row.keyFocused
+                ? Qt.rgba(row.accentColor.r, row.accentColor.g, row.accentColor.b, 0.65)
+                : "transparent"
+            border.width: 1.5
+            Behavior on border.color { ColorAnimation { duration: 150 } }
         }
     }
 }
