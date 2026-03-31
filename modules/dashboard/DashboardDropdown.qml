@@ -1640,8 +1640,8 @@ DropdownBase {
                 // Equirectangular projection offsets (image is letterboxed / centered by PreserveAspectFit)
                 readonly property real _offX:    (_mapContainer.width  - _mapImage.paintedWidth)  / 2
                 readonly property real _offY:    (_mapContainer.height - _mapImage.paintedHeight) / 2
-                readonly property real _centerX: _offX + (dash._vpnGeoLon + 180) / 360 * _mapImage.paintedWidth  - 8
-                readonly property real _centerY: _offY + (90 - dash._vpnGeoLat) / 180 * _mapImage.paintedHeight + 19
+                readonly property real _centerX: _offX + (dash._vpnGeoLon + 180) / 360 * _mapImage.paintedWidth  - 10
+                readonly property real _centerY: _offY + (90 - dash._vpnGeoLat) / 180 * _mapImage.paintedHeight + 17
 
                 // Ring 1 — first ripple
                 Rectangle {
