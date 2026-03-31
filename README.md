@@ -1,6 +1,6 @@
 # Quickshell Configuration
 
-<video src="assets/vids/2026-03-31 18-01-15.mp4" controls></video>
+![Screenshot](assets/screenshot2.png)
 
 A highly customized Wayland status bar and system interface built with [Quickshell](https://quickshell.outfoxxed.me/) for Hyprland.
 
