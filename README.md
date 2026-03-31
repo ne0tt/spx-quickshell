@@ -18,6 +18,29 @@ A feature-rich top panel for Hyprland with smooth animations, reactive system st
 
 ---
 
+## Recent Improvements (March 31, 2026)
+
+### ✅ Code Quality Improvements
+- **Font Consistency**: Fixed hardcoded "Hack Nerd Font" references in `NotifCard.qml` to use `config.fontFamily`
+- **Code Cleanup**: Removed all commented/dead code sections throughout `shell.qml`:
+  - Cleaned up unused network, weather, rightPanelSlider imports and references
+  - Removed commented RightPanelSlider implementation and global shortcuts
+  - Simplified dropdown arrays and scrim references
+  - Cleaned up debug statements in `SystemTrayPanel.qml`
+- **Module Structure**: Added missing `qmldir` files for better module organization:
+  - `modules/network/qmldir`
+  - `modules/weather/qmldir` 
+  - `modules/rightPanelSlider/qmldir`
+  - `modules/chat/qmldir`
+
+### 📝 Current Module Status
+| Module | Status | Notes |
+|---|---|---|
+| **Active Modules** | ✅ Enabled | appLauncher, bluetooth, calendar, clock, dashboard, lockscreen, notifications, power, settings, systemTray, systemUpdates, volume, vpn, wallpaper, workspaces |
+| **Available but Disabled** | ⏸️ Ready | network, weather, rightPanelSlider, chat — fully functional with qmldir files, disabled in shell.qml imports |
+
+---
+
 ## File Structure
 
 ```
@@ -117,29 +140,6 @@ quickshell/
     └── systemUpdates/
         └── SystemUpdatesButton.qml  # System package update count indicator
 ```
-
----
-
-## Recent Improvements (March 31, 2026)
-
-### ✅ Code Quality Improvements
-- **Font Consistency**: Fixed hardcoded "Hack Nerd Font" references in `NotifCard.qml` to use `config.fontFamily`
-- **Code Cleanup**: Removed all commented/dead code sections throughout `shell.qml`:
-  - Cleaned up unused network, weather, rightPanelSlider imports and references
-  - Removed commented RightPanelSlider implementation and global shortcuts
-  - Simplified dropdown arrays and scrim references
-  - Cleaned up debug statements in `SystemTrayPanel.qml`
-- **Module Structure**: Added missing `qmldir` files for better module organization:
-  - `modules/network/qmldir`
-  - `modules/weather/qmldir` 
-  - `modules/rightPanelSlider/qmldir`
-  - `modules/chat/qmldir`
-
-### 📝 Current Module Status
-| Module | Status | Notes |
-|---|---|---|
-| **Active Modules** | ✅ Enabled | appLauncher, bluetooth, calendar, clock, dashboard, lockscreen, notifications, power, settings, systemTray, systemUpdates, volume, vpn, wallpaper, workspaces |
-| **Available but Disabled** | ⏸️ Ready | network, weather, rightPanelSlider, chat — fully functional with qmldir files, disabled in shell.qml imports |
 
 ---
 
