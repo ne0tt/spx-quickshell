@@ -58,7 +58,7 @@ DropdownBase {
             }
         }
         onExited: {
-            var names  = vpnDrop._buf.map(x => x.name)
+            var names  = vpnDrop._buf.map(x => x.name).sort((a, b) => a.localeCompare(b))
             var newSet = {}
             vpnDrop._buf.forEach(x => { if (x.active) newSet[x.name] = true })
             vpnDrop._buf          = []

@@ -108,6 +108,15 @@ DropdownBase {
     property var    _vpnActiveSet:   ({})
     property var    _vpnBuf:         []
 
+    // VPN server geo-location (for map pulsing dot)
+    property real   _vpnGeoLat:   0.0
+    property real   _vpnGeoLon:   0.0
+    property bool   _vpnGeoValid: false
+
+    // Network tab keyboard focus (-1 = none, 0..N-1 = VPN cards, N = editor button)
+    property int    _netFocusIdx:   -1
+    property int    _netKbdFireIdx: -1   // pulses to trigger per-card toggle by index
+
     // Map colorization is handled by matugen before quickshell reloads
     readonly property string _mapPath: "file://" + Quickshell.env("HOME") + "/.config/quickshell/assets/map_colorized_latest.png"
 
@@ -128,6 +137,19 @@ DropdownBase {
         updatesProc.running      = true
         kernelProc.running       = true
         hyprlandVerProc.running  = true
+        // Prime the VPN state so tab 4 has data without waiting for the timer
+        _vpnBuf = []
+        _vpnProc.running = true
+    }
+
+    on_TabChanged: {
+        if (_tab === 4) {
+            _netIfaceProc.running = true
+            _vpnBuf = []
+            _vpnProc.running = true
+        } else {
+            _netFocusIdx = -1
+        }
     }
 
     Timer {
@@ -261,9 +283,44 @@ DropdownBase {
         onExited: {
             var newSet = {}
             dash._vpnBuf.forEach(x => { if (x.active) newSet[x.name] = true })
-            dash._vpnConnections = dash._vpnBuf.map(x => x.name)
+            var prevKeys = Object.keys(dash._vpnActiveSet).sort().join(",")
+            var newKeys  = Object.keys(newSet).sort().join(",")
+            dash._vpnConnections = dash._vpnBuf.map(x => x.name).sort((a, b) => a.localeCompare(b))
             dash._vpnActiveSet   = newSet
             dash._vpnBuf         = []
+            if (Object.keys(newSet).length > 0) {
+                if (!dash._vpnGeoValid || prevKeys !== newKeys)
+                    _vpnGeoProc.running = true
+            } else {
+                dash._vpnGeoValid = false
+            }
+        }
+    }
+
+    // ── VPN server geo-location lookup ────────────────────────
+    // When a full-tunnel VPN is active our external IP is the VPN server IP,
+    // so ip-api auto-detects it correctly without needing root to read endpoints.
+    Process {
+        id: _vpnGeoProc
+        running: false
+        command: ["curl", "-sf", "--max-time", "8",
+                  "http://ip-api.com/json?fields=lat,lon,status"]
+        stdout: SplitParser {
+            onRead: data => {
+                var s = data.trim()
+                if (!s) return
+                try {
+                    var obj = JSON.parse(s)
+                    if (obj && obj.status === "success") {
+                        dash._vpnGeoLat   = parseFloat(obj.lat) || 0.0
+                        dash._vpnGeoLon   = parseFloat(obj.lon) || 0.0
+                        dash._vpnGeoValid = true
+                    }
+                } catch (e) {}
+            }
+        }
+        onExited: (code, status) => {
+            if (code !== 0) dash._vpnGeoValid = false
         }
     }
 
@@ -363,6 +420,27 @@ DropdownBase {
         Keys.onTabPressed:    { dash._tab = (dash._tab + 1) % 5; dash.triggerHex() }
         Keys.onBacktabPressed: { dash._tab = (dash._tab + 4) % 5; dash.triggerHex() }
         Keys.onEscapePressed: dash.closePanel()
+
+        // ── Network tab (Tab 4) up/down/enter navigation ─────
+        Keys.onDownPressed: {
+            if (dash._tab !== 4) return
+            var total = dash._vpnConnections.length + 1  // cards + editor button
+            dash._netFocusIdx = (dash._netFocusIdx + 1 + total) % total
+        }
+        Keys.onUpPressed: {
+            if (dash._tab !== 4) return
+            var total = dash._vpnConnections.length + 1
+            dash._netFocusIdx = (dash._netFocusIdx - 1 + total) % total
+        }
+        Keys.onReturnPressed: {
+            if (dash._tab !== 4 || dash._netFocusIdx < 0) return
+            if (dash._netFocusIdx < dash._vpnConnections.length) {
+                dash._netKbdFireIdx = dash._netFocusIdx
+            } else {
+                _nmConnEditor.running = true
+                dash.closePanel()
+            }
+        }
     }
 
     // ══════════════════════════════════════════════════════════
@@ -1447,91 +1525,77 @@ DropdownBase {
             Repeater {
                 model: dash._vpnConnections
 
-                Rectangle {
-                    id: _vpnCard
+                Item {
+                    id: _vpnRow
                     required property string modelData
                     required property int    index
 
                     width:  _vpnCol.width
-                    height: 44
-                    radius: 8
-                    property bool _isActive: dash._vpnActiveSet[modelData] === true
-                    property bool _isBusy:   false
+                    height: 48
 
-                    color: _isActive
-                        ? Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.15)
-                        : _vpnCardArea.containsMouse
-                            ? Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.08)
-                            : Qt.rgba(1, 1, 1, 0.04)
-                    border.color: _isActive
-                        ? Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.45)
-                        : Qt.rgba(1, 1, 1, 0.10)
-                    border.width: 1
-                    Behavior on color { ColorAnimation { duration: 160 } }
+                    property bool _isActive:  dash._vpnActiveSet[modelData] === true
+                    property bool _isBusy:    false
+                    property bool _wasActive: false
+                    readonly property bool _kbdFocused: dash._netFocusIdx === index
 
-                    Row {
-                        anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter }
-                        spacing: 8
+                    on_IsActiveChanged: {
+                        if (_isActive && !_wasActive) _vpnSelCard.flash()
+                        _wasActive = _isActive
+                    }
 
-                        Text {
-                            text: ""
-                            font.family: config.fontFamily; font.pixelSize: 14
-                            color: _vpnCard._isActive ? dash.accentColor : dash.dimColor
-                            anchors.verticalCenter: parent.verticalCenter
-                            Behavior on color { ColorAnimation { duration: 160 } }
-                        }
-                        Column {
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: 2
-                            Text {
-                                text: _vpnCard.modelData
-                                font.pixelSize: 12; font.bold: true
-                                color: _vpnCard._isActive ? dash.accentColor : dash.textColor
-                                font.family: config.fontFamily
-                                Behavior on color { ColorAnimation { duration: 160 } }
-                            }
-                            Text {
-                                text: _vpnCard._isBusy ? "connecting…"
-                                    : _vpnCard._isActive ? "active" : "inactive"
-                                font.pixelSize: 10
-                                color: _vpnCard._isActive ? Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.7)
-                                                          : dash.dimColor
-                                font.family: config.fontFamily
-                                Behavior on color { ColorAnimation { duration: 160 } }
+                    // Keyboard-enter trigger: fires toggle when _netKbdFireIdx matches our index
+                    Connections {
+                        target: dash
+                        function on_NetKbdFireIdxChanged() {
+                            if (dash._netKbdFireIdx === _vpnRow.index && !_vpnRow._isBusy) {
+                                _vpnRow._isBusy = true
+                                _cardToggleProc.running = true
+                                dash._netKbdFireIdx = -1
                             }
                         }
                     }
 
-                    // ── Right: status dot ────────────────────────────
-                    Rectangle {
-                        id: _vpnDot
-                        anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
-                        width: 8; height: 8; radius: 4
-                        color: _vpnCard._isActive ? dash.accentColor : Qt.rgba(1, 1, 1, 0.10)
-                        Behavior on color { ColorAnimation { duration: 260 } }
-
-                        SequentialAnimation {
-                            running: _vpnCard._isActive && dash.isOpen
-                            loops: Animation.Infinite
-                            NumberAnimation { target: _vpnDot; property: "opacity"; to: 0.25; duration: 900; easing.type: Easing.InOutSine }
-                            NumberAnimation { target: _vpnDot; property: "opacity"; to: 1.0;  duration: 900; easing.type: Easing.InOutSine }
-                            onStopped: _vpnDot.opacity = 1.0
+                    Process {
+                        id: _cardToggleProc
+                        running: false
+                        command: _vpnRow._isActive
+                            ? ["nmcli", "connection", "down", _vpnRow.modelData]
+                            : ["nmcli", "connection", "up",   _vpnRow.modelData]
+                        onExited: (code, status) => {
+                            _vpnRow._isBusy = false
+                            dash._vpnBuf    = []
+                            _vpnProc.running = true
                         }
                     }
 
-                    MouseArea {
-                        id: _vpnCardArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        enabled: !_vpnCard._isBusy
+                    SelectableCard {
+                        id: _vpnSelCard
+                        width:       parent.width
+                        isActive:    _vpnRow._isActive
+                        isBusy:      _vpnRow._isBusy
+                        cardIcon:    "󰦝"
+                        label:       _vpnRow.modelData
+                        subtitle:    _vpnRow._isBusy
+                            ? (_vpnRow._isActive ? "Disconnecting…" : "Connecting…")
+                            : (_vpnRow._isActive ? "Connected" : "Disconnected")
+                        isPanelOpen: dash.isOpen
+                        accentColor: dash.accentColor
+                        textColor:   dash.textColor
+                        dimColor:    dash.dimColor
                         onClicked: {
-                            _vpnCard._isBusy = true
-                            _vpnToggleProc.command = _vpnCard._isActive
-                                ? ["nmcli", "con", "down", _vpnCard.modelData]
-                                : ["nmcli", "con", "up",   _vpnCard.modelData]
-                            _vpnToggleProc.running = true
+                            _vpnRow._isBusy         = true
+                            _cardToggleProc.running = true
                         }
+                    }
+
+                    // Keyboard focus ring
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 10
+                        color: "transparent"
+                        border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, _vpnRow._kbdFocused ? 0.8 : 0)
+                        border.width: 2
+                        Behavior on border.color { ColorAnimation { duration: 120 } }
                     }
                 }
             }
@@ -1547,32 +1611,144 @@ DropdownBase {
             }
         }
 
-        // ── Right: map image ──────────────────────────────────
-        Image {
+        // ── Right: map image + VPN server dot ────────────────────
+        Item {
+            id: _mapContainer
             anchors {
                 right: parent.right; rightMargin: 15
                 top: parent.top; topMargin: 15
-                bottom: parent.bottom; bottomMargin: 48 + 15  // 48 for nm-editor button + 15 margin
+                bottom: parent.bottom; bottomMargin: 48 + 15
             }
-            width:  parent._rightW - 30  // 15px margin each side
-            source: Object.keys(dash._vpnActiveSet).length > 0 ? dash._mapPath : "../../assets/map_colorized_latest_dark.png"
-            fillMode: Image.PreserveAspectFit
-            smooth: true
-            asynchronous: true
-            opacity: 0.55
+            width: parent._rightW - 30
+
+            Image {
+                id: _mapImage
+                anchors.fill: parent
+                source: Object.keys(dash._vpnActiveSet).length > 0 ? dash._mapPath : "../../assets/map_colorized_latest_dark.png"
+                fillMode: Image.PreserveAspectFit
+                smooth: true
+                asynchronous: true
+                opacity: 0.55
+            }
+
+            // VPN server location overlay — only visible when geo data is available
+            Item {
+                id: _vpnOverlay
+                anchors.fill: parent
+                visible: dash._vpnGeoValid && Object.keys(dash._vpnActiveSet).length > 0
+
+                // Equirectangular projection offsets (image is letterboxed / centered by PreserveAspectFit)
+                readonly property real _offX:    (_mapContainer.width  - _mapImage.paintedWidth)  / 2
+                readonly property real _offY:    (_mapContainer.height - _mapImage.paintedHeight) / 2
+                readonly property real _centerX: _offX + (dash._vpnGeoLon + 180) / 360 * _mapImage.paintedWidth  - 8
+                readonly property real _centerY: _offY + (90 - dash._vpnGeoLat) / 180 * _mapImage.paintedHeight + 19
+
+                // Ring 1 — first ripple
+                Rectangle {
+                    id: _ring1
+                    x: _vpnOverlay._centerX - 16; y: _vpnOverlay._centerY - 16
+                    width: 28; height: 28; radius: 14
+                    transformOrigin: Item.Center
+                    color: "transparent"
+                    border.color: dash.accentColor
+                    border.width: 1.5
+                    opacity: 0; scale: 0.4
+                    SequentialAnimation {
+                        running: _vpnOverlay.visible && dash.isOpen
+                        loops: Animation.Infinite
+                        ParallelAnimation {
+                            NumberAnimation { target: _ring1; property: "opacity"; from: 0.9; to: 0.0; duration: 1400; easing.type: Easing.OutCubic }
+                            NumberAnimation { target: _ring1; property: "scale";   from: 0.4; to: 2.8; duration: 1400; easing.type: Easing.OutCubic }
+                        }
+                        PauseAnimation { duration: 400 }
+                    }
+                }
+
+                // Ring 2 — second ripple (staggered)
+                Rectangle {
+                    id: _ring2
+                    x: _vpnOverlay._centerX - 16; y: _vpnOverlay._centerY - 16
+                    width: 28; height: 28; radius: 14
+                    transformOrigin: Item.Center
+                    color: "transparent"
+                    border.color: dash.accentColor
+                    border.width: 1.5
+                    opacity: 0; scale: 0.4
+                    SequentialAnimation {
+                        running: _vpnOverlay.visible && dash.isOpen
+                        loops: Animation.Infinite
+                        PauseAnimation { duration: 600 }
+                        ParallelAnimation {
+                            NumberAnimation { target: _ring2; property: "opacity"; from: 0.9; to: 0.0; duration: 1400; easing.type: Easing.OutCubic }
+                            NumberAnimation { target: _ring2; property: "scale";   from: 0.4; to: 2.8; duration: 1400; easing.type: Easing.OutCubic }
+                        }
+                    }
+                }
+
+                // Ring 3 — third ripple (most staggered)
+                Rectangle {
+                    id: _ring3
+                    x: _vpnOverlay._centerX - 16; y: _vpnOverlay._centerY - 16
+                    width: 28; height: 28; radius: 14
+                    transformOrigin: Item.Center
+                    color: "transparent"
+                    border.color: dash.accentColor
+                    border.width: 1.5
+                    opacity: 0; scale: 0.4
+                    SequentialAnimation {
+                        running: _vpnOverlay.visible && dash.isOpen
+                        loops: Animation.Infinite
+                        PauseAnimation { duration: 1200 }
+                        ParallelAnimation {
+                            NumberAnimation { target: _ring3; property: "opacity"; from: 0.9; to: 0.0; duration: 1400; easing.type: Easing.OutCubic }
+                            NumberAnimation { target: _ring3; property: "scale";   from: 0.4; to: 2.8; duration: 1400; easing.type: Easing.OutCubic }
+                        }
+                        PauseAnimation { duration: 200 }
+                    }
+                }
+
+                // Inner dot — scales small→big and fades in/out
+                Rectangle {
+                    id: _vpnMapDot
+                    x: _vpnOverlay._centerX - 6; y: _vpnOverlay._centerY - 6
+                    width: 8; height: 8; radius: 6
+                    transformOrigin: Item.Center
+                    color: "#ffffff"
+                    opacity: 0; scale: 0.3
+                    SequentialAnimation {
+                        running: _vpnOverlay.visible && dash.isOpen
+                        loops: Animation.Infinite
+                        ParallelAnimation {
+                            NumberAnimation { target: _vpnMapDot; property: "opacity"; from: 0.0; to: 1.0; duration: 500; easing.type: Easing.OutCubic }
+                            NumberAnimation { target: _vpnMapDot; property: "scale";   from: 0.3; to: 1.0; duration: 500; easing.type: Easing.OutBack }
+                        }
+                        PauseAnimation { duration: 800 }
+                        ParallelAnimation {
+                            NumberAnimation { target: _vpnMapDot; property: "opacity"; from: 1.0; to: 0.0; duration: 500; easing.type: Easing.InCubic }
+                            NumberAnimation { target: _vpnMapDot; property: "scale";   from: 1.0; to: 0.3; duration: 500; easing.type: Easing.InBack }
+                        }
+                        PauseAnimation { duration: 100 }
+                    }
+                }
+            }
         }
 
         // ── nm-connection-editor button (full width, bottom) ───
         Rectangle {
+            id: _nmEditorBtn
             anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
             height: 38
             radius: 10
-            color: _nmBtnArea.containsMouse
+            readonly property bool _kbdFocused: dash._netFocusIdx === dash._vpnConnections.length
+            color: _nmBtnArea.containsMouse || _kbdFocused
                 ? Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.22)
                 : Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.10)
-            border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.35)
-            border.width: 1
-            Behavior on color { ColorAnimation { duration: 160 } }
+            border.color: _kbdFocused
+                ? Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.8)
+                : Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.35)
+            border.width: _kbdFocused ? 2 : 1
+            Behavior on color        { ColorAnimation { duration: 120 } }
+            Behavior on border.color { ColorAnimation { duration: 120 } }
 
             Row {
                 anchors.centerIn: parent
@@ -1600,15 +1776,6 @@ DropdownBase {
                     dash.closePanel()
                 }
             }
-        }
-    }
-
-    Process {
-        id: _vpnToggleProc
-        running: false
-        onExited: {
-            dash._vpnBuf = []
-            _vpnProc.running = true
         }
     }
 
