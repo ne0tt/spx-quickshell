@@ -120,7 +120,7 @@ quickshell/
 
 ---
 
-## Recent Improvements (March 29, 2026)
+## Recent Improvements (March 31, 2026)
 
 ### ✅ Code Quality Improvements
 - **Font Consistency**: Fixed hardcoded "Hack Nerd Font" references in `NotifCard.qml` to use `config.fontFamily`
