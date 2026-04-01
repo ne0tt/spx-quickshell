@@ -33,6 +33,7 @@ A feature-rich top panel for Hyprland with smooth animations, reactive system st
 ### ✅ Reliability Fixes
 - Fixed CAVA restart flow in `state/Audio.qml` (`restartTimer` scope/usage) and removed CAVA debug log spam from normal operation.
 - Fixed `SystemUpdatesButton` notification-service scoping to prevent `NotifService is not defined` runtime warnings during update checks/cleanup.
+- Unified update counting between `DashboardDropdown` and `SystemUpdatesButton` so both surfaces always show the same total.
 - Improved package update state synchronization across Dashboard, Notifications, and the bar update button:
   - Recheck update count when opening Dashboard.
   - Added periodic background recheck (every 15 minutes) in addition to startup/hourly checks.
@@ -608,6 +609,8 @@ All gauges animate smoothly (600 ms `OutCubic`) and turn red when ≥ 85%. The t
 
 ### Package Updates (`SystemUpdatesButton`)
 Runs `checkupdates` + `yay -Qua` on startup, hourly via `SystemClock.Hours`, and on a 15-minute periodic refresh to keep state current. The count is also rechecked when Dashboard opens and after any upgrade flow completes. Hidden when count is zero. When updates are found for the first time (or the count changes), a D-Bus notification is sent through QuickShell's own notification server so it appears as a popup. Clicking the bar button opens a floating `kitty` terminal running `yay -Syu`.
+
+Update counting logic is shared with `DashboardDropdown`: repo updates come from `checkupdates`, AUR updates are added via `yay -Qua` when `yay` is available, and missing `yay` gracefully falls back to repo-only counts.
 
 **Position:** First item in the right section of the bar — always leftmost, before Bluetooth and Volume.
 

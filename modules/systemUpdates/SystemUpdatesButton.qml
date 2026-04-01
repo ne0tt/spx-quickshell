@@ -112,7 +112,7 @@ Rectangle {
 
     Process {
         id: systemUpdateProc
-        command: ["bash", "-c", "{ checkupdates 2>/dev/null; timeout 15 yay -Qua 2>/dev/null; } | wc -l || echo 0"]
+        command: ["bash", "-c", "repo=$(checkupdates 2>/dev/null | wc -l); aur=0; if command -v yay >/dev/null 2>&1; then aur=$(timeout 15 yay -Qua 2>/dev/null | wc -l); fi; echo $((repo + aur))"]
         stdout: SplitParser {
             onRead: data => {
                 var count = parseInt(data.trim());
