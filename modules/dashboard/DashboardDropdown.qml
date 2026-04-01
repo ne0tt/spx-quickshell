@@ -30,7 +30,7 @@ DropdownBase {
 
     // Per-tab panelFullHeight: must accommodate _contentY + content + bottom-pad
     readonly property int _dashH:    _contentY + 155 + 10 + 200 + 4  // info row + cal
-    readonly property int _mediaH:   _contentY + 179 + 12
+    readonly property int _mediaH:   _contentY + 287 + 12  // increased for volume slider at top
     readonly property int _perfH:    _contentY + 194 + 12
     readonly property int _weatherH: _contentY + 455 + 12  // current + hourly + weekly + sunrise
     readonly property int _networkH: _contentY + 280 + 12   // vpn list + map + nm button
@@ -74,6 +74,8 @@ DropdownBase {
     property string _mediaArtUrl: ""
     property string _mediaStatus: "Stopped"
     property bool   _mediaAvail:  false
+    property real   _mediaPosition: 0     // in seconds
+    property real   _mediaDuration: 0     // in seconds
 
     property int    _cpuPercent:  0
     property int    _ramUsed:     0
@@ -142,6 +144,13 @@ DropdownBase {
         _vpnBuf = []
         _mapRefreshCounter++  // Force map image reload
         _vpnProc.running = true
+        // Control CAVA based on initial state
+        Audio.cava.visualizationVisible = false
+    }
+
+    onIsOpenChanged: {
+        if (!isOpen) Audio.cava.visualizationVisible = false
+        else if (_tab === 1 && _mediaAvail) Audio.cava.visualizationVisible = true
     }
 
     on_TabChanged: {
@@ -153,6 +162,8 @@ DropdownBase {
         } else {
             _netFocusIdx = -1
         }
+        // Control CAVA visualization
+        Audio.cava.visualizationVisible = dash.isOpen && _tab === 1 && _mediaAvail
     }
 
     Timer {
@@ -165,6 +176,16 @@ DropdownBase {
             if (dash._tab === 0 || dash._tab === 2) perfProc.running = true
             if (dash._tab === 4) _netIfaceProc.running = true
             if (dash._tab === 4) { dash._vpnBuf = []; dash._mapRefreshCounter++; _vpnProc.running = true }
+        }
+    }
+
+    // Progress bar update timer - runs every second for smooth seekbar updates
+    Timer {
+        interval: 1000
+        running:  dash.isOpen && dash._tab === 1 && dash._mediaAvail
+        repeat:   true
+        onTriggered: {
+            mediaProc.running = true
         }
     }
 
@@ -345,9 +366,9 @@ DropdownBase {
         id: mediaProc
         running: false
         command: ["bash", "-c",
-            "playerctl -a metadata --format '{{status}}|{{title}}|{{artist}}|{{mpris:artUrl}}'" +
+            "playerctl -a metadata --format '{{status}}|{{title}}|{{artist}}|{{mpris:artUrl}}|{{position}}|{{mpris:length}}'" +
             " 2>/dev/null | awk -F'|' '$1==\"Playing\"{print;found=1;exit}" +
-            " {last=$0} END{if(!found&&NR>0)print last}' || echo 'Stopped|||'"]
+            " {last=$0} END{if(!found&&NR>0)print last}' || echo 'Stopped|||||'"]
         stdout: SplitParser {
             onRead: data => {
                 var p = data.trim().split("|")
@@ -358,6 +379,11 @@ DropdownBase {
                     dash._mediaTitle  = dash._mediaAvail ? p[1] : ""
                     dash._mediaArtist = dash._mediaAvail ? (p[2] || "") : ""
                     dash._mediaArtUrl = dash._mediaAvail && p.length > 3 ? p[3] : ""
+                    // Position and duration are in microseconds, convert to seconds
+                    dash._mediaPosition = p.length > 4 && p[4] ? parseInt(p[4]) / 1000000 : 0
+                    dash._mediaDuration = p.length > 5 && p[5] ? parseInt(p[5]) / 1000000 : 0
+                    // Control CAVA visualization
+                    Audio.cava.visualizationVisible = dash.isOpen && dash._tab === 1 && dash._mediaAvail
                 }
             }
         }
@@ -895,7 +921,7 @@ DropdownBase {
         x:       16 + 14
         y:       dash._contentY
         width:   dash._cw
-        height:  179
+        height:  287
         visible: dash._tab === 1
 
         property int _mediaDragVol: -1
@@ -908,162 +934,10 @@ DropdownBase {
             border.width: 1
         }
 
-        Rectangle {
-            id: bigArt
-            width: 95; height: 95; radius: 10
-            anchors { left: parent.left; leftMargin: 15; top: parent.top; topMargin: 15 }
-            color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.15)
-
-            // Animated border — pulses between accent and a complementary hue while playing
-            border.width: dash._mediaStatus === "Playing" ? 2 : 0
-            border.color: {
-                if (dash._mediaStatus !== "Playing") return "transparent"
-                var t = (Math.sin((_artAngle % 360) / 360 * Math.PI * 4) + 1) / 2
-                var r = dash.accentColor.r * (1 - t) + 0.769 * t
-                var g = dash.accentColor.g * (1 - t) + 0.498 * t
-                var b = dash.accentColor.b * (1 - t) + 0.835 * t
-                return Qt.rgba(r, g, b, 1.0)
-            }
-            Behavior on border.width { NumberAnimation { duration: 200 } }
-
-            property real _artAngle: 0
-            Timer {
-                interval: 50
-                running: dash._mediaStatus === "Playing" && dash.isOpen && dash._tab === 1
-                repeat: true
-                onTriggered: bigArt._artAngle = (bigArt._artAngle + 3) % 360
-            }
-
-            Rectangle {
-                id: bigArtMask
-                anchors { fill: parent; margins: bigArt.border.width }
-                radius: bigArt.radius - 1
-                color: "white"
-                layer.enabled: true
-                visible: false
-            }
-            Image {
-                id: bigArtImage
-                anchors { fill: parent; margins: bigArt.border.width }
-                source: dash._mediaArtUrl
-                fillMode: Image.PreserveAspectCrop
-                smooth: true; asynchronous: true
-                visible: dash._mediaArtUrl !== "" && status === Image.Ready
-                layer.enabled: true
-                layer.effect: MultiEffect {
-                    maskEnabled: true
-                    maskSource: bigArtMask
-                }
-            }
-            Text {
-                anchors.centerIn: parent
-                visible: bigArtImage.status !== Image.Ready || dash._mediaArtUrl === ""
-                text: "󰎆"; font.family: config.fontFamily; font.styleName: "Solid"
-                font.pixelSize: 36; color: dash.accentColor
-            }
-        }
-
-        Column {
-            anchors {
-                left: bigArt.right; leftMargin: 24
-                right: parent.right; rightMargin: 28
-                top: parent.top; topMargin: 15
-            }
-            spacing: 10
-
-            Item {
-                id: mediaTitleClip
-                width: parent.width; height: 20
-                clip: true
-
-                Text {
-                    id: mediaTitleText
-                    text: dash._mediaAvail ? dash._mediaTitle : "No media playing"
-                    color: dash.textColor; font.pixelSize: 15; font.bold: true
-                    font.family: config.fontFamily
-
-                    property bool needsScroll: paintedWidth > mediaTitleClip.width
-                    SequentialAnimation {
-                        running: mediaTitleText.needsScroll && dash.isOpen
-                        loops: Animation.Infinite
-                        PauseAnimation { duration: 2000 }
-                        NumberAnimation {
-                            target: mediaTitleText; property: "x"
-                            from: 0; to: mediaTitleClip.width - mediaTitleText.paintedWidth - 4
-                            duration: Math.max(3000, mediaTitleText.paintedWidth * 20)
-                            easing.type: Easing.InOutQuad
-                        }
-                        PauseAnimation { duration: 1500 }
-                        NumberAnimation {
-                            target: mediaTitleText; property: "x"
-                            from: mediaTitleClip.width - mediaTitleText.paintedWidth - 4; to: 0
-                            duration: Math.max(3000, mediaTitleText.paintedWidth * 20)
-                            easing.type: Easing.InOutQuad
-                        }
-                    }
-                    onNeedsScrollChanged: if (!needsScroll) x = 0
-                    onTextChanged: { x = 0 }
-                }
-            }
-            Text {
-                width: parent.width
-                text:    dash._mediaArtist
-                visible: dash._mediaArtist !== ""
-                color: dash.dimColor; font.pixelSize: 13
-                elide: Text.ElideRight; font.family: config.fontFamily
-            }
-
-            Row {
-                spacing: 16
-                topPadding: 4
-                opacity: dash._mediaAvail ? 1.0 : 0.35
-
-                Rectangle {
-                    width: 40; height: 40; radius: 20
-                    color: prevHov.containsMouse
-                        ? Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.15)
-                        : Qt.rgba(dash.dimColor.r, dash.dimColor.g, dash.dimColor.b, 0.1)
-                    Behavior on color { ColorAnimation { duration: 120 } }
-                    Text { anchors.centerIn: parent; text: "󰒮"; font.family: config.fontFamily; font.pixelSize: 16; color: dash.accentColor }
-                    MouseArea {
-                        id: prevHov; anchors.fill: parent; cursorShape: Qt.PointingHandCursor
-                        hoverEnabled: true; enabled: dash._mediaAvail
-                        onClicked: { ctrlProc.command = ["playerctl","previous"]; ctrlProc.running = true }
-                    }
-                }
-                Rectangle {
-                    width: 40; height: 40; radius: 20
-                    color: playHov.containsMouse
-                        ? Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.25)
-                        : Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.15)
-                    Behavior on color { ColorAnimation { duration: 120 } }
-                    Text { anchors.centerIn: parent; text: dash._mediaStatus === "Playing" ? "󰏤" : "󰐊"; font.family: config.fontFamily; font.pixelSize: 18; color: dash.accentColor }
-                    MouseArea {
-                        id: playHov; anchors.fill: parent; cursorShape: Qt.PointingHandCursor
-                        hoverEnabled: true; enabled: dash._mediaAvail
-                        onClicked: { ctrlProc.command = ["playerctl","play-pause"]; ctrlProc.running = true }
-                    }
-                }
-                Rectangle {
-                    width: 40; height: 40; radius: 20
-                    color: nextHov.containsMouse
-                        ? Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.15)
-                        : Qt.rgba(dash.dimColor.r, dash.dimColor.g, dash.dimColor.b, 0.1)
-                    Behavior on color { ColorAnimation { duration: 120 } }
-                    Text { anchors.centerIn: parent; text: "󰒭"; font.family: config.fontFamily; font.pixelSize: 16; color: dash.accentColor }
-                    MouseArea {
-                        id: nextHov; anchors.fill: parent; cursorShape: Qt.PointingHandCursor
-                        hoverEnabled: true; enabled: dash._mediaAvail
-                        onClicked: { ctrlProc.command = ["playerctl","next"]; ctrlProc.running = true }
-                    }
-                }
-            }
-        }
-
-        // ── Volume slider ──────────────────────────────────────────
+        // ── Volume slider at top ──────────────────────────────────────
         Item {
             id: mediaVolContainer
-            x: 20; y: 125
+            x: 20; y: 15
             width: parent.width - 40; height: 44
 
             Text {
@@ -1119,6 +993,323 @@ DropdownBase {
                     onPressed:         mouse => setFromX(mouse.x)
                     onPositionChanged: mouse => { if (pressed) setFromX(mouse.x) }
                     onReleased: mediaVolContainer.parent._mediaDragVol = -1
+                }
+            }
+        }
+
+        // Divider between volume and media
+        Rectangle {
+            x: 0; y: 67
+            width: parent.width
+            height: 1
+            color: Qt.rgba(dash.dimColor.r, dash.dimColor.g, dash.dimColor.b, 0.2)
+        }
+
+        Rectangle {
+            id: bigArt
+            width: 95; height: 95; radius: 10
+            x: 15; y: 76
+            color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.15)
+
+            // Animated border — pulses between accent and a complementary hue while playing
+            border.width: dash._mediaStatus === "Playing" ? 2 : 0
+            border.color: {
+                if (dash._mediaStatus !== "Playing") return "transparent"
+                var t = (Math.sin((_artAngle % 360) / 360 * Math.PI * 4) + 1) / 2
+                var r = dash.accentColor.r * (1 - t) + 0.769 * t
+                var g = dash.accentColor.g * (1 - t) + 0.498 * t
+                var b = dash.accentColor.b * (1 - t) + 0.835 * t
+                return Qt.rgba(r, g, b, 1.0)
+            }
+            Behavior on border.width { NumberAnimation { duration: 200 } }
+
+            property real _artAngle: 0
+            Timer {
+                interval: 50
+                running: dash._mediaStatus === "Playing" && dash.isOpen && dash._tab === 1
+                repeat: true
+                onTriggered: bigArt._artAngle = (bigArt._artAngle + 3) % 360
+            }
+
+            Rectangle {
+                id: bigArtMask
+                anchors { fill: parent; margins: bigArt.border.width }
+                radius: bigArt.radius - 1
+                color: "white"
+                layer.enabled: true
+                visible: false
+            }
+            Image {
+                id: bigArtImage
+                anchors { fill: parent; margins: bigArt.border.width }
+                source: dash._mediaArtUrl
+                fillMode: Image.PreserveAspectCrop
+                smooth: true; asynchronous: true
+                visible: dash._mediaArtUrl !== "" && status === Image.Ready
+                layer.enabled: true
+                layer.effect: MultiEffect {
+                    maskEnabled: true
+                    maskSource: bigArtMask
+                }
+            }
+            Text {
+                anchors.centerIn: parent
+                visible: bigArtImage.status !== Image.Ready || dash._mediaArtUrl === ""
+                text: "󰎆"; font.family: config.fontFamily; font.styleName: "Solid"
+                font.pixelSize: 36; color: dash.accentColor
+            }
+        }
+
+        Column {
+            x: bigArt.x + bigArt.width + 24
+            y: 76
+            width: parent.width - bigArt.x - bigArt.width - 24 - 28
+            spacing: 10
+
+            Item {
+                id: mediaTitleClip
+                width: parent.width; height: 20
+                clip: true
+
+                Text {
+                    id: mediaTitleText
+                    text: dash._mediaAvail ? dash._mediaTitle : "No media playing"
+                    color: dash.textColor; font.pixelSize: 15; font.bold: true
+                    font.family: config.fontFamily
+
+                    property bool needsScroll: paintedWidth > mediaTitleClip.width
+                    SequentialAnimation {
+                        running: mediaTitleText.needsScroll && dash.isOpen && dash._tab === 1
+                        loops: Animation.Infinite
+                        PauseAnimation { duration: 2000 }
+                        NumberAnimation {
+                            target: mediaTitleText; property: "x"
+                            from: 0; to: mediaTitleClip.width - mediaTitleText.paintedWidth - 4
+                            duration: Math.max(3000, mediaTitleText.paintedWidth * 20)
+                            easing.type: Easing.InOutQuad
+                        }
+                        PauseAnimation { duration: 1500 }
+                        NumberAnimation {
+                            target: mediaTitleText; property: "x"
+                            from: mediaTitleClip.width - mediaTitleText.paintedWidth - 4; to: 0
+                            duration: Math.max(3000, mediaTitleText.paintedWidth * 20)
+                            easing.type: Easing.InOutQuad
+                        }
+                    }
+                    onNeedsScrollChanged: if (!needsScroll) x = 0
+                    onTextChanged: { x = 0 }
+                }
+            }
+            Text {
+                width: parent.width
+                text:    dash._mediaArtist
+                visible: dash._mediaArtist !== ""
+                color: dash.dimColor; font.pixelSize: 13
+                elide: Text.ElideRight; font.family: config.fontFamily
+            }
+
+            // ── Playback controls + Progress bar ──────────────────────
+            Row {
+                width: parent.width
+                height: 40
+                topPadding: 4
+                spacing: 20
+
+                // Playback controls
+                Row {
+                    spacing: 16
+                    anchors.verticalCenter: parent.verticalCenter
+                    opacity: dash._mediaAvail ? 1.0 : 0.35
+
+                    Rectangle {
+                        width: 40; height: 40; radius: 20
+                        color: prevHov.containsMouse
+                            ? Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.15)
+                            : Qt.rgba(dash.dimColor.r, dash.dimColor.g, dash.dimColor.b, 0.1)
+                        Behavior on color { ColorAnimation { duration: 120 } }
+                        Text { anchors.centerIn: parent; text: "󰒮"; font.family: config.fontFamily; font.pixelSize: 16; color: dash.accentColor }
+                        MouseArea {
+                            id: prevHov; anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true; enabled: dash._mediaAvail
+                            onClicked: { ctrlProc.command = ["playerctl","previous"]; ctrlProc.running = true }
+                        }
+                    }
+                    Rectangle {
+                        width: 40; height: 40; radius: 20
+                        color: playHov.containsMouse
+                            ? Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.25)
+                            : Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.15)
+                        Behavior on color { ColorAnimation { duration: 120 } }
+                        Text { anchors.centerIn: parent; text: dash._mediaStatus === "Playing" ? "󰏤" : "󰐊"; font.family: config.fontFamily; font.pixelSize: 18; color: dash.accentColor }
+                        MouseArea {
+                            id: playHov; anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true; enabled: dash._mediaAvail
+                            onClicked: { ctrlProc.command = ["playerctl","play-pause"]; ctrlProc.running = true }
+                        }
+                    }
+                    Rectangle {
+                        width: 40; height: 40; radius: 20
+                        color: nextHov.containsMouse
+                            ? Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.15)
+                            : Qt.rgba(dash.dimColor.r, dash.dimColor.g, dash.dimColor.b, 0.1)
+                        Behavior on color { ColorAnimation { duration: 120 } }
+                        Text { anchors.centerIn: parent; text: "󰒭"; font.family: config.fontFamily; font.pixelSize: 16; color: dash.accentColor }
+                        MouseArea {
+                            id: nextHov; anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true; enabled: dash._mediaAvail
+                            onClicked: { ctrlProc.command = ["playerctl","next"]; ctrlProc.running = true }
+                        }
+                    }
+                }
+
+                // Progress bar
+                Item {
+                    width: parent.width - 168  // Parent width minus controls (136) and spacing
+                    height: parent.height
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: dash._mediaAvail && dash._mediaDuration > 0
+
+                    Row {
+                        anchors.centerIn: parent
+                        width: parent.width
+                        height: parent.height
+                        spacing: 3
+
+                        Text {
+                            id: currentTime
+                            width: 38
+                            text: {
+                                var sec = Math.floor(dash._mediaPosition)
+                                var min = Math.floor(sec / 60)
+                                var s = sec % 60
+                                return min + ":" + String(s).padStart(2, "0")
+                            }
+                            color: dash.accentColor
+                            font.pixelSize: 11
+                            font.family: config.fontFamily
+                            horizontalAlignment: Text.AlignRight
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        Item {
+                            width: parent.width - 82
+                            height: parent.height
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            Rectangle {
+                                id: progressBg
+                                anchors.centerIn: parent
+                                width: parent.width
+                                height: 6
+                                radius: 3
+                                color: Qt.rgba(dash.dimColor.r, dash.dimColor.g, dash.dimColor.b, 0.3)
+
+                                Rectangle {
+                                    id: progressFill
+                                    height: parent.height
+                                    width: dash._mediaDuration > 0 ? (dash._mediaPosition / dash._mediaDuration) * parent.width : 0
+                                    radius: parent.radius
+                                    color: dash.accentColor
+
+                                    Behavior on width {
+                                        NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+                                    }
+                                }
+
+                                Rectangle {
+                                    visible: progressHover.containsMouse
+                                    x: progressFill.width - width / 2
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 12
+                                    height: 12
+                                    radius: 6
+                                    color: dash.accentColor
+                                    border.color: Qt.lighter(dash.accentColor, 1.3)
+                                    border.width: 2
+
+                                    Behavior on width { NumberAnimation { duration: 100 } }
+                                    Behavior on height { NumberAnimation { duration: 100 } }
+                                }
+
+                                MouseArea {
+                                    id: progressHover
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: mouse => {
+                                        if (dash._mediaDuration > 0) {
+                                            var fraction = mouse.x / width
+                                            var seekPos = Math.max(0, Math.min(dash._mediaDuration, fraction * dash._mediaDuration))
+                                            ctrlProc.command = ["playerctl", "position", String(seekPos)]
+                                            ctrlProc.running = true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Text {
+                            id: totalTime
+                            width: 38
+                            text: {
+                                var sec = Math.floor(dash._mediaDuration)
+                                var min = Math.floor(sec / 60)
+                                var s = sec % 60
+                                return min + ":" + String(s).padStart(2, "0")
+                            }
+                            color: dash.dimColor
+                            font.pixelSize: 11
+                            font.family: config.fontFamily
+                            horizontalAlignment: Text.AlignLeft
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── CAVA Visualization ──────────────────────────────────────────
+        Item {
+            x: 20
+            y: 223
+            width: parent.width - 40
+            height: 54
+            visible: dash._mediaAvail
+
+            Row {
+                id: cavaBarsRow
+                anchors.centerIn: parent
+                height: parent.height - 14
+                spacing: 3
+
+                property int barCount: 20
+
+                Repeater {
+                    model: cavaBarsRow.barCount
+
+                    Rectangle {
+                        id: cavaBar
+                        required property int index
+
+                        property real value: (dash.isOpen && dash._tab === 1 && dash._mediaAvail) ?
+                            Math.max(0, Math.min(1,
+                                Audio.cava.values?.[Math.floor((index / (cavaBarsRow.barCount - 1)) * (Audio.cava.values?.length - 1 || 0))] || 0
+                            )) : 0
+
+                        width: (parent.parent.width - (cavaBarsRow.spacing * (cavaBarsRow.barCount - 1))) / cavaBarsRow.barCount
+                        height: Math.max(2, cavaBar.value * cavaBarsRow.height * 1.8)
+
+                        anchors.bottom: parent.bottom
+                        color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.8)
+
+                        Behavior on height {
+                            enabled: dash.isOpen && dash._tab === 1 && dash._mediaAvail
+                            NumberAnimation {
+                                duration: 30
+                                easing.type: Easing.Linear
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -22,6 +22,16 @@ Singleton {
         // Control when CAVA should run (set by UI components)
         property bool visualizationVisible: false
         
+        // Auto-restart timer (defined before process so it can be referenced)
+        property var restartTimer: Timer {
+            interval: 2000
+            repeat: false
+            onTriggered: {
+                console.log("Restarting CAVA process")
+                cavaProcess.running = true
+            }
+        }
+        
         // CAVA process - outputs raw data to stdout
         property var _cavaProcess: Process {
             id: cavaProcess
@@ -65,16 +75,6 @@ Singleton {
                     // Restart after 2 seconds
                     restartTimer.start()
                 }
-            }
-        }
-        
-        // Auto-restart timer
-        property var restartTimer: Timer {
-            interval: 2000
-            repeat: false
-            onTriggered: {
-                console.log("Restarting CAVA process")
-                cavaProcess.running = true
             }
         }
     }
