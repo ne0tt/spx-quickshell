@@ -22,7 +22,7 @@ Item {
 
     signal clicked(real clickX)
 
-    property string sensorPath: "/sys/class/hwmon/hwmon2/temp1_input"
+    property string sensorPath: ""
     property string temperature: "--°C"
     property int    _tempValue:   0
     readonly property string _icon:
@@ -44,6 +44,29 @@ Item {
         onTriggered: root._flashOn = !root._flashOn
         onRunningChanged: if (!running) root._flashOn = false
     }
+    // ============================================================
+    // AUTO-DETECT SENSOR — find first available hwmon temp sensor
+    // ============================================================
+    Process {
+        id: sensorDetect
+        running: false
+        command: ["sh", "-c", "for d in /sys/class/hwmon/hwmon*; do [ -d \"$d\" ] || continue; n=$(cat \"$d/name\" 2>/dev/null); case \"$n\" in coretemp|k10temp|zenpower|cpu_thermal|x86_pkg_temp) for l in \"$d\"/temp*_label; do [ -r \"$l\" ] || continue; t=$(cat \"$l\" 2>/dev/null); case \"$t\" in *Package*|*Tctl*|*Tdie*|*CPU*) i=\"${l%_label}_input\"; [ -r \"$i\" ] && echo \"$i\" && exit 0;; esac; done; for i in \"$d\"/temp*_input; do [ -r \"$i\" ] && echo \"$i\" && exit 0; done;; esac; done; for i in /sys/class/hwmon/hwmon*/temp*_input; do [ -r \"$i\" ] && echo \"$i\" && exit 0; done"]
+        stdout: SplitParser {
+            splitMarker: "\n"
+            onRead: data => {
+                var path = data.trim()
+                if (path && path.startsWith("/sys/class/hwmon/")) {
+                    root.sensorPath = path
+                    tempFile.reload()
+                }
+            }
+        }
+    }
+
+    Component.onCompleted: {
+        sensorDetect.running = true
+    }
+
     // ============================================================
     // FILEVIEW — reads sysfs directly, no fork/exec overhead
     // ============================================================
@@ -69,7 +92,7 @@ Item {
     // ============================================================
     Timer {
         interval: 5000
-        running: root.visible
+        running: root.visible && root.sensorPath !== ""
         repeat: true
         triggeredOnStart: true
         onTriggered: tempFile.reload()
