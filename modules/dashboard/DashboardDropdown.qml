@@ -5,6 +5,7 @@ import Quickshell.Io
 import Quickshell.Wayland
 import QtQuick
 import QtQuick.Effects
+import "../.."
 import "../../base"
 import "../../state"
 
@@ -728,7 +729,7 @@ DropdownBase {
                         Rectangle {
                             width: parent.width - 29 - 31 - 12; height: 6; radius: 3
                             anchors.verticalCenter: parent.verticalCenter
-                            color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.15)
+                            color: Colors.col_background
                             Rectangle {
                                 width: parent.width * (modelData.pct / 100); height: parent.height; radius: 3
                                 color: modelData.pct > 85 ? "#ff6b6b" : dash.accentColor
@@ -973,7 +974,7 @@ DropdownBase {
                 Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
                     width: parent.width; height: 6; radius: 3
-                    color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.15)
+                    color: Colors.col_background
 
                     Rectangle {
                         width: parent.width * (VolumeState.muted ? 0 : mediaVolContainer.parent._mediaDisplayVol / 100)
@@ -1221,7 +1222,7 @@ DropdownBase {
                                 width: parent.width
                                 height: 6
                                 radius: 3
-                                color: Qt.rgba(dash.dimColor.r, dash.dimColor.g, dash.dimColor.b, 0.3)
+                                color: Colors.col_background
 
                                 Rectangle {
                                     id: progressFill
@@ -1391,7 +1392,7 @@ DropdownBase {
                             var cx = 60, cy = 60, r = 46, lw = 9
                             ctx.beginPath()
                             ctx.arc(cx, cy, r, 0, Math.PI * 2)
-                            ctx.strokeStyle = Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.15).toString()
+                            ctx.strokeStyle = Colors.col_background.toString()
                             ctx.lineWidth = lw; ctx.stroke()
                             var p = parent._anim / 100
                             if (p > 0) {
@@ -1433,7 +1434,7 @@ DropdownBase {
                             var cx = 60, cy = 60, r = 46, lw = 9
                             ctx.beginPath()
                             ctx.arc(cx, cy, r, 0, Math.PI * 2)
-                            ctx.strokeStyle = Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.15).toString()
+                            ctx.strokeStyle = Colors.col_background.toString()
                             ctx.lineWidth = lw; ctx.stroke()
                             var p = parent._anim / 100
                             if (p > 0) {
@@ -1475,7 +1476,7 @@ DropdownBase {
                             var cx = 60, cy = 60, r = 46, lw = 9
                             ctx.beginPath()
                             ctx.arc(cx, cy, r, 0, Math.PI * 2)
-                            ctx.strokeStyle = Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.15).toString()
+                            ctx.strokeStyle = Colors.col_background.toString()
                             ctx.lineWidth = lw; ctx.stroke()
                             var p = parent._anim / 100
                             if (p > 0) {

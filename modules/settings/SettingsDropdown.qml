@@ -2,6 +2,7 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
 import QtQuick
+import "../.."
 import "../../base"
 import "../../state"
 
@@ -534,7 +535,7 @@ DropdownBase {
                         id: _trackBg
                         x: 7; y: 5
                         width: parent.width - 14; height: 3; radius: 2
-                        color: Qt.rgba(1, 1, 1, 0.12)
+                        color: Colors.col_background
                     }
 
                     // Active fill (left side up to knob centre)
