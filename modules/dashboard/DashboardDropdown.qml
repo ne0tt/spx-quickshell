@@ -1357,8 +1357,17 @@ DropdownBase {
             return gb + " GB"
         }
 
+        Rectangle {
+            anchors.fill: parent
+            radius: 10
+            color:        Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.08)
+            border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.20)
+            border.width: 1
+        }
+
         Column {
             anchors.fill: parent
+            anchors.margins: 10
             spacing: 16
 
             // Circular gauges row
@@ -1715,14 +1724,31 @@ DropdownBase {
         height:  280
         visible: dash._tab === 4
 
+        Rectangle {
+            id: _netCard
+            anchors.fill: parent
+            anchors.bottomMargin: _nmEditorBtn.height + 8
+            radius: 10
+            color:        Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.08)
+            border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.20)
+            border.width: 1
+        }
+
         readonly property real _colGap:  10
-        readonly property real _leftW:   Math.round((width - _colGap) * 0.45) - 100
-        readonly property real _rightW:  width - _leftW - _colGap
+        readonly property real _leftW:   Math.round((_netCard.width - _colGap) * 0.45) - 100
+        readonly property real _rightW:  _netCard.width - _leftW - _colGap
 
         // ── Left: VPN connections ─────────────────────────────
         Column {
             id: _vpnCol
-            anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
+            anchors {
+                left: _netCard.left
+                top: _netCard.top
+                bottom: _netCard.bottom
+                leftMargin: 12
+                topMargin: 12
+                bottomMargin: 12
+            }
             width: parent._leftW
             spacing: 8
 
@@ -1829,11 +1855,11 @@ DropdownBase {
         Item {
             id: _mapContainer
             anchors {
-                right: parent.right; rightMargin: 15
-                top: parent.top; topMargin: 15
-                bottom: parent.bottom; bottomMargin: 48 + 15
+                right: _netCard.right; rightMargin: 12
+                top: _netCard.top; topMargin: 12
+                bottom: _netCard.bottom; bottomMargin: 12
             }
-            width: parent._rightW - 30
+            width: parent._rightW - 24
 
             Image {
                 id: _mapImage
@@ -1950,7 +1976,12 @@ DropdownBase {
         // ── nm-connection-editor button (full width, bottom) ───
         Rectangle {
             id: _nmEditorBtn
-            anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+            anchors {
+                left: parent.left
+                right: parent.right
+                top: _netCard.bottom
+                topMargin: 8
+            }
             height: 38
             radius: 10
             readonly property bool _kbdFocused: dash._netFocusIdx === dash._vpnConnections.length

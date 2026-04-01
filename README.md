@@ -34,6 +34,7 @@ A feature-rich top panel for Hyprland with smooth animations, reactive system st
 - Fixed CAVA restart flow in `state/Audio.qml` (`restartTimer` scope/usage) and removed CAVA debug log spam from normal operation.
 - Fixed `SystemUpdatesButton` notification-service scoping to prevent `NotifService is not defined` runtime warnings during update checks/cleanup.
 - Unified update counting between `DashboardDropdown` and `SystemUpdatesButton` so both surfaces always show the same total.
+- Deferred Dashboard update checks until the dropdown has fully finished opening, avoiding checks during the rollout animation.
 - Improved package update state synchronization across Dashboard, Notifications, and the bar update button:
   - Recheck update count when opening Dashboard.
   - Added periodic background recheck (every 15 minutes) in addition to startup/hourly checks.
@@ -566,7 +567,7 @@ Below the info cards sits a **clock + date + inline calendar** row:
 | RAM | `free -m` | Used / Total (human-readable GiB/TiB) |
 | Disk | `df /` | Used / Total GB |
 
-All gauges animate smoothly (600 ms `OutCubic`) and turn red when ≥ 85%. The tab re-fetches data immediately on becoming visible, then shares the 3 s polling timer.
+All gauges animate smoothly (600 ms `OutCubic`) and turn red when ≥ 85%. The tab content is now wrapped in a full card-style box to match other tabs. The tab re-fetches data immediately on becoming visible, then shares the 3 s polling timer.
 
 **Weather tab (Tab 3)** pulls all data from `WeatherState` (same source as the standalone WeatherDropdown):
 - Current conditions card: big icon, temp, feels-like, wind, humidity, sunrise
@@ -575,7 +576,8 @@ All gauges animate smoothly (600 ms `OutCubic`) and turn red when ≥ 85%. The t
 - Sunrise / Sunset / Wind summary row at the bottom
 
 **Data refresh:**
-- On open: all processes run immediately (`uptimeProc`, `mediaProc`, `perfProc`, `updatesProc`, `kernelProc`, `hyprlandVerProc`)
+- On open: all processes run immediately except update checks (`uptimeProc`, `mediaProc`, `perfProc`, `kernelProc`, `hyprlandVerProc`)
+- After open animation: `updatesProc` runs once the dropdown is fully rolled down
 - While open: a 3 s `Timer` re-polls uptime (tab 0), media (tab 1), and perf (tabs 0 & 2)
 - When the upgrade terminal closes: `updatesProc` re-runs locally **and** `upgradeCompleted` signal fires so `SystemUpdatesButton` re-checks the bar count too (see below)
 
@@ -586,7 +588,8 @@ All gauges animate smoothly (600 ms `OutCubic`) and turn red when ≥ 85%. The t
 - **Network info**: detects the active VLAN interface via `nmcli`, shows IP address, gateway, and DNS servers. The VLAN ID is derived from the third IP octet (e.g. `192.168.10.x` → `VLAN10`).
 - **WireGuard VPN cards**: lists all `nmcli` WireGuard connections as `SelectableCard` items. Click (or keyboard Enter) to bring a connection up or down. Cards flash on activation; busy spinner while toggling.
 - **World map**: a colorized equirectangular world map fills the right column. When no VPN is active a darker map variant is shown. When a VPN is active the map switches to the colorized version and a **pulsing geo-dot** appears at the VPN server's location (three staggered ripple rings + inner white dot). The server location is resolved via `http://ip-api.com/json` using the current external IP — when a full-tunnel VPN is active this automatically resolves to the VPN server's geographic location without needing root access.
-- **Connection Editor button**: a full-width button at the bottom opens `nm-connection-editor`.
+- **Layout**: the WireGuard header/cards and map are contained inside a shared card-style box for consistency with other tabs.
+- **Connection Editor button**: a full-width button sits below the Network box and opens `nm-connection-editor`.
 - **Data refresh**: network info and VPN list re-fetch immediately on switching to this tab and every 3 s while the tab is visible.
 
 **Network tab keyboard navigation:**
