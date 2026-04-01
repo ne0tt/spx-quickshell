@@ -4,7 +4,7 @@
 
 A highly customized Wayland status bar and system interface built with [Quickshell](https://quickshell.outfoxxed.me/) for Hyprland.
 
-**Last Updated**: March 31, 2026 — Network tab, Settings keyboard nav, and documentation improvements
+**Last Updated**: April 1, 2026 — Media controls, update sync fixes, CPU temp auto-detect, and runtime optimizations
 
 ---
 
@@ -15,6 +15,28 @@ A feature-rich top panel for Hyprland with smooth animations, reactive system st
 - **Left** — App launcher button, wallpaper picker
 - **Center** — Hyprland workspace indicators with glow overlay
 - **Right** — Package updates, VPN, Bluetooth, volume with audio visualizer, power profile, temperature, system tray, notifications, lockscreen, clock
+
+---
+
+## Recent Improvements (April 1, 2026)
+
+### ✅ Media Controls & Playback UX
+- Added a horizontal playback progress bar to both `VolumeDropdown` and dashboard Media tab with matching layout.
+- Added left/right time labels and click-to-seek behavior on the progress bar.
+- Matched playback button sizing between dropdowns for visual consistency.
+- Improved handling of invalid MPRIS position/duration values (including Apple Music edge cases) to prevent UI overflow and nonsense timestamps.
+
+### ✅ Performance & Visibility Optimizations
+- Gated CAVA bar animations and marquee animations so they only run while the relevant panel/tab is visible.
+- Limited background polling/monitoring for several modules to visible/open states where appropriate (e.g., network and power widgets), reducing unnecessary runtime work.
+
+### ✅ Reliability Fixes
+- Fixed CAVA restart flow in `state/Audio.qml` (`restartTimer` scope/usage) and removed CAVA debug log spam from normal operation.
+- Fixed `SystemUpdatesButton` notification-service scoping to prevent `NotifService is not defined` runtime warnings during update checks/cleanup.
+- Improved package update state synchronization across Dashboard, Notifications, and the bar update button:
+  - Recheck update count when opening Dashboard.
+  - Added periodic background recheck (every 15 minutes) in addition to startup/hourly checks.
+- Temperature sensor detection now auto-selects processor-oriented hwmon sources (e.g., `coretemp`, `k10temp`) with safe fallback behavior.
 
 ---
 
@@ -336,10 +358,12 @@ Uses `SystemClock { precision: SystemClock.Seconds }` — updates aligned to the
 
 - **System Volume**: Main PipeWire sink volume slider 
 - **Media Player Control**: Full media player integration via `playerctl` with browser detection
+- **Playback Timeline**: Horizontal seek bar with current time on the left and total duration on the right (shared layout with dashboard media tab)
 - **Browser Support**: Explicit browser sink detection (Chrome, Firefox, Brave, Vivaldi, Opera)
 - **Media Volume**: Separate volume control for active media players with sync capability; slider calls `VolumeState.setVolume()`
 - **Audio Visualizer**: Real-time 20-bar CAVA spectrum display with gradient coloring and smooth animation
 - **Smart Polling**: Refreshes on open, 800ms polling while active, disabled when closed
+- **Robust Metadata Parsing**: Position/duration values are validated and clamped to avoid malformed player metadata breaking layout
 - **Dynamic Height**: Adapts from 70px (no media) to 410px (media active) based on content
 
 The audio visualizer is fed by the global `Audio` singleton, displaying normalized spectrum data with 30ms smooth transitions.
@@ -381,7 +405,7 @@ Components:
 Power controlled via `rfkill`. Live state from `bluetoothctl monitor` parsed in `BluetoothState`, debounced 600 ms. A 400 ms delay after `rfkill unblock` gives the adapter time to initialize before re-reading state.
 
 ### Power & Temperature
-`PowerProfileDropdown` uses `power-profiles-daemon` (selectable cards). `TemperatureButton` reads CPU temp from system sensors with color coding. `BatteryButton` shows a dynamic icon and percentage in the bar; `BatteryDropdown` provides full battery detail including charge state and ETA.
+`PowerProfileDropdown` uses `power-profiles-daemon` (selectable cards). `TemperatureButton` now auto-detects a processor temperature sensor by prioritizing CPU-oriented hwmon devices (`coretemp`, `k10temp`, `zenpower`, `cpu_thermal`, `x86_pkg_temp`) and falls back safely if needed. `BatteryButton` shows a dynamic icon and percentage in the bar; `BatteryDropdown` provides full battery detail including charge state and ETA.
 
 ### Settings
 `SettingsDropdown` provides an expandable Night Light card plus seven rows of controls.
@@ -583,7 +607,7 @@ All gauges animate smoothly (600 ms `OutCubic`) and turn red when ≥ 85%. The t
 `WorkspacesPanel` filters `Hyprland.workspaces` to the configured monitor. `WorkspaceGlowOverlay` is a separate `PanelWindow` that renders a glow behind the active workspace indicator, animating horizontally as workspaces change.
 
 ### Package Updates (`SystemUpdatesButton`)
-Runs `checkupdates` + `yay -Qua` hourly via `SystemClock.Hours` (more efficient than 15-minute polling). Hidden when count is zero. When updates are found for the first time (or the count changes), a D-Bus notification is sent through QuickShell's own notification server so it appears as a popup. Clicking the bar button opens a floating `kitty` terminal running `yay -Syu`.
+Runs `checkupdates` + `yay -Qua` on startup, hourly via `SystemClock.Hours`, and on a 15-minute periodic refresh to keep state current. The count is also rechecked when Dashboard opens and after any upgrade flow completes. Hidden when count is zero. When updates are found for the first time (or the count changes), a D-Bus notification is sent through QuickShell's own notification server so it appears as a popup. Clicking the bar button opens a floating `kitty` terminal running `yay -Syu`.
 
 **Position:** First item in the right section of the bar — always leftmost, before Bluetooth and Volume.
 

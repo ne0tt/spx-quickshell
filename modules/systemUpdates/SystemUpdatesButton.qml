@@ -1,6 +1,7 @@
 import Quickshell
 import Quickshell.Io
 import QtQuick
+import "../notifications"
 import "../.."
 
 Rectangle {
@@ -122,7 +123,7 @@ Rectangle {
                 if (count > 0 && count !== systemUpdatesButton._prevCount)
                     notifProc.running = true;
                 // Clean up all yay notifications when no updates remain
-                if (count === 0 && systemUpdatesButton._prevCount > 0) {
+                if (count === 0 && systemUpdatesButton._prevCount > 0 && typeof NotifService !== "undefined") {
                     for (var i = 0; i < NotifService.list.length; i++) {
                         var n = NotifService.list[i];
                         if (n.appName === "yay" && !n.closed) n.close();
@@ -154,6 +155,15 @@ Rectangle {
         onHoursChanged: systemUpdateProc.running = true
     }
 
+    // Keep state fresh between hour boundaries so dashboard/open checks
+    // and bar badge stay in sync without waiting up to 59 minutes.
+    Timer {
+        interval: 900000
+        running: true
+        repeat: true
+        onTriggered: systemUpdateProc.running = true
+    }
+
     MouseArea {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
@@ -175,9 +185,11 @@ Rectangle {
         onRunningChanged: {
             if (running) {
                 // Proactively remove yay notifications when upgrade starts
-                for (var i = 0; i < NotifService.list.length; i++) {
-                    var n = NotifService.list[i];
-                    if (n.appName === "yay" && !n.closed) n.close();
+                if (typeof NotifService !== "undefined") {
+                    for (var i = 0; i < NotifService.list.length; i++) {
+                        var n = NotifService.list[i];
+                        if (n.appName === "yay" && !n.closed) n.close();
+                    }
                 }
             } else {
                 // Re-check update count after upgrade completes

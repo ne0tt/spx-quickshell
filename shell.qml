@@ -671,6 +671,7 @@ ShellRoot {
     DashboardDropdown {
         id: dashboardDropdown
         screen: root.screen
+        onAboutToOpen: systemUpdatesButton.recheckUpdates()
         onUpgradeCompleted: systemUpdatesButton.recheckUpdates()
     }
 
