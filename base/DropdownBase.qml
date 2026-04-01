@@ -264,10 +264,11 @@ PanelWindow {
     }
 
     // ─── Drop shadow (sibling so blur escapes _wrapper clip) ─
-    // Only created when blur is enabled for performance.
+    // Uses a blurred shadow when blur is enabled and a lightweight
+    // flat shadow fallback when blur is disabled.
     Item {
         id: _shadowItem
-        visible: config.blur && _wrapper.visible
+        visible: _wrapper.visible
         // Fade with the hex bar so MultiEffect has time to initialize
         // before the shadow is visible — prevents the 1-frame black flash.
         opacity: _hexBar.opacity
@@ -299,6 +300,19 @@ PanelWindow {
                     blurMax: 16
                 }
             }
+        }
+
+        Rectangle {
+            visible: !config.blur
+            x: 14; y: 8
+            width: _base.panelWidth + 4
+            height: Math.max(0, parent.height - 8)
+            topLeftRadius: 0
+            topRightRadius: 0
+            bottomLeftRadius: 19
+            bottomRightRadius: 19
+            color: "black"
+            opacity: 0.22
         }
     }
 
