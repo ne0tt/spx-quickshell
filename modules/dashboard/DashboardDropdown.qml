@@ -169,7 +169,7 @@ DropdownBase {
     // Start update check only after dropdown finishes opening.
     Timer {
         id: updatesOpenDelay
-        interval: dash.openDuration +250
+        interval: dash.openDuration + 250
         repeat: false
         onTriggered: {
             if (dash.isOpen) {
