@@ -132,6 +132,13 @@ DropdownBase {
     onAboutToOpen: {
         _tab      = 0
         _updates  = -1
+        _mediaStatus = "Stopped"
+        _mediaAvail = false
+        _mediaTitle = "No media playing"
+        _mediaArtist = ""
+        _mediaArtUrl = ""
+        _mediaPosition = 0
+        _mediaDuration = 0
         var now = new Date()
         inlineCal.displayYear  = now.getFullYear()
         inlineCal.displayMonth = now.getMonth()
@@ -160,6 +167,8 @@ DropdownBase {
             _vpnBuf = []
             _mapRefreshCounter++  // Force map image reload
             _vpnProc.running = true
+        } else if (_tab === 1) {
+            mediaProc.running = true
         } else {
             _netFocusIdx = -1
         }
@@ -386,23 +395,48 @@ DropdownBase {
             onRead: data => {
                 var p = data.trim().split("|")
                 if (p.length >= 3) {
-                    dash._mediaStatus = p[0] || "Stopped"
-                    dash._mediaAvail  = (dash._mediaStatus === "Playing" || dash._mediaStatus === "Paused")
-                                        && (p[1] || "") !== ""
-                    dash._mediaTitle  = dash._mediaAvail ? p[1] : ""
-                    dash._mediaArtist = dash._mediaAvail ? (p[2] || "") : ""
-                    dash._mediaArtUrl = dash._mediaAvail && p.length > 3 ? p[3] : ""
-                    // Position and duration are in microseconds, convert to seconds
-                    // Validate they're reasonable (max 24 hours = 86400 seconds)
-                    var pos = p.length > 4 && p[4] && p[4].trim() !== "" ? parseInt(p[4]) : 0
-                    var posSeconds = (!isNaN(pos) && pos >= 0) ? pos / 1000000 : 0
-                    dash._mediaPosition = (posSeconds >= 0 && posSeconds < 86400) ? posSeconds : 0
-                    
-                    var dur = p.length > 5 && p[5] && p[5].trim() !== "" ? parseInt(p[5]) : 0
-                    var durSeconds = (!isNaN(dur) && dur >= 0) ? dur / 1000000 : 0
-                    dash._mediaDuration = (durSeconds >= 0 && durSeconds < 86400) ? durSeconds : 0
+                    var status = (p[0] || "Stopped").trim()
+                    var title = (p[1] || "").trim()
+                    var artist = (p[2] || "").trim()
+                    var artUrl = (p.length > 3 ? (p[3] || "") : "").trim()
+
+                    dash._mediaStatus = status
+                    dash._mediaAvail = (status === "Playing" || status === "Paused")
+                                      && title !== ""
+                                      && title !== "No media playing"
+
+                    if (dash._mediaAvail) {
+                        dash._mediaTitle = title
+                        dash._mediaArtist = artist
+                        dash._mediaArtUrl = artUrl
+
+                        // Position and duration are in microseconds, convert to seconds
+                        // Validate they're reasonable (max 24 hours = 86400 seconds)
+                        var pos = p.length > 4 && p[4] && p[4].trim() !== "" ? parseInt(p[4]) : 0
+                        var posSeconds = (!isNaN(pos) && pos >= 0) ? pos / 1000000 : 0
+                        dash._mediaPosition = (posSeconds >= 0 && posSeconds < 86400) ? posSeconds : 0
+
+                        var dur = p.length > 5 && p[5] && p[5].trim() !== "" ? parseInt(p[5]) : 0
+                        var durSeconds = (!isNaN(dur) && dur >= 0) ? dur / 1000000 : 0
+                        dash._mediaDuration = (durSeconds >= 0 && durSeconds < 86400) ? durSeconds : 0
+                    } else {
+                        dash._mediaTitle = "No media playing"
+                        dash._mediaArtist = ""
+                        dash._mediaArtUrl = ""
+                        dash._mediaPosition = 0
+                        dash._mediaDuration = 0
+                    }
                     // Control CAVA visualization
                     Audio.cava.visualizationVisible = dash.isOpen && dash._tab === 1 && dash._mediaAvail
+                } else {
+                    dash._mediaStatus = "Stopped"
+                    dash._mediaAvail = false
+                    dash._mediaTitle = "No media playing"
+                    dash._mediaArtist = ""
+                    dash._mediaArtUrl = ""
+                    dash._mediaPosition = 0
+                    dash._mediaDuration = 0
+                    Audio.cava.visualizationVisible = false
                 }
             }
         }
@@ -1061,7 +1095,7 @@ DropdownBase {
             Image {
                 id: bigArtImage
                 anchors { fill: parent; margins: bigArt.border.width }
-                source: dash._mediaArtUrl
+                source: dash._mediaAvail ? dash._mediaArtUrl : ""
                 fillMode: Image.PreserveAspectCrop
                 smooth: true; asynchronous: true
                 visible: dash._mediaArtUrl !== "" && status === Image.Ready
@@ -1073,7 +1107,7 @@ DropdownBase {
             }
             Text {
                 anchors.centerIn: parent
-                visible: bigArtImage.status !== Image.Ready || dash._mediaArtUrl === ""
+                visible: dash._mediaAvail && (bigArtImage.status !== Image.Ready || dash._mediaArtUrl === "")
                 text: "󰎆"; font.family: config.fontFamily; font.styleName: "Solid"
                 font.pixelSize: 36; color: dash.accentColor
             }
