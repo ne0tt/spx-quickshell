@@ -137,7 +137,7 @@ DropdownBase {
         WeatherState.refresh()
         uptimeProc.running       = true
         perfProc.running         = true
-        updatesProc.running      = true
+        updatesOpenDelay.restart()
         kernelProc.running       = true
         hyprlandVerProc.running  = true
         // Prime the VPN state so tab 4 has data without waiting for the timer
@@ -164,6 +164,18 @@ DropdownBase {
         }
         // Control CAVA visualization
         Audio.cava.visualizationVisible = dash.isOpen && _tab === 1 && _mediaAvail
+    }
+
+    // Start update check only after dropdown finishes opening.
+    Timer {
+        id: updatesOpenDelay
+        interval: dash.openDuration +250
+        repeat: false
+        onTriggered: {
+            if (dash.isOpen) {
+                updatesProc.running = true
+            }
+        }
     }
 
     Timer {
@@ -354,7 +366,7 @@ DropdownBase {
         running: false
         command: ["sh", "-c",
             "awk '{s=int($1);h=int(s/3600);m=int((s%3600)/60);" +
-            "if(h>0)printf \"up %dh %dm\",h,m;else printf \"up %dm\",m}'" +
+            "if(h>0)printf \"Uptime %dh %dm\",h,m;else printf \"Uptime %dm\",m}'" +
             " /proc/uptime"]
         stdout: SplitParser {
             onRead: data => dash._uptime = data.trim()
@@ -649,8 +661,8 @@ DropdownBase {
                             id: updatesLabel
                             color: dash._updates > 0 ? dash.accentColor : dash.textColor
                             font.pixelSize: 13; font.family: config.fontFamily; anchors.verticalCenter: parent.verticalCenter
-                            text: dash._updates < 0 ? "checking…"
-                                : dash._updates === 0 ? "system up to date"
+                            text: dash._updates < 0 ? "Checking for updates…"
+                                : dash._updates === 0 ? "System is up to date"
                                 : numbersToText.convert(dash._updates) + (dash._updates === 1 ? " update available" : " updates available")
                             Behavior on color { ColorAnimation { duration: 160 } }
                         }
