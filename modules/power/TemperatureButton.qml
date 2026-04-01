@@ -69,7 +69,7 @@ Item {
     // ============================================================
     Timer {
         interval: 5000
-        running: true
+        running: root.visible
         repeat: true
         triggeredOnStart: true
         onTriggered: tempFile.reload()

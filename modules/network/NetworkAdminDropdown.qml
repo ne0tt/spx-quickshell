@@ -326,7 +326,7 @@ DropdownBase {
 
     // nmcli event monitor — debounced
     Process {
-        running: true
+        running: netAdmin.isOpen
         command: ["nmcli", "monitor"]
         stdout: SplitParser {
             onRead: data => nmAdminDebounce.restart()

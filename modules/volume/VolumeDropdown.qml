@@ -144,8 +144,18 @@ DropdownBase {
             onRead: data => {
                 var parts = data.trim().split('|')
                 if (parts.length === 2) {
-                    volDrop._mediaPosition = Math.floor(parseInt(parts[0]) / 1000000)  // microseconds to seconds
-                    volDrop._mediaDuration = Math.floor(parseInt(parts[1]) / 1000000)
+                    // Parse and validate position (microseconds to seconds)
+                    // Ensure values are reasonable (max 24 hours = 86400 seconds)
+                    var posStr = parts[0] && parts[0].trim() !== "" ? parts[0].trim() : "0"
+                    var pos = parseInt(posStr)
+                    var posSeconds = (!isNaN(pos) && pos >= 0) ? Math.floor(pos / 1000000) : 0
+                    volDrop._mediaPosition = (posSeconds >= 0 && posSeconds < 86400) ? posSeconds : 0
+                    
+                    // Parse and validate duration (microseconds to seconds)
+                    var durStr = parts[1] && parts[1].trim() !== "" ? parts[1].trim() : "0"
+                    var dur = parseInt(durStr)
+                    var durSeconds = (!isNaN(dur) && dur >= 0) ? Math.floor(dur / 1000000) : 0
+                    volDrop._mediaDuration = (durSeconds >= 0 && durSeconds < 86400) ? durSeconds : 0
                 }
             }
         }
@@ -618,8 +628,9 @@ DropdownBase {
                     Text {
                         anchors.left: parent.left
                         text: {
-                            var m = Math.floor(volDrop._mediaPosition / 60)
-                            var s = volDrop._mediaPosition % 60
+                            var pos = volDrop._mediaPosition || 0
+                            var m = Math.floor(pos / 60)
+                            var s = pos % 60
                             return m + ":" + (s < 10 ? "0" : "") + s
                         }
                         font.family: fontFamily
@@ -630,8 +641,9 @@ DropdownBase {
                     Text {
                         anchors.right: parent.right
                         text: {
-                            var m = Math.floor(volDrop._mediaDuration / 60)
-                            var s = volDrop._mediaDuration % 60
+                            var dur = volDrop._mediaDuration || 0
+                            var m = Math.floor(dur / 60)
+                            var s = dur % 60
                             return m + ":" + (s < 10 ? "0" : "") + s
                         }
                         font.family: fontFamily

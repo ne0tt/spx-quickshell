@@ -27,7 +27,6 @@ Singleton {
             interval: 2000
             repeat: false
             onTriggered: {
-                console.log("Restarting CAVA process")
                 cavaProcess.running = true
             }
         }
@@ -64,16 +63,15 @@ Singleton {
                         cavaObj.values = parsedValues
                         cavaObj.active = parsedValues.some(v => v > 0.01)
                     } catch (e) {
-                        console.log("CAVA parse error:", e, "Data:", data)
+                        // Silently ignore parse errors
                     }
                 }
             }
             
             onExited: (exitCode) => {
-                console.log("CAVA process finished, exit code:", exitCode)
                 if (exitCode !== 0) {
                     // Restart after 2 seconds
-                    restartTimer.start()
+                    cavaObj.restartTimer.start()
                 }
             }
         }

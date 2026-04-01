@@ -108,7 +108,7 @@ DropdownBase {
     // --------------------------------------------------------
     Process {
         id: nmMonitorProc
-        running: true
+        running: netDrop.isOpen
         command: ["nmcli", "monitor"]
         stdout: SplitParser {
             onRead: data => nmDebounce.restart()

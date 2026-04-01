@@ -380,8 +380,14 @@ DropdownBase {
                     dash._mediaArtist = dash._mediaAvail ? (p[2] || "") : ""
                     dash._mediaArtUrl = dash._mediaAvail && p.length > 3 ? p[3] : ""
                     // Position and duration are in microseconds, convert to seconds
-                    dash._mediaPosition = p.length > 4 && p[4] ? parseInt(p[4]) / 1000000 : 0
-                    dash._mediaDuration = p.length > 5 && p[5] ? parseInt(p[5]) / 1000000 : 0
+                    // Validate they're reasonable (max 24 hours = 86400 seconds)
+                    var pos = p.length > 4 && p[4] && p[4].trim() !== "" ? parseInt(p[4]) : 0
+                    var posSeconds = (!isNaN(pos) && pos >= 0) ? pos / 1000000 : 0
+                    dash._mediaPosition = (posSeconds >= 0 && posSeconds < 86400) ? posSeconds : 0
+                    
+                    var dur = p.length > 5 && p[5] && p[5].trim() !== "" ? parseInt(p[5]) : 0
+                    var durSeconds = (!isNaN(dur) && dur >= 0) ? dur / 1000000 : 0
+                    dash._mediaDuration = (durSeconds >= 0 && durSeconds < 86400) ? durSeconds : 0
                     // Control CAVA visualization
                     Audio.cava.visualizationVisible = dash.isOpen && dash._tab === 1 && dash._mediaAvail
                 }
@@ -1167,7 +1173,7 @@ DropdownBase {
                     width: parent.width - 168  // Parent width minus controls (136) and spacing
                     height: parent.height
                     anchors.verticalCenter: parent.verticalCenter
-                    visible: dash._mediaAvail && dash._mediaDuration > 0
+                    visible: dash._mediaAvail
 
                     Row {
                         anchors.centerIn: parent
@@ -1179,7 +1185,8 @@ DropdownBase {
                             id: currentTime
                             width: 38
                             text: {
-                                var sec = Math.floor(dash._mediaPosition)
+                                var pos = dash._mediaPosition || 0
+                                var sec = Math.floor(pos)
                                 var min = Math.floor(sec / 60)
                                 var s = sec % 60
                                 return min + ":" + String(s).padStart(2, "0")
@@ -1252,7 +1259,8 @@ DropdownBase {
                             id: totalTime
                             width: 38
                             text: {
-                                var sec = Math.floor(dash._mediaDuration)
+                                var dur = dash._mediaDuration || 0
+                                var sec = Math.floor(dur)
                                 var min = Math.floor(sec / 60)
                                 var s = sec % 60
                                 return min + ":" + String(s).padStart(2, "0")
