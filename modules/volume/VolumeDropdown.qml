@@ -54,6 +54,14 @@ DropdownBase {
         refreshMedia()
         refreshMediaVol()
     }
+    
+    // Control CAVA process based on dropdown state and media availability
+    onIsOpenChanged: {
+        Audio.cava.visualizationVisible = volDrop.isOpen && volDrop.mediaAvailable
+    }
+    onMediaAvailableChanged: {
+        Audio.cava.visualizationVisible = volDrop.isOpen && volDrop.mediaAvailable
+    }
 
     // Poll while open so the slider stays in sync with external changes
     Timer {

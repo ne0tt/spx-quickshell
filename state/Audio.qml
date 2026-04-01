@@ -19,10 +19,13 @@ Singleton {
         property var values: new Array(24).fill(0)  // Initialize with 24 bars (even number)
         property bool active: false
         
+        // Control when CAVA should run (set by UI components)
+        property bool visualizationVisible: false
+        
         // CAVA process - outputs raw data to stdout
         property var _cavaProcess: Process {
             id: cavaProcess
-            running: true
+            running: cavaObj.visualizationVisible
             command: [
                 "cava", 
                 "-p", Quickshell.env("HOME") + "/dotfiles/.config/quickshell/cava.conf"

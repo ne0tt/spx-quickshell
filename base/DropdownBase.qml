@@ -264,9 +264,10 @@ PanelWindow {
     }
 
     // ─── Drop shadow (sibling so blur escapes _wrapper clip) ─
+    // Only created when blur is enabled for performance.
     Item {
         id: _shadowItem
-        visible: _wrapper.visible
+        visible: config.blur && _wrapper.visible
         // Fade with the hex bar so MultiEffect has time to initialize
         // before the shadow is visible — prevents the 1-frame black flash.
         opacity: _hexBar.opacity
@@ -277,21 +278,26 @@ PanelWindow {
         height: _wrapper.height
 
         // Shadow: unified body (header + content + footer) — flat top, rounded bottom
-        Rectangle {
+        Loader {
+            active: config.blur
             x: 14; y: 6
             width: _base.panelWidth +4
             height: Math.max(0, parent.height - 6)
-            topLeftRadius: 0
-            topRightRadius: 0
-            bottomLeftRadius: 19
-            bottomRightRadius: 19
-            color: "black"
-            opacity: 0.6
-            layer.enabled: !_openAnim.running && !_closeAnim.running
-            layer.effect: MultiEffect {
-                blurEnabled: true
-                blur:    0.6
-                blurMax: 16
+            
+            sourceComponent: Rectangle {
+                topLeftRadius: 0
+                topRightRadius: 0
+                bottomLeftRadius: 19
+                bottomRightRadius: 19
+                color: "black"
+                opacity: 0.6
+                // Disable layer during animations for better performance
+                layer.enabled: !_openAnim.running && !_closeAnim.running
+                layer.effect: MultiEffect {
+                    blurEnabled: true
+                    blur:    0.6
+                    blurMax: 16
+                }
             }
         }
     }
