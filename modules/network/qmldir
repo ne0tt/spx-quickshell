@@ -1,3 +1,5 @@
 NetworkButton 1.0 NetworkButton.qml
 NetworkDropdown 1.0 NetworkDropdown.qml
 NetworkAdminDropdown 1.0 NetworkAdminDropdown.qml
+VlanButton 1.0 VlanButton.qml
+VlanDropdown 1.0 VlanDropdown.qml

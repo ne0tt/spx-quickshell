@@ -17,10 +17,10 @@ import qs.modules.bluetooth
 import qs.modules.calendar
 import qs.modules.clock
 import qs.modules.lockscreen
+import qs.modules.network
 import qs.modules.power
 import qs.modules.settings
 import qs.modules.systemTray
-import qs.modules.vpn
 import qs.modules.volume
 import qs.modules.wallpaper
 import qs.modules.workspaces
@@ -236,7 +236,7 @@ ShellRoot {
         // Single source of truth for all panels that use closePanel()
         // appLauncher is excluded here because it uses closeLauncher() instead
         readonly property var dropdowns: [calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown,
-            powerDropdown, vpnDropdown, bluetoothDropdown, wpDropdown, settingsDropdown, appLaunchDropdown,
+            powerDropdown, bluetoothDropdown, wpDropdown, settingsDropdown, appLaunchDropdown,
             trayMenu, notifDropdown, dashboardDropdown]
 
         // Close every open dropdown/drawer in one call
@@ -536,21 +536,6 @@ ShellRoot {
                         }
                     }
 
-                    // VPN MODULE
-                    VPNModule {
-                        id: vpnModuleWidget
-                        anchors.verticalCenterOffset: 0
-                        isActive: vpnDropdown.isOpen
-                        onClicked: function (clickX) {
-                            vpnDropdown.panelX = Math.max(0, clickX - vpnDropdown.panelWidth / 2 - 16);
-                            if (vpnDropdown.isOpen) {
-                                vpnDropdown.closePanel();
-                            } else {
-                                root.switchPanel(() => vpnDropdown.openPanel());
-                            }
-                        }
-                    }
-
                     // SYSTEM TRAY
                     SystemTrayPanel {
                         anchors.verticalCenterOffset: 0
@@ -622,7 +607,7 @@ ShellRoot {
 
         // Reactive: becomes true the moment any dropdown opens.
         // QML resolves the IDs lazily, so forward refs (calendarPanel etc.) are fine.
-        readonly property bool anyOpen: (typeof calendarPanel !== "undefined" && calendarPanel.isOpen) || (typeof volumeDropdown !== "undefined" && volumeDropdown.isOpen) || (typeof vlanDropdown !== "undefined" && vlanDropdown.isOpen) || (typeof powerProfileDropdown !== "undefined" && powerProfileDropdown.isOpen) || (typeof powerDropdown !== "undefined" && powerDropdown.isOpen) || (typeof vpnDropdown !== "undefined" && vpnDropdown.isOpen) || (typeof bluetoothDropdown !== "undefined" && bluetoothDropdown.isOpen) || (typeof wpDropdown !== "undefined" && wpDropdown.isOpen) || (typeof settingsDropdown !== "undefined" && settingsDropdown.isOpen) || (typeof appLaunchDropdown !== "undefined" && appLaunchDropdown.isOpen) || (typeof appLauncher !== "undefined" && appLauncher.isOpen)
+        readonly property bool anyOpen: (typeof calendarPanel !== "undefined" && calendarPanel.isOpen) || (typeof volumeDropdown !== "undefined" && volumeDropdown.isOpen) || (typeof vlanDropdown !== "undefined" && vlanDropdown.isOpen) || (typeof powerProfileDropdown !== "undefined" && powerProfileDropdown.isOpen) || (typeof powerDropdown !== "undefined" && powerDropdown.isOpen) || (typeof bluetoothDropdown !== "undefined" && bluetoothDropdown.isOpen) || (typeof wpDropdown !== "undefined" && wpDropdown.isOpen) || (typeof settingsDropdown !== "undefined" && settingsDropdown.isOpen) || (typeof appLaunchDropdown !== "undefined" && appLaunchDropdown.isOpen) || (typeof appLauncher !== "undefined" && appLauncher.isOpen)
 
         mask: Region {
             item: _scrimMask
@@ -673,12 +658,6 @@ ShellRoot {
     // PowerDropdown — drops down from the power icon
     PowerDropdown {
         id: powerDropdown
-        screen: root.screen
-    }
-
-    // VPNDropdown — drops down from the VPN module pill
-    VPNDropdown {
-        id: vpnDropdown
         screen: root.screen
     }
 

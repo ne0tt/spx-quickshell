@@ -74,8 +74,8 @@ Long notification text no longer spills outside card bounds in either popup card
 ### 📝 Current Module Status
 | Module | Status | Notes |
 |---|---|---|
-| **Active Modules** | ✅ Enabled | appLauncher, bluetooth, calendar, clock, dashboard, lockscreen, notifications, power, settings, systemTray, systemUpdates, volume, vpn, wallpaper, workspaces |
-| **Available but Disabled** | ⏸️ Ready | network, weather, rightPanelSlider, chat — fully functional with qmldir files, disabled in shell.qml imports |
+| **Active Modules** | ✅ Enabled | appLauncher, bluetooth, calendar, clock, dashboard, lockscreen, network, notifications, power, settings, systemTray, systemUpdates, volume, wallpaper, workspaces |
+| **Available but Disabled** | ⏸️ Ready | vpn, weather, rightPanelSlider, chat — fully functional with qmldir files, disabled in shell.qml imports |
 
 ---
 
@@ -130,10 +130,12 @@ quickshell/
     │   ├── pam/password.conf        # Custom PAM configuration
     │   ├── Colors.qml               # Theme colors symlink
     │   └── qmldir                   # Module exports
-    ├── network/                         # (qmldir added, disabled in shell.qml)
+    ├── network/
     │   ├── NetworkAdminDropdown.qml     # Full NetworkManager admin panel
     │   ├── NetworkButton.qml            # IP address pill in bar
     │   ├── NetworkDropdown.qml          # Ethernet status and details dropdown
+    │   ├── VlanButton.qml               # VLAN icon button in bar
+    │   ├── VlanDropdown.qml             # VLAN management panel
     │   └── qmldir                       # Module exports
     ├── notifications/
     │   ├── NotifService.qml         # Singleton: D-Bus notification server + list management
@@ -167,8 +169,6 @@ quickshell/
     │   ├── VolumeButton.qml         # Volume icon + percentage in bar
     │   └── VolumeDropdown.qml       # Volume slider, media controls & audio visualizer
     ├── vpn/
-    │   ├── VlanButton.qml           # VLAN icon button in bar
-    │   ├── VlanDropdown.qml         # VLAN management panel
     │   ├── VPNDropdown.qml          # WireGuard connection controls
     │   └── VPNModule.qml            # VPN/IP status pill in bar
     ├── wallpaper/
@@ -788,18 +788,7 @@ Change `barMonitor` in `Config.qml` (or via the Settings dropdown at runtime —
 
 ## Enabling Disabled Modules
 
-Several modules are currently disabled in `shell.qml` but remain fully functional with proper qmldir configuration:
-
-### Network Module
-```qml
-// In shell.qml imports section:
-import qs.modules.network
-
-// In the appropriate bar section:
-NetworkButton {
-    // your configuration
-}
-```
+Some modules are currently disabled in `shell.qml` but remain fully functional with proper qmldir configuration:
 
 ### Weather Module  
 ```qml
