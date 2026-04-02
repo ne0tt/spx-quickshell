@@ -629,9 +629,11 @@ DropdownBase {
                         anchors.left: parent.left
                         text: {
                             var pos = volDrop._mediaPosition || 0
-                            var m = Math.floor(pos / 60)
-                            var s = pos % 60
-                            return m + ":" + (s < 10 ? "0" : "") + s
+                            var sec = Math.floor(pos)
+                            var h = Math.floor(sec / 3600)
+                            var m = Math.floor((sec % 3600) / 60)
+                            var s = sec % 60
+                            return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0")
                         }
                         font.family: fontFamily
                         font.pixelSize: 10
@@ -642,9 +644,11 @@ DropdownBase {
                         anchors.right: parent.right
                         text: {
                             var dur = volDrop._mediaDuration || 0
-                            var m = Math.floor(dur / 60)
-                            var s = dur % 60
-                            return m + ":" + (s < 10 ? "0" : "") + s
+                            var sec = Math.floor(dur)
+                            var h = Math.floor(sec / 3600)
+                            var m = Math.floor((sec % 3600) / 60)
+                            var s = sec % 60
+                            return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0")
                         }
                         font.family: fontFamily
                         font.pixelSize: 10

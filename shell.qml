@@ -561,7 +561,7 @@ ShellRoot {
                     ClockPanel {
                         id: clockWidget
                         anchors.verticalCenterOffset: 0
-                        fontSize: 12
+                        fontSize: 13
                         fontBold: true
                         textColor: calendarPanel.isOpen ? Colors.col_source_color : Colors.col_primary
                         borderColor: "black"

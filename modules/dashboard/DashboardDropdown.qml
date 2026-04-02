@@ -1230,13 +1230,14 @@ DropdownBase {
 
                         Text {
                             id: currentTime
-                            width: 38
+                            width: 56
                             text: {
                                 var pos = dash._mediaPosition || 0
                                 var sec = Math.floor(pos)
-                                var min = Math.floor(sec / 60)
+                                var h = Math.floor(sec / 3600)
+                                var min = Math.floor((sec % 3600) / 60)
                                 var s = sec % 60
-                                return min + ":" + String(s).padStart(2, "0")
+                                return String(h).padStart(2, "0") + ":" + String(min).padStart(2, "0") + ":" + String(s).padStart(2, "0")
                             }
                             color: dash.accentColor
                             font.pixelSize: 11
@@ -1246,7 +1247,7 @@ DropdownBase {
                         }
 
                         Item {
-                            width: parent.width - 82
+                            width: parent.width - 118
                             height: parent.height
                             anchors.verticalCenter: parent.verticalCenter
 
@@ -1304,13 +1305,14 @@ DropdownBase {
 
                         Text {
                             id: totalTime
-                            width: 38
+                            width: 56
                             text: {
                                 var dur = dash._mediaDuration || 0
                                 var sec = Math.floor(dur)
-                                var min = Math.floor(sec / 60)
+                                var h = Math.floor(sec / 3600)
+                                var min = Math.floor((sec % 3600) / 60)
                                 var s = sec % 60
-                                return min + ":" + String(s).padStart(2, "0")
+                                return String(h).padStart(2, "0") + ":" + String(min).padStart(2, "0") + ":" + String(s).padStart(2, "0")
                             }
                             color: dash.dimColor
                             font.pixelSize: 11
