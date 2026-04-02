@@ -34,7 +34,7 @@ Item {
         _prevCount = _count;
     }
 
-    width:  24
+    width:  20
     height: 24
 
     // Bell icon

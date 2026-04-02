@@ -22,7 +22,7 @@ Item {
 
     signal clicked(real clickX)
 
-    width:  25
+    width:  15
     height: 24
 
     Text {
