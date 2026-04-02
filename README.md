@@ -88,6 +88,7 @@ quickshell/
 ├── Config.qml                       # Global settings (font, barMonitor, animations, blur)
 ├── NumbersToText.qml                # Global utility: converts integers to English words
 ├── cava.conf                        # CAVA audio visualizer configuration
+├── qmldir                           # Root module exports (Colors, Config, utilities)
 │
 ├── state/
 │   ├── VolumeState.qml              # Singleton: PipeWire default-sink volume & mute
@@ -139,13 +140,18 @@ quickshell/
     │   ├── NotifCard.qml            # Visual card for a single notification (fade in/out)
     │   ├── NotifPopups.qml          # WlrLayer.Overlay popup stack (top-right)
     │   ├── NotifButton.qml          # Bell icon button in bar with unread count badge
-    │   └── NotifDropdown.qml        # Notification history + yay update card (DropdownBase)
+    │   ├── NotifDropdown.qml        # Notification history + yay update card (DropdownBase)
+    │   └── qmldir                   # Module exports
     ├── power/
     │   ├── BatteryButton.qml        # Battery percentage + icon indicator in bar
     │   ├── BatteryDropdown.qml      # Battery detail panel (state, ETA, energy)
+    │   ├── PowerButton.qml          # Power icon button in bar
+    │   ├── PowerDropdown.qml        # Hold-to-confirm power actions (lock, reboot, shutdown)
     │   ├── PowerProfileButton.qml   # Power profile icon in bar
     │   ├── PowerProfileDropdown.qml # Power profile selector
-    │   └── TemperatureButton.qml    # CPU temperature indicator in bar
+    │   ├── TemperatureButton.qml    # CPU temperature indicator in bar
+    │   ├── reboot.sh                # Reboot helper script invoked by PowerDropdown
+    │   └── shutdown.sh              # Shutdown helper script invoked by PowerDropdown
     ├── rightPanelSlider/                # (qmldir added, disabled in shell.qml)
     │   ├── RightPanelButton.qml         # Bar icon that opens the right-side panel
     │   ├── RightPanelSlider.qml         # Panel that slides in from the right edge
