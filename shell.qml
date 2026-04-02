@@ -236,7 +236,7 @@ ShellRoot {
         // Single source of truth for all panels that use closePanel()
         // appLauncher is excluded here because it uses closeLauncher() instead
         readonly property var dropdowns: [calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown,
-            vpnDropdown, bluetoothDropdown, wpDropdown, settingsDropdown, appLaunchDropdown, 
+            powerDropdown, vpnDropdown, bluetoothDropdown, wpDropdown, settingsDropdown, appLaunchDropdown,
             trayMenu, notifDropdown, dashboardDropdown]
 
         // Close every open dropdown/drawer in one call
@@ -575,6 +575,27 @@ ShellRoot {
                             }
                         }
                     }
+
+                    // POWER BUTTON
+                    PowerButton {
+                        id: powerButton
+                        anchors.verticalCenterOffset: 1
+                        isActive: powerDropdown.isOpen
+                        onClicked: function (clickX) {
+                            // Nudge left so the panel doesn't hug the bar's far-right edge.
+                            powerDropdown.panelX = Math.max(0, clickX - powerDropdown.panelWidth / 2 - 155);
+                            if (powerDropdown.isOpen) {
+                                powerDropdown.closePanel();
+                            } else {
+                                root.switchPanel(() => powerDropdown.openPanel());
+                            }
+                        }
+                    }
+
+                    Item {
+                        width: 1
+                        height: 1
+                    }
                 }
             }
         }
@@ -601,7 +622,7 @@ ShellRoot {
 
         // Reactive: becomes true the moment any dropdown opens.
         // QML resolves the IDs lazily, so forward refs (calendarPanel etc.) are fine.
-        readonly property bool anyOpen: (typeof calendarPanel !== "undefined" && calendarPanel.isOpen) || (typeof volumeDropdown !== "undefined" && volumeDropdown.isOpen) || (typeof vlanDropdown !== "undefined" && vlanDropdown.isOpen) || (typeof powerProfileDropdown !== "undefined" && powerProfileDropdown.isOpen) || (typeof vpnDropdown !== "undefined" && vpnDropdown.isOpen) || (typeof bluetoothDropdown !== "undefined" && bluetoothDropdown.isOpen) || (typeof wpDropdown !== "undefined" && wpDropdown.isOpen) || (typeof settingsDropdown !== "undefined" && settingsDropdown.isOpen) || (typeof appLaunchDropdown !== "undefined" && appLaunchDropdown.isOpen) || (typeof appLauncher !== "undefined" && appLauncher.isOpen)
+        readonly property bool anyOpen: (typeof calendarPanel !== "undefined" && calendarPanel.isOpen) || (typeof volumeDropdown !== "undefined" && volumeDropdown.isOpen) || (typeof vlanDropdown !== "undefined" && vlanDropdown.isOpen) || (typeof powerProfileDropdown !== "undefined" && powerProfileDropdown.isOpen) || (typeof powerDropdown !== "undefined" && powerDropdown.isOpen) || (typeof vpnDropdown !== "undefined" && vpnDropdown.isOpen) || (typeof bluetoothDropdown !== "undefined" && bluetoothDropdown.isOpen) || (typeof wpDropdown !== "undefined" && wpDropdown.isOpen) || (typeof settingsDropdown !== "undefined" && settingsDropdown.isOpen) || (typeof appLaunchDropdown !== "undefined" && appLaunchDropdown.isOpen) || (typeof appLauncher !== "undefined" && appLauncher.isOpen)
 
         mask: Region {
             item: _scrimMask
@@ -647,6 +668,12 @@ ShellRoot {
         id: powerProfileDropdown
         screen: root.screen
         currentProfile: powerProfileWidget.currentProfile
+    }
+
+    // PowerDropdown — drops down from the power icon
+    PowerDropdown {
+        id: powerDropdown
+        screen: root.screen
     }
 
     // VPNDropdown — drops down from the VPN module pill

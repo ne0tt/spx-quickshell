@@ -4,7 +4,7 @@
 
 A highly customized Wayland status bar and system interface built with [Quickshell](https://quickshell.outfoxxed.me/) for Hyprland.
 
-**Last Updated**: April 1, 2026 — Media controls, update sync fixes, CPU temp auto-detect, and runtime optimizations
+**Last Updated**: April 2, 2026 — SelectableCard hold-to-confirm UX plus notification text overflow/truncation fixes
 
 ---
 
@@ -15,6 +15,35 @@ A feature-rich top panel for Hyprland with smooth animations, reactive system st
 - **Left** — App launcher button, wallpaper picker
 - **Center** — Hyprland workspace indicators with glow overlay
 - **Right** — Package updates, VPN, Bluetooth, volume with audio visualizer, power profile, temperature, system tray, notifications, lockscreen, clock
+
+---
+
+## Recent Improvements (April 2, 2026)
+
+### ✅ SelectableCard Hold-to-Confirm UX
+A new hold-to-confirm interaction model was added to `SelectableCard`, primarily used by `PowerDropdown`.
+
+- **Hold progress border**: A Canvas-drawn accent-colored border traces around the card while the button is held, starting from the vertical midpoint of the right edge and sweeping clockwise all the way around. Progress is driven by a `NumberAnimation` over `holdDuration` ms.
+- **Dot pulse during hold**: The status dot pulses using the full accent color (fades between `accentColor` and a near-transparent tint at 300 ms) while the hold is in progress, giving a second visual cue that an action is pending. The first frame snaps to `accentColor` so the pulse always starts from the source color.
+- **Border flash on completion**: Once the hold completes, the border flashes 3 times (80 ms per step) before the action fires, confirming the trigger.
+- **Selected state window**: After the border flash, the card shows its full selected/active visual state for 1 second. The action (`clicked()` signal) fires immediately when this window begins — so the panel starts closing and the task executes right away — and the timer simply clears the visual state after the second is up.
+- **Clean cancellation**: Releasing the press or closing the panel at any point stops all in-flight animations (`_holdProgressAnim`, `_borderFlashAnim`, `_holdActiveTimer`), clears all flags, and resets the dot color and border opacity to neutral with no visual artefacts.
+- **Panel close guard**: An `onIsPanelOpenChanged` handler ensures every animation and timer is stopped the moment the panel rolls up.
+- **`_selected` computed alias**: All visual bindings now evaluate `_selected = isActive || _holdActive`, so the brief selected-state window after a successful hold is visually indistinguishable from a genuinely active card.
+
+### ✅ Notification Text Containment & Truncation
+Long notification text no longer spills outside card bounds in either popup cards or notification history list cards.
+
+- **`NotifCard.qml` containment hardening**:
+  - Enabled card clipping (`clip: true`) so painted text is always confined to the card.
+  - Summary and body now use safer wrapping (`WrapAtWordBoundaryOrAnywhere`) to handle long unbroken tokens.
+  - Added explicit summary truncation (`maximumLineCount: 3`, `elide: Text.ElideRight`).
+  - Kept body capped at 4 lines with right-side ellipsis.
+  - Action button labels now respect button width and ellide when too long.
+- **`SelectableCard.qml` containment hardening** (affects `NotifDropdown` list items):
+  - Enabled clipping on the card background container.
+  - Constrained the label/subtitle column between left icon and right status dot.
+  - Forced single-line title/subtitle with `Text.ElideRight` so long notification summaries end with `...` instead of overflowing.
 
 ---
 
@@ -41,21 +70,6 @@ A feature-rich top panel for Hyprland with smooth animations, reactive system st
 - Temperature sensor detection now auto-selects processor-oriented hwmon sources (e.g., `coretemp`, `k10temp`) with safe fallback behavior.
 
 ---
-
-## Recent Improvements (March 31, 2026)
-
-### ✅ Code Quality Improvements
-- **Font Consistency**: Fixed hardcoded "Hack Nerd Font" references in `NotifCard.qml` to use `config.fontFamily`
-- **Code Cleanup**: Removed all commented/dead code sections throughout `shell.qml`:
-  - Cleaned up unused network, weather, rightPanelSlider imports and references
-  - Removed commented RightPanelSlider implementation and global shortcuts
-  - Simplified dropdown arrays and scrim references
-  - Cleaned up debug statements in `SystemTrayPanel.qml`
-- **Module Structure**: Added missing `qmldir` files for better module organization:
-  - `modules/network/qmldir`
-  - `modules/weather/qmldir` 
-  - `modules/rightPanelSlider/qmldir`
-  - `modules/chat/qmldir`
 
 ### 📝 Current Module Status
 | Module | Status | Notes |
@@ -310,7 +324,43 @@ Animated hexagonal grid painted to a `Canvas`. Repaints are rate-limited to ~20 
 Matrix-style digital rain canvas effect with configurable cascade animation. Features adjustable speed, density, trail lengths, and character colors. Currently unused but available for background effects or easter eggs. Runs at ~20 fps with Canvas optimization. (Its a bit buggy, but I may pick it up again soon)
 
 ### `SelectableCard.qml`
-Card widget used in power profile, VPN, VLAN, and notification history dropdowns for single-select or informational lists.
+Card widget used in power profile, VPN, VLAN, notification history, and power action dropdowns for single-select or informational lists.
+
+**Standard props:**
+
+| Prop | Default | Purpose |
+|---|---|---|
+| `isActive` | `false` | Highlight / selected state |
+| `isBusy` | `false` | Disables click while a command is in-flight |
+| `cardIcon` | `""` | Nerd-font glyph for the left circle |
+| `label` | `""` | Primary text (bold, 13 px) |
+| `subtitle` | `""` | Secondary text (12 px); hidden when empty |
+| `isPanelOpen` | `false` | Drives the status-dot idle pulse |
+| `accentColor` | `white` | Primary accent (from `DropdownBase`) |
+| `textColor` | `white` | Primary text colour |
+| `dimColor` | `#888888` | Inactive / muted colour |
+| `dotActiveColor` | `accentColor` | Colour of the status dot when active |
+
+**Hold-to-confirm props (optional — leave `holdDuration: 0` to disable):**
+
+| Prop | Default | Purpose |
+|---|---|---|
+| `holdDuration` | `0` | Hold time in ms; `0` = normal click mode |
+| `flashLoops` | `3` | Number of border flash cycles after hold |
+| `flashOpacityLow` | `0.25` | Lowest opacity during card flash |
+| `flashDuration` | `120` | ms per opacity step during card flash |
+
+**Hold-to-confirm behaviour (when `holdDuration > 0`):**
+1. Press and hold → accent-colored border traces clockwise from the right-edge midpoint over `holdDuration` ms
+2. Status dot pulses accent color while holding
+3. Border flashes `flashLoops` × 2 times (80 ms per step) to confirm
+4. Card briefly shows full selected state; `clicked()` fires immediately
+5. Releasing early or closing the panel cancels everything cleanly
+
+**Signals / methods:**
+- `clicked` — emitted when the card is activated (tap or hold-to-confirm)
+- `flash()` — trigger the card opacity flash externally
+- `resetHoldState()` — cancel all hold animations and reset state
 
 ### `SettingsToggleRow.qml`
 Icon circle + label + optional subtitle + animated toggle pill. Has an `isBusy` spinner state.
@@ -326,10 +376,10 @@ Icon circle + label + optional subtitle + animated toggle pill. Has an `isBusy` 
 | Component | Purpose |
 |---|---|
 | `NotifService` | D-Bus server; holds `list` (all notifications) and `popups` (active, non-closed). Provides `clearAll()` and `dnd` toggle. |
-| `NotifCard` | Visual card per notification. Fades in on appear; dragging or timeout fades it out. Hover pauses the expire timer. |
+| `NotifCard` | Visual card per notification. Fades in on appear; dragging or timeout fades it out. Hover pauses the expire timer. Summary/body are bounded and ellipsized to prevent overflow. |
 | `NotifPopups` | `PanelWindow` on `WlrLayer.Overlay`, top-right corner. `ListView` backed by `NotifService.popups`. Cards fade in/out; wrapper collapses height to pull remaining cards up. |
 | `NotifButton` | Bell icon (`󰂚`) in the bar. Shows a count badge when there are unread notifications. Click opens `NotifDropdown`. |
-| `NotifDropdown` | History panel extending `DropdownBase`. Shows all non-closed notifications as `SelectableCard` items. Includes a `systemUpdateCount` card at the top when updates are pending — clicking it closes the panel then launches the system upgrade terminal. |
+| `NotifDropdown` | History panel extending `DropdownBase`. Shows all non-closed notifications as `SelectableCard` items with strict single-line ellipsis truncation for long titles/subtitles. Includes a `systemUpdateCount` card at the top when updates are pending — clicking it closes the panel then launches the system upgrade terminal. |
 
 The notification popup window hides itself when `NotifService.popups` is empty. Each `Notif` object holds a `Set`-based lock mechanism so visual animations can finish before the object is destroyed.
 

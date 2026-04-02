@@ -35,6 +35,7 @@ Rectangle {
 
     implicitWidth:  cardWidth
     implicitHeight: inner.implicitHeight + padV * 2
+    clip:           true
 
     radius:       8
     color:        isCritical ? "#2d1a1a" : "#1b3534"
@@ -191,10 +192,12 @@ Rectangle {
             font.family:         config.fontFamily
             font.pixelSize:      13
             font.bold:           true
-            wrapMode:            Text.WordWrap
+            wrapMode:            Text.WrapAtWordBoundaryOrAnywhere
             horizontalAlignment: Text.AlignLeft
             Layout.fillWidth:    true
             visible:             text.length > 0
+            maximumLineCount:    3
+            elide:               Text.ElideRight
         }
 
         // ── Body (full width, flush left) ─────────────────────────────────
@@ -203,7 +206,7 @@ Rectangle {
             color:               "#a8cccb"
             font.family:         config.fontFamily
             font.pixelSize:      12
-            wrapMode:            Text.WordWrap
+            wrapMode:            Text.WrapAtWordBoundaryOrAnywhere
             horizontalAlignment: Text.AlignLeft
             Layout.fillWidth:    true
             visible:             text.length > 0
@@ -228,6 +231,7 @@ Rectangle {
 
                     radius:         6
                     color:          actionMouse.containsMouse ? "#2a5a58" : "#1f4442"
+                    Layout.fillWidth: true
                     implicitWidth:  actionLabel.implicitWidth + 20
                     implicitHeight: 26
 
@@ -242,6 +246,9 @@ Rectangle {
                         color:            "#80d5d4"
                         font.family:      config.fontFamily
                         font.pixelSize:   11
+                        width:            Math.max(0, actionBtn.width - 12)
+                        elide:            Text.ElideRight
+                        horizontalAlignment: Text.AlignHCenter
                     }
 
                     MouseArea {
