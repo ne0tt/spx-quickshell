@@ -4,7 +4,7 @@
 
 A highly customized Wayland status bar and system interface built with [Quickshell](https://quickshell.outfoxxed.me/) for Hyprland.
 
-**Last Updated**: April 2, 2026 — SelectableCard hold-to-confirm UX plus notification text overflow/truncation fixes
+**Last Updated**: May 3, 2026 — Dashboard tab navigation switched from Tab/Shift+Tab to Left/Right arrow keys
 
 ---
 
@@ -14,67 +14,27 @@ A feature-rich top panel for Hyprland with smooth animations, reactive system st
 
 - **Left** — App launcher button, wallpaper picker
 - **Center** — Hyprland workspace indicators with glow overlay
-- **Right** — Package updates, VPN, Bluetooth, volume with audio visualizer, power profile, temperature, system tray, notifications, lockscreen, clock
+- **Right** — Package updates, VPN, Bluetooth, volume with audio visualizer, power profile, temperature, system tray, notifications, clock, Pomodoro timer
 
 ---
 
-## Recent Improvements (April 2, 2026)
+## Recent Improvements (April 20, 2026)
 
-### ✅ SelectableCard Hold-to-Confirm UX
-A new hold-to-confirm interaction model was added to `SelectableCard`, primarily used by `PowerDropdown`.
+### ✅ Pomodoro Timer Module
+A new Pomodoro workflow was added directly to the bar as a dedicated button + dropdown module.
 
-- **Hold progress border**: A Canvas-drawn accent-colored border traces around the card while the button is held, starting from the vertical midpoint of the right edge and sweeping clockwise all the way around. Progress is driven by a `NumberAnimation` over `holdDuration` ms.
-- **Dot pulse during hold**: The status dot pulses using the full accent color (fades between `accentColor` and a near-transparent tint at 300 ms) while the hold is in progress, giving a second visual cue that an action is pending. The first frame snaps to `accentColor` so the pulse always starts from the source color.
-- **Border flash on completion**: Once the hold completes, the border flashes 3 times (80 ms per step) before the action fires, confirming the trigger.
-- **Selected state window**: After the border flash, the card shows its full selected/active visual state for 1 second. The action (`clicked()` signal) fires immediately when this window begins — so the panel starts closing and the task executes right away — and the timer simply clears the visual state after the second is up.
-- **Clean cancellation**: Releasing the press or closing the panel at any point stops all in-flight animations (`_holdProgressAnim`, `_borderFlashAnim`, `_holdActiveTimer`), clears all flags, and resets the dot color and border opacity to neutral with no visual artefacts.
-- **Panel close guard**: An `onIsPanelOpenChanged` handler ensures every animation and timer is stopped the moment the panel rolls up.
-- **`_selected` computed alias**: All visual bindings now evaluate `_selected = isActive || _holdActive`, so the brief selected-state window after a successful hold is visually indistinguishable from a genuinely active card.
-
-### ✅ Notification Text Containment & Truncation
-Long notification text no longer spills outside card bounds in either popup cards or notification history list cards.
-
-- **`NotifCard.qml` containment hardening**:
-  - Enabled card clipping (`clip: true`) so painted text is always confined to the card.
-  - Summary and body now use safer wrapping (`WrapAtWordBoundaryOrAnywhere`) to handle long unbroken tokens.
-  - Added explicit summary truncation (`maximumLineCount: 3`, `elide: Text.ElideRight`).
-  - Kept body capped at 4 lines with right-side ellipsis.
-  - Action button labels now respect button width and ellide when too long.
-- **`SelectableCard.qml` containment hardening** (affects `NotifDropdown` list items):
-  - Enabled clipping on the card background container.
-  - Constrained the label/subtitle column between left icon and right status dot.
-  - Forced single-line title/subtitle with `Text.ElideRight` so long notification summaries end with `...` instead of overflowing.
-
----
-
-## Recent Improvements (April 1, 2026)
-
-### ✅ Media Controls & Playback UX
-- Added a horizontal playback progress bar to both `VolumeDropdown` and dashboard Media tab with matching layout.
-- Added left/right time labels and click-to-seek behavior on the progress bar.
-- Matched playback button sizing between dropdowns for visual consistency.
-- Improved handling of invalid MPRIS position/duration values (including Apple Music edge cases) to prevent UI overflow and nonsense timestamps.
-
-### ✅ Performance & Visibility Optimizations
-- Gated CAVA bar animations and marquee animations so they only run while the relevant panel/tab is visible.
-- Limited background polling/monitoring for several modules to visible/open states where appropriate (e.g., network and power widgets), reducing unnecessary runtime work.
-
-### ✅ Reliability Fixes
-- Fixed CAVA restart flow in `state/Audio.qml` (`restartTimer` scope/usage) and removed CAVA debug log spam from normal operation.
-- Fixed `SystemUpdatesButton` notification-service scoping to prevent `NotifService is not defined` runtime warnings during update checks/cleanup.
-- Unified update counting between `DashboardDropdown` and `SystemUpdatesButton` so both surfaces always show the same total.
-- Deferred Dashboard update checks until the dropdown has fully finished opening, avoiding checks during the rollout animation.
-- Improved package update state synchronization across Dashboard, Notifications, and the bar update button:
-  - Recheck update count when opening Dashboard.
-  - Added periodic background recheck (every 15 minutes) in addition to startup/hourly checks.
-- Temperature sensor detection now auto-selects processor-oriented hwmon sources (e.g., `coretemp`, `k10temp`) with safe fallback behavior.
+- **Live countdown on bar button**: When a Pomodoro session is running, the button switches from icon mode to `mm:ss` countdown.
+- **Session modes**: One-click start for `Work`, `Short break`, and `Long break` sessions.
+- **Timer controls**: Built-in `Start/Pause` and `Reset` controls in the dropdown.
+- **Duration options**: Per-session duration tuning (work/short/long) via +/- minute controls.
+- **Global shortcut**: Added a shell action `togglePomodoroDropdown` (recommended Hyprland bind: `SUPER CTRL + P`).
 
 ---
 
 ### 📝 Current Module Status
 | Module | Status | Notes |
 |---|---|---|
-| **Active Modules** | ✅ Enabled | appLauncher, bluetooth, calendar, clock, dashboard, lockscreen, network, notifications, power, settings, systemTray, systemUpdates, volume, wallpaper, workspaces |
+| **Active Modules** | ✅ Enabled | appLauncher, bluetooth, calendar, clock, dashboard, lockscreen, network, notifications, pomodoro, power, settings, systemTray, systemUpdates, volume, wallpaper, workspaces |
 | **Available but Disabled** | ⏸️ Ready | vpn, weather, rightPanelSlider, chat — fully functional with qmldir files, disabled in shell.qml imports |
 
 ---
@@ -154,6 +114,9 @@ quickshell/
     │   ├── TemperatureButton.qml    # CPU temperature indicator in bar
     │   ├── reboot.sh                # Reboot helper script invoked by PowerDropdown
     │   └── shutdown.sh              # Shutdown helper script invoked by PowerDropdown
+    ├── pomodoro/
+    │   ├── PomodoroButton.qml       # Bar button that shows icon or live timer countdown
+    │   └── PomodoroDropdown.qml     # Pomodoro controls (work/break, start/pause/reset, durations)
     ├── rightPanelSlider/                # (qmldir added, disabled in shell.qml)
     │   ├── RightPanelButton.qml         # Bar icon that opens the right-side panel
     │   ├── RightPanelSlider.qml         # Panel that slides in from the right edge
@@ -586,7 +549,7 @@ The `--type` argument is configurable from inside the dropdown itself and persis
 
 ### Dashboard (`DashboardButton` + `DashboardDropdown`)
 
-`DashboardButton` is a bar icon (`󱇘`) that opens `DashboardDropdown` — a tabbed panel with five tabs, navigable by clicking or with **Tab / Shift+Tab** on the keyboard.
+`DashboardButton` is a bar icon (`󱇘`) that opens `DashboardDropdown` — a tabbed panel with five tabs, navigable by clicking or with **Left / Right arrow keys** on the keyboard.
 
 **Tabs:**
 
@@ -654,10 +617,10 @@ All gauges animate smoothly (600 ms `OutCubic`) and turn red when ≥ 85%. The t
 |---|---|
 | Up / Down | Move focus ring between VPN connection cards and the Connection Editor button |
 | Enter | Toggle focused VPN (up/down) or open `nm-connection-editor` if the button is focused |
-| Tab / Shift+Tab | Switch to next/previous tab |
+| Left / Right | Switch to previous/next tab |
 | Escape | Close the panel |
 
-**Keyboard:** Tab/Shift+Tab cycle all five tabs; Escape closes the panel (exclusive keyboard focus while open).
+**Keyboard:** Left/Right arrow keys cycle all five tabs; Escape closes the panel (exclusive keyboard focus while open).
 
 **Global shortcut:** `SUPER CTRL, D` → `quickshell:toggleDashboardDropdown`
 

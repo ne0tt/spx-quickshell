@@ -499,8 +499,8 @@ DropdownBase {
     // ── Tab key navigation ──────────────────────────────────
     Item {
         focus: true
-        Keys.onTabPressed:    { dash._tab = (dash._tab + 1) % 5; dash.triggerHex() }
-        Keys.onBacktabPressed: { dash._tab = (dash._tab + 4) % 5; dash.triggerHex() }
+        Keys.onRightPressed: { dash._tab = (dash._tab + 1) % 5; dash.triggerHex() }
+        Keys.onLeftPressed:  { dash._tab = (dash._tab + 4) % 5; dash.triggerHex() }
         Keys.onEscapePressed: dash.closePanel()
 
         // ── Network tab (Tab 4) up/down/enter navigation ─────
