@@ -12,9 +12,9 @@ A highly customized Wayland status bar and system interface built with [Quickshe
 
 A feature-rich top panel for Hyprland with smooth animations, reactive system state, and dropdown panels for everything. The bar is divided into three sections:
 
-- **Left** — App launcher button, wallpaper picker
+- **Left** — App launcher button
 - **Center** — Hyprland workspace indicators with glow overlay
-- **Right** — Package updates, VPN, Bluetooth, volume with audio visualizer, power profile, temperature, system tray, notifications, clock, Pomodoro timer
+- **Right** — Package updates, Bluetooth, VLAN, volume with audio visualizer, power profile, temperature, system tray, notifications, clock
 
 ---
 
@@ -34,8 +34,8 @@ A new Pomodoro workflow was added directly to the bar as a dedicated button + dr
 ### 📝 Current Module Status
 | Module | Status | Notes |
 |---|---|---|
-| **Active Modules** | ✅ Enabled | appLauncher, bluetooth, calendar, clock, dashboard, lockscreen, network, notifications, pomodoro, power, settings, systemTray, systemUpdates, volume, wallpaper, workspaces |
-| **Available but Disabled** | ⏸️ Ready | vpn, weather, rightPanelSlider, chat — fully functional with qmldir files, disabled in shell.qml imports |
+| **Active Modules** | ✅ Enabled | appLauncher, bluetooth, calendar, clock, dashboard, lockscreen, network, notifications, power, settings, systemTray, systemUpdates, volume, wallpaper, workspaces |
+| **Available but Disabled** | ⏸️ Ready | pomodoro, vpn, weather, rightPanelSlider, chat — fully functional with qmldir files, not imported in shell.qml |
 
 ---
 
@@ -153,7 +153,7 @@ quickshell/
 ## Core Architecture
 
 ### `shell.qml`
-Entry point. Hosts the `PanelWindow` (70px tall, 50px exclusive zone), instantiates all modules, and wires up three global shortcuts. Key utilities:
+Entry point. Hosts the `PanelWindow` (70px tall, 50px exclusive zone), instantiates all modules, and wires up nine global shortcuts. Key utilities:
 
 | Function | Purpose |
 |---|---|
@@ -503,7 +503,7 @@ Settings file lives at `modules/settings/settings.json`:
 ```
 
 ### Wallpaper (`WallpaperButton` + `WallpaperDropdown`)
-`WallpaperButton` is an icon-only bar button (`󰸉`) that opens `WallpaperDropdown` — a scrollable 4-column thumbnail grid for browsing and applying wallpapers.
+`WallpaperButton` is an icon-only button (`󰸉`) that opens `WallpaperDropdown` — a scrollable 4-column thumbnail grid for browsing and applying wallpapers. The button component exists but is not currently placed in the bar; the picker is accessible via the `toggleWallpaperDropdown` global shortcut (`SUPER CTRL + W`) or the **Change Wallpaper** action row in `SettingsDropdown`.
 
 **Wallpaper daemon:** [`awww`](https://github.com/LGFae/swww) (the successor to swww). Wallpapers are applied via:
 
@@ -549,7 +549,7 @@ The `--type` argument is configurable from inside the dropdown itself and persis
 
 ### Dashboard (`DashboardButton` + `DashboardDropdown`)
 
-`DashboardButton` is a bar icon (`󱇘`) that opens `DashboardDropdown` — a tabbed panel with five tabs, navigable by clicking or with **Left / Right arrow keys** on the keyboard.
+`DashboardButton` is an icon button (`󱇘`) that opens `DashboardDropdown` — a tabbed panel with five tabs, navigable by clicking or with **Left / Right arrow keys** on the keyboard. The button component exists but is not currently placed in the bar; the dashboard is accessible via the `toggleDashboardDropdown` global shortcut (`SUPER CTRL + D`).
 
 **Tabs:**
 
