@@ -237,7 +237,7 @@ ShellRoot {
         // appLauncher is excluded here because it uses closeLauncher() instead
         readonly property var dropdowns: [calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown,
             powerDropdown, bluetoothDropdown, wpDropdown, settingsDropdown, appLaunchDropdown,
-            trayMenu, notifDropdown, dashboardDropdown]
+            trayMenu, notifDropdown, dashboardDropdown, temperatureDropdown]
 
         // Close every open dropdown/drawer in one call
         function closeAllDropdowns() {
@@ -480,7 +480,24 @@ ShellRoot {
 
                     // TEMPERATURE BUTTON
                     TemperatureButton {
+                        id: tempButton
                         anchors.verticalCenterOffset: 1
+                        isActive: temperatureDropdown.isOpen
+                        onTemperatureChanged: {
+                            if (temperatureDropdown.isOpen) {
+                                temperatureDropdown.cpuTemp = temperature
+                                temperatureDropdown.refresh()
+                            }
+                        }
+                        onClicked: function (clickX) {
+                            temperatureDropdown.cpuTemp = temperature
+                            temperatureDropdown.panelX = Math.max(0, clickX - temperatureDropdown.panelWidth / 2 + 16);
+                            if (temperatureDropdown.isOpen) {
+                                temperatureDropdown.closePanel();
+                            } else {
+                                root.switchPanel(() => temperatureDropdown.openPanel());
+                            }
+                        }
                     }
 
                     // NOTIFICATION BUTTON
@@ -607,7 +624,7 @@ ShellRoot {
 
         // Reactive: becomes true the moment any dropdown opens.
         // QML resolves the IDs lazily, so forward refs (calendarPanel etc.) are fine.
-        readonly property bool anyOpen: (typeof calendarPanel !== "undefined" && calendarPanel.isOpen) || (typeof volumeDropdown !== "undefined" && volumeDropdown.isOpen) || (typeof vlanDropdown !== "undefined" && vlanDropdown.isOpen) || (typeof powerProfileDropdown !== "undefined" && powerProfileDropdown.isOpen) || (typeof powerDropdown !== "undefined" && powerDropdown.isOpen) || (typeof bluetoothDropdown !== "undefined" && bluetoothDropdown.isOpen) || (typeof wpDropdown !== "undefined" && wpDropdown.isOpen) || (typeof settingsDropdown !== "undefined" && settingsDropdown.isOpen) || (typeof appLaunchDropdown !== "undefined" && appLaunchDropdown.isOpen) || (typeof appLauncher !== "undefined" && appLauncher.isOpen)
+        readonly property bool anyOpen: (typeof calendarPanel !== "undefined" && calendarPanel.isOpen) || (typeof volumeDropdown !== "undefined" && volumeDropdown.isOpen) || (typeof vlanDropdown !== "undefined" && vlanDropdown.isOpen) || (typeof powerProfileDropdown !== "undefined" && powerProfileDropdown.isOpen) || (typeof powerDropdown !== "undefined" && powerDropdown.isOpen) || (typeof bluetoothDropdown !== "undefined" && bluetoothDropdown.isOpen) || (typeof wpDropdown !== "undefined" && wpDropdown.isOpen) || (typeof settingsDropdown !== "undefined" && settingsDropdown.isOpen) || (typeof appLaunchDropdown !== "undefined" && appLaunchDropdown.isOpen) || (typeof appLauncher !== "undefined" && appLauncher.isOpen) || (typeof temperatureDropdown !== "undefined" && temperatureDropdown.isOpen)
 
         mask: Region {
             item: _scrimMask
@@ -671,6 +688,13 @@ ShellRoot {
     WallpaperDropdown {
         id: wpDropdown
         screen: root.screen
+    }
+
+    // TemperatureDropdown — drops down from the temperature button
+    TemperatureDropdown {
+        id: temperatureDropdown
+        screen: root.screen
+        panelIcon: tempButton._icon
     }
 
     // DashboardDropdown — tabbed dashboard panel

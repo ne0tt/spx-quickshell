@@ -4,7 +4,7 @@
 
 A highly customized Wayland status bar and system interface built with [Quickshell](https://quickshell.outfoxxed.me/) for Hyprland.
 
-**Last Updated**: May 3, 2026 — Dashboard tab navigation switched from Tab/Shift+Tab to Left/Right arrow keys
+**Last Updated**: May 6, 2026 — README updated to accurately reflect current module state and configuration
 
 ---
 
@@ -14,28 +14,40 @@ A feature-rich top panel for Hyprland with smooth animations, reactive system st
 
 - **Left** — App launcher button
 - **Center** — Hyprland workspace indicators with glow overlay
-- **Right** — Package updates, Bluetooth, VLAN, volume with audio visualizer, power profile, temperature, system tray, notifications, clock
+- **Right** — Package updates, Bluetooth, volume with audio visualizer, power profile, temperature, notifications, settings, VLAN, system tray, clock, power
 
 ---
 
-## Recent Improvements (April 20, 2026)
+## Module Status
 
-### ✅ Pomodoro Timer Module
-A new Pomodoro workflow was added directly to the bar as a dedicated button + dropdown module.
+### ✅ Active Modules
+Currently imported and enabled in `shell.qml`:
+- **appLauncher** — App search and launcher (floating or dropdown mode)
+- **bluetooth** — Bluetooth power toggle and device management
+- **calendar** — Calendar dropdown from clock
+- **clock** — Time/date display in bar
+- **dashboard** — Tabbed info panel (Dashboard/Media/Performance/Weather/Network with VPN)
+- **lockscreen** — Session locking with PAM authentication
+- **network** — VLAN connection status and management
+- **notifications** — D-Bus notification server with popups and history
+- **power** — Battery, power profile, temperature, and power actions (lock/reboot/shutdown)
+- **settings** — Quick toggles for animations, blur, night light, and more
+- **systemTray** — SNI system tray area
+- **systemUpdates** — Package update count and upgrade terminal
+- **volume** — Volume control with media player integration and audio visualizer
+- **wallpaper** — Wallpaper browser and picker with matugen color generation
+- **workspaces** — Hyprland workspace switcher with glow overlay
 
-- **Live countdown on bar button**: When a Pomodoro session is running, the button switches from icon mode to `mm:ss` countdown.
-- **Session modes**: One-click start for `Work`, `Short break`, and `Long break` sessions.
-- **Timer controls**: Built-in `Start/Pause` and `Reset` controls in the dropdown.
-- **Duration options**: Per-session duration tuning (work/short/long) via +/- minute controls.
-- **Global shortcut**: Added a shell action `togglePomodoroDropdown` (recommended Hyprland bind: `SUPER CTRL + P`).
+### ⏸️ Available Modules (Not Currently Enabled)
+These modules have qmldir configuration files and can be enabled by adding imports to `shell.qml`:
+- **chat** — Chat shortcut widget (has qmldir, not imported)
+- **weather** — Standalone weather button and dropdown (has qmldir, not imported; weather data used in Dashboard)
+- **rightPanelSlider** — Slide-in panel from right edge (has qmldir, not imported)
 
----
-
-### 📝 Current Module Status
-| Module | Status | Notes |
-|---|---|---|
-| **Active Modules** | ✅ Enabled | appLauncher, bluetooth, calendar, clock, dashboard, lockscreen, network, notifications, power, settings, systemTray, systemUpdates, volume, wallpaper, workspaces |
-| **Available but Disabled** | ⏸️ Ready | pomodoro, vpn, weather, rightPanelSlider, chat — fully functional with qmldir files, not imported in shell.qml |
+### 🚧 Incomplete Modules
+Modules that exist but lack proper configuration:
+- **pomodoro** — Timer module files exist but no qmldir, not integrated into shell
+- **vpn** — Module files exist but no qmldir; VPN functionality is integrated into Dashboard Network tab instead
 
 ---
 
@@ -74,8 +86,8 @@ quickshell/
     │   └── BluetoothDropdown.qml    # Bluetooth device management panel
     ├── calendar/
     │   └── CalendarPanel.qml        # Calendar dropdown (extends DropdownBase)
-    ├── chat/                            # (qmldir added, disabled in shell.qml)
-    │   ├── ChatShortcut.qml             # Quick chat access button (currently unused)
+    ├── chat/                            # (has qmldir, not imported in shell.qml)
+    │   ├── ChatShortcut.qml             # Quick chat access button
     │   └── qmldir                       # Module exports
     ├── dashboard/
     │   ├── DashboardButton.qml      # Dashboard icon button in bar
@@ -114,10 +126,10 @@ quickshell/
     │   ├── TemperatureButton.qml    # CPU temperature indicator in bar
     │   ├── reboot.sh                # Reboot helper script invoked by PowerDropdown
     │   └── shutdown.sh              # Shutdown helper script invoked by PowerDropdown
-    ├── pomodoro/
+    ├── pomodoro/                        # (no qmldir, not integrated)
     │   ├── PomodoroButton.qml       # Bar button that shows icon or live timer countdown
     │   └── PomodoroDropdown.qml     # Pomodoro controls (work/break, start/pause/reset, durations)
-    ├── rightPanelSlider/                # (qmldir added, disabled in shell.qml)
+    ├── rightPanelSlider/                # (has qmldir, not imported in shell.qml)
     │   ├── RightPanelButton.qml         # Bar icon that opens the right-side panel
     │   ├── RightPanelSlider.qml         # Panel that slides in from the right edge
     │   └── qmldir                       # Module exports
@@ -131,15 +143,15 @@ quickshell/
     ├── volume/
     │   ├── VolumeButton.qml         # Volume icon + percentage in bar
     │   └── VolumeDropdown.qml       # Volume slider, media controls & audio visualizer
-    ├── vpn/
-    │   ├── VPNDropdown.qml          # WireGuard connection controls
-    │   └── VPNModule.qml            # VPN/IP status pill in bar
+    ├── vpn/                             # (no qmldir; VPN integrated into Dashboard Network tab)
+    │   ├── VPNDropdown.qml          # WireGuard connection controls (standalone, unused)
+    │   └── VPNModule.qml            # VPN/IP status pill in bar (standalone, unused)
     ├── wallpaper/
     │   ├── WallpaperButton.qml      # Wallpaper picker icon button in bar
     │   └── WallpaperDropdown.qml    # Wallpaper browser and picker
-    ├── weather/                         # (qmldir added, disabled in shell.qml)
+    ├── weather/                         # (has qmldir, not imported in shell.qml)
     │   ├── WeatherButton.qml            # Current conditions indicator in bar
-    │   ├── WeatherDropdown.qml          # Detailed weather forecast panel
+    │   ├── WeatherDropdown.qml          # Detailed weather forecast panel (WeatherState used by Dashboard)
     │   └── qmldir                       # Module exports
     ├── workspaces/
     │   ├── WorkspaceGlowOverlay.qml # Fullscreen glow that follows active workspace
@@ -367,12 +379,12 @@ Uses `SystemClock { precision: SystemClock.Seconds }` — updates aligned to the
 ### Right Panel (`RightPanelSlider`)
 `RightPanelSlider` is a `PanelWindow` anchored to the right+top+bottom edges that slides in from the right. It reserves an exclusive zone on the right edge when open so Hyprland windows reflow around it. Content is added via the `panelContent` default alias. API: `openPanel()`, `closePanel()`, `isOpen`.
 
-*Note: RightPanelSlider module is currently disabled in shell.qml but remains available with proper qmldir configuration.*
+*Note: RightPanelSlider module is currently not imported in shell.qml but has proper qmldir configuration and can be enabled. See [Enabling Disabled Modules](#enabling-disabled-modules) section.*
 
 ### Weather
 `WeatherDropdown` reads all data from `WeatherState`. The dropdown shows current conditions (icon, description, temp, feels-like, humidity, wind, sunrise/sunset) and a multi-day forecast. `onAboutToOpen` triggers a manual `WeatherState.refresh()`.
 
-*Note: Weather module is currently disabled in shell.qml but remains available with proper qmldir configuration.*
+*Note: Weather module is currently not imported in shell.qml as a standalone button/dropdown, but WeatherState singleton is actively used by the Dashboard's Weather tab (Tab 3). The standalone weather button and dropdown remain available with proper qmldir configuration and can be enabled. See [Enabling Disabled Modules](#enabling-disabled-modules) section.*
 
 ### Volume
 `VolumeButton` shows icon + percentage, scroll-to-adjust. `VolumeDropdown` provides comprehensive audio control:
@@ -392,8 +404,7 @@ The audio visualizer is fed by the global `Audio` singleton, displaying normaliz
 ### Network
 - `NetworkDropdown` — connection name, IP, gateway, DNS via `nmcli`. Button to open `nm-connection-editor`.
 - `NetworkAdminDropdown` — three views: connections list (activate/deactivate/delete), connection editor (DHCP/static IP/gateway/DNS), Wi-Fi scanner with connect dialog.
-
-*Note: Network modules are currently disabled in shell.qml but remain available with proper qmldir configuration.*
+- `VlanButton` and `VlanDropdown` are actively used in the bar (see [VPN / VLAN](#vpn--vlan) section for details).
 
 ### Lockscreen
 Complete session locking system using Wayland's `WlSessionLock` protocol:
@@ -417,10 +428,17 @@ Components:
 > **🦕 Audio** — On lock, a sound clip of Dennis Nedry from *Jurassic Park* plays ("Ah ah ah, you didn't say the magic word!", Because I am a man child.). The audio file is included in the `assets/` directory.
 
 ### VPN / VLAN
-- `VPNDropdown` — lists all WireGuard connections via `nmcli`, click to bring up/down. `VPNModule` shows a status pill that hides 5 s after the VPN IP clears. Cards flash with a color animation on first activation. An `nmcli monitor` process watches for state changes while the dropdown is open, debounced 800 ms. Pre-loads connection state on startup so the panel height is correct before first open. Keyboard: Escape closes the panel.
-- `VlanDropdown` — lists VLANs with active state. Runs `nmcli monitor` while open for live updates.
 
-> **WireGuard in the Dashboard**: The Dashboard's Network tab (Tab 4) also surfaces WireGuard connections with keyboard navigation and a real-time geo-located world map. See [Network tab (Tab 4)](#dashboard-dashboardbutton--dashboarddropdown) above.
+**VLAN (`VlanButton` + `VlanDropdown`):**  
+`VlanButton` is displayed in the bar showing VLAN network status. `VlanDropdown` lists VLANs with active state. Runs `nmcli monitor` while open for live updates (debounced 800 ms).
+
+**VPN (integrated into Dashboard Network tab):**  
+WireGuard VPN management is integrated into the Dashboard's Network tab (Tab 4), not as standalone bar components. The standalone `vpn/` module directory contains unused VPNDropdown.qml and VPNModule.qml files. See the [Network tab (Tab 4)](#dashboard-dashboardbutton--dashboarddropdown) section for full VPN functionality including:
+- WireGuard connection management via `nmcli`
+- Selectable cards for each VPN connection  
+- Geographic location mapping with pulsing geo-dot on world map
+- Keyboard navigation (Up/Down/Enter)
+- Flash animation on connection toggle
 
 ### Bluetooth
 Power controlled via `rfkill`. Live state from `bluetoothctl monitor` parsed in `BluetoothState`, debounced 600 ms. A 400 ms delay after `rfkill unblock` gives the adapter time to initialize before re-reading state.
@@ -704,17 +722,20 @@ Change `barMonitor` in `Config.qml` (or via the Settings dropdown at runtime —
 2. Create a `qmldir` file in `modules/<name>/` listing all exported components:
    ```
    ComponentName 1.0 ComponentName.qml
+   AnotherComponent 1.0 AnotherComponent.qml
    ```
-3. Add the `import qs.modules.<name>` line to `shell.qml`
-4. Instantiate it in the appropriate bar section (`leftSection`, `centerRow`, `rightRow`)
-5. If it's a dropdown, add it to the `dropdowns` array in `shell.qml`
+3. Add the `import qs.modules.<name>` line to `shell.qml` (near the top with other imports)
+4. Instantiate it in the appropriate bar section (`leftRow`, `centerRow`, `rightRow`)
+5. If it's a dropdown, add it to the `dropdowns` array in `shell.qml` so `closeAllDropdowns()` works correctly
+6. If adding a global shortcut, create a `GlobalShortcut` block in shell.qml and document it in this README
 
 ### Code Style Guidelines
 - Use `config.fontFamily` instead of hardcoded font names
 - Prefer `Colors.col_*` properties over hardcoded color values
-- Comment out unused imports rather than deleting them if they might be re-enabled
-- Include proper `qmldir` files for all modules
-- Use consistent naming: `*Button.qml` for bar buttons, `*Dropdown.qml` for panels
+- All modules should have a `qmldir` file to be properly loadable as QML modules
+- Use consistent naming: `*Button.qml` for bar buttons, `*Dropdown.qml` for panels extending DropdownBase
+- Follow the established pattern for integrating new modules: create qmldir, import in shell.qml, add to dropdowns array if applicable
+- Add global shortcuts for new dropdowns in both shell.qml and document them in the README
 
 ---
 
@@ -751,17 +772,38 @@ Change `barMonitor` in `Config.qml` (or via the Settings dropdown at runtime —
 
 ## Enabling Disabled Modules
 
-Some modules are currently disabled in `shell.qml` but remain fully functional with proper qmldir configuration:
+Some modules are currently not imported in `shell.qml` but have proper qmldir configuration and can be enabled:
 
-### Weather Module  
+### Weather Module (Standalone Button)
+The weather data is already available via `WeatherState` singleton and used in the Dashboard. To add a dedicated weather button to the bar:
+
 ```qml
 // In shell.qml imports section:
 import qs.modules.weather
 
-// In rightRow section:
+// In rightRow section (or wherever you want it):
 WeatherButton {
-    // your configuration
+    id: weatherButton
+    anchors.verticalCenterOffset: 1
+    isActive: weatherDropdown.isOpen
+    onClicked: function (clickX) {
+        weatherDropdown.panelX = Math.max(0, clickX - weatherDropdown.panelWidth / 2 - 16);
+        if (weatherDropdown.isOpen) {
+            weatherDropdown.closePanel();
+        } else {
+            root.switchPanel(() => weatherDropdown.openPanel());
+        }
+    }
 }
+
+// Add dropdown instance (with other dropdowns):
+WeatherDropdown {
+    id: weatherDropdown
+    screen: root.screen
+}
+
+// Add to dropdowns array:
+readonly property var dropdowns: [..., weatherDropdown]
 ```
 
 ### Right Panel Slider
@@ -775,7 +817,32 @@ RightPanelSlider {
     screen: root.screen
 }
 
-// Add button to bar and re-enable global shortcut
+// Add button to bar:
+RightPanelButton {
+    id: rightPanelButton
+    anchors.verticalCenterOffset: 1
+    isActive: rightPanel.isOpen
+    onClicked: {
+        if (rightPanel.isOpen) {
+            rightPanel.closePanel();
+        } else {
+            root.switchPanel(() => rightPanel.openPanel());
+        }
+    }
+}
+
+// Optional: Add global shortcut
+GlobalShortcut {
+    name: "toggleRightPanel"
+    description: "Open/close the right panel"
+    onPressed: {
+        if (rightPanel.isOpen) {
+            rightPanel.closePanel();
+        } else {
+            root.switchPanel(() => rightPanel.openPanel());
+        }
+    }
+}
 ```
 
 ### Chat Module
@@ -788,6 +855,22 @@ ChatShortcut {
     // your configuration
 }
 ```
+
+### Enabling Pomodoro Module
+The pomodoro module currently lacks a qmldir file and is not integrated. To enable it:
+
+1. Create `/modules/pomodoro/qmldir`:
+```
+PomodoroButton 1.0 PomodoroButton.qml
+PomodoroDropdown 1.0 PomodoroDropdown.qml
+```
+
+2. Add to `shell.qml` imports:
+```qml
+import qs.modules.pomodoro
+```
+
+3. Add button and dropdown following the same pattern as other modules (see Weather example above).
 
 ---
 
