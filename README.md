@@ -4,7 +4,7 @@
 
 A highly customized Wayland status bar and system interface built with [Quickshell](https://quickshell.outfoxxed.me/) for Hyprland.
 
-**Last Updated**: May 6, 2026 — README updated to accurately reflect current module state and configuration
+**Last Updated**: May 10, 2026 — Calendar now starts week on Monday (ISO 8601 standard)
 
 ---
 
@@ -30,7 +30,7 @@ Currently imported and enabled in `shell.qml`:
 - **lockscreen** — Session locking with PAM authentication
 - **network** — VLAN connection status and management
 - **notifications** — D-Bus notification server with popups and history
-- **power** — Battery, power profile, temperature, and power actions (lock/reboot/shutdown)
+- **power** — Battery, power profile, temperature, and power actions (lock/logout/reboot/shutdown)
 - **settings** — Quick toggles for animations, blur, night light, and more
 - **systemTray** — SNI system tray area
 - **systemUpdates** — Package update count and upgrade terminal
@@ -120,10 +120,11 @@ quickshell/
     │   ├── BatteryButton.qml        # Battery percentage + icon indicator in bar
     │   ├── BatteryDropdown.qml      # Battery detail panel (state, ETA, energy)
     │   ├── PowerButton.qml          # Power icon button in bar
-    │   ├── PowerDropdown.qml        # Hold-to-confirm power actions (lock, reboot, shutdown)
+    │   ├── PowerDropdown.qml        # Hold-to-confirm power actions (lock, logout, reboot, shutdown)
     │   ├── PowerProfileButton.qml   # Power profile icon in bar
     │   ├── PowerProfileDropdown.qml # Power profile selector
     │   ├── TemperatureButton.qml    # CPU temperature indicator in bar
+    │   ├── logout.sh                # Logout helper script invoked by PowerDropdown
     │   ├── reboot.sh                # Reboot helper script invoked by PowerDropdown
     │   └── shutdown.sh              # Shutdown helper script invoked by PowerDropdown
     ├── pomodoro/                        # (no qmldir, not integrated)
