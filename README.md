@@ -4,7 +4,7 @@
 
 A highly customized Wayland status bar and system interface built with [Quickshell](https://quickshell.outfoxxed.me/) for Hyprland.
 
-**Last Updated**: May 10, 2026 — Calendar now starts week on Monday (ISO 8601 standard)
+**Last Updated**: May 10, 2026 — Calendar starts week on Monday; PowerDropdown now includes logout action
 
 ---
 
@@ -445,7 +445,7 @@ WireGuard VPN management is integrated into the Dashboard's Network tab (Tab 4),
 Power controlled via `rfkill`. Live state from `bluetoothctl monitor` parsed in `BluetoothState`, debounced 600 ms. A 400 ms delay after `rfkill unblock` gives the adapter time to initialize before re-reading state.
 
 ### Power & Temperature
-`PowerProfileDropdown` uses `power-profiles-daemon` (selectable cards). `TemperatureButton` now auto-detects a processor temperature sensor by prioritizing CPU-oriented hwmon devices (`coretemp`, `k10temp`, `zenpower`, `cpu_thermal`, `x86_pkg_temp`) and falls back safely if needed. `BatteryButton` shows a dynamic icon and percentage in the bar; `BatteryDropdown` provides full battery detail including charge state and ETA.
+`PowerProfileDropdown` uses `power-profiles-daemon` (selectable cards). `PowerDropdown` provides hold-to-confirm power actions: lockscreen, logout, reboot, and shutdown. `TemperatureButton` now auto-detects a processor temperature sensor by prioritizing CPU-oriented hwmon devices (`coretemp`, `k10temp`, `zenpower`, `cpu_thermal`, `x86_pkg_temp`) and falls back safely if needed. `BatteryButton` shows a dynamic icon and percentage in the bar; `BatteryDropdown` provides full battery detail including charge state and ETA.
 
 ### Settings
 `SettingsDropdown` provides an expandable Night Light card plus seven rows of controls.
