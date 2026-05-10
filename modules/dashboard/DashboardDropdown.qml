@@ -848,7 +848,7 @@ DropdownBase {
 
                 property var calDays: {
                     var yr = displayYear, mo = displayMonth
-                    var firstDay   = new Date(yr, mo, 1).getDay()
+                    var firstDay   = (new Date(yr, mo, 1).getDay() + 6) % 7
                     var total      = new Date(yr, mo+1, 0).getDate()
                     var prevTotal  = new Date(yr, mo, 0).getDate()
                     var tod        = new Date()
@@ -908,7 +908,7 @@ DropdownBase {
                     readonly property real cellW: inlineCal.width / 7
 
                     Repeater {
-                        model: ["Su","Mo","Tu","We","Th","Fr","Sa"]
+                        model: ["Mo","Tu","We","Th","Fr","Sa","Su"]
                         delegate: Text {
                             required property string modelData
                             width: dowRow.cellW

@@ -13,7 +13,7 @@ DropdownBase {
     Item { focus: true; Keys.onEscapePressed: powerDrop.closePanel() }
 
     implicitHeight: 340
-    panelFullHeight: 186
+    panelFullHeight: 242
     panelWidth: 260
     panelTitle: "Power"
     panelIcon: ""
@@ -21,6 +21,7 @@ DropdownBase {
 
     property var actions: [
         { id: "lockscreen", label: "Lockscreen", subtitle: "Lock this session", icon: "󰌾" },
+        { id: "logout", label: "Logout", subtitle: "End session", icon: "󰍃" },
         { id: "reboot", label: "Reboot", subtitle: "Restart system", icon: "󰜉" },
         { id: "shutdown", label: "Shutdown", subtitle: "Power off system", icon: "󰐥" }
     ]
@@ -28,6 +29,8 @@ DropdownBase {
     function triggerAction(actionId) {
         if (actionId === "lockscreen") {
             lockscreenProcess.startDetached()
+        } else if (actionId === "logout") {
+            logoutProcess.startDetached()
         } else if (actionId === "reboot") {
             rebootProcess.startDetached()
         } else if (actionId === "shutdown") {
@@ -53,7 +56,7 @@ DropdownBase {
                     id: actionCard
                     width: parent.width
                     isActive: false
-                    holdDuration: 3000
+                    holdDuration: 2000
                     cardIcon: modelData.icon
                     label: modelData.label
                     subtitle: modelData.subtitle
@@ -77,6 +80,12 @@ DropdownBase {
         id: lockscreenProcess
         running: false
         command: ["quickshell", "-p", Quickshell.env("HOME") + "/dotfiles/.config/quickshell/modules/lockscreen/LockscreenService.qml"]
+    }
+
+    Process {
+        id: logoutProcess
+        running: false
+        command: ["bash", Quickshell.env("HOME") + "/dotfiles/.config/quickshell/modules/power/logout.sh"]
     }
 
     Process {
