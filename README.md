@@ -218,7 +218,7 @@ A separate `Singleton` that manages CAVA audio visualizer integration. Provides 
 |---|---|
 | **`cava.values`** | Array of 24 normalized bar heights (0-1 range) representing audio spectrum |
 | **`cava.active`** | Boolean indicating if audio is currently detected |
-| **CAVA Process** | Long-running `cava` process with auto-restart on failure. Uses `/home/sispx/dotfiles/.config/quickshell/cava.conf` for configuration. |
+| **CAVA Process** | Long-running `cava` process with auto-restart on failure. Uses `~/.config/quickshell/cava.conf` for configuration. |
 | **Data Format** | Raw CAVA output parsed from semicolon-delimited values, normalized to 0-1 range |
 
 ### `Colors.qml`
@@ -441,10 +441,10 @@ WireGuard VPN management is integrated into the Dashboard's Network tab (Tab 4),
 - Flash animation on connection toggle
 
 ### Bluetooth
-Power controlled via `rfkill`. Live state from `bluetoothctl monitor` parsed in `BluetoothState`, debounced 600 ms. A 400 ms delay after `rfkill unblock` gives the adapter time to initialize before re-reading state.
+Power controlled via `rfkill`. Live state from `bluetoothctl monitor` parsed in `BluetoothState`. See [`BluetoothState.qml`](#bluetoothstateqml) for debounce and initialization delay details.
 
 ### Power & Temperature
-`PowerProfileDropdown` uses `power-profiles-daemon` (selectable cards). `PowerDropdown` provides hold-to-confirm power actions: lockscreen, logout, reboot, and shutdown. `TemperatureButton` now auto-detects a processor temperature sensor by prioritizing CPU-oriented hwmon devices (`coretemp`, `k10temp`, `zenpower`, `cpu_thermal`, `x86_pkg_temp`) and falls back safely if needed. `BatteryButton` shows a dynamic icon and percentage in the bar; `BatteryDropdown` provides full battery detail including charge state and ETA.
+`PowerProfileDropdown` uses `power-profiles-daemon` (selectable cards). `PowerDropdown` provides hold-to-confirm power actions: lockscreen, logout, reboot, and shutdown. `TemperatureButton` auto-detects a processor temperature sensor by prioritizing CPU-oriented hwmon devices (`coretemp`, `k10temp`, `zenpower`, `cpu_thermal`, `x86_pkg_temp`) and falls back safely if needed. See [`### Battery`](#battery-batterybutton--batterydropdown) for battery detail.
 
 ### Settings
 `SettingsDropdown` provides an expandable Night Light card plus seven rows of controls.
@@ -461,21 +461,17 @@ Power controlled via `rfkill`. Live state from `bluetoothctl monitor` parsed in 
 | Max | `"max"` | `blue-light-filter-100.glsl` |
 
 > **Hyprland 0.55 — `hyprshade` replaced by `shaders.lua`**
-> Hyprland 0.55 introduced breaking changes that made `hyprshade` stop working (the `decoration:screen_shader` config path and the way external tools toggled shaders both changed). Night light is now handled by `hyprland/shaders.lua` — a pure-Lua module loaded directly by Hyprland's Lua config system with no external tool required. It applies shaders via `hl.config({ decoration = { screen_shader = path } })` and persists the active shader to `/tmp/hypr_shader_state` so state survives config reloads (e.g. triggered by matugen). A `config.reloaded` hook restores the shader automatically after every reload.
->
-> The keybinding **`SUPER + CTRL + Delete`** cycles through `off → 25% → 50% → 75% → 100%` filter strengths. Shader `.glsl` files live in `~/.config/hypr/shaders/`.
+> See [Hyprland 0.55 — Lua Config & Breaking Changes](#hyprland-055--lua-config--breaking-changes) for the full explanation. In short: `hyprshade` is gone; shaders are now applied via `hyprctl eval "hl.config({ decoration = { screen_shader = path } })"` from Quickshell, and `hyprland/shaders.lua` handles the keyboard shortcut cycle and reload restoration natively inside Hyprland. The keybinding **`SUPER + CTRL + Delete`** cycles `off → 25% → 50% → 75% → 100%`. Shader `.glsl` files live in `~/.config/hypr/shaders/`.
 
 **Toggle rows:**
 
 | Row | Label | Bound to |
 |---|---|---|
 | 1 | Animations | `config.animations` → `hyprctl keyword animations.enabled` |
-| 2 | Blur | `config.blur` → `hyprctl keyword decoration.blur.enabled` |
+| 2 | Blur | `config.blur` → `hyprctl eval "hl.config({ decoration = { blur = { enabled = … } } })"` (0.55+) |
 | 3 | Bluetooth | `BluetoothState.btPowered` → `rfkill` |
 | 4 | Floating Launcher | `config.launcherFloating` (fullscreen vs dropdown) |
 | 5 | Workspace Glow | `config.workspaceGlow` |
-
-For Hyprland 0.55+ Lua configs, the Settings panel uses dot-path option names for `hyprctl keyword` and `hyprctl getoption` calls, e.g. `animations.enabled`, `decoration.blur.enabled`, and `decoration.screen_shader`.
 
 **Action rows:** Change Wallpaper (opens `WallpaperDropdown`) and Lock Screen.
 
@@ -588,7 +584,7 @@ The `--type` argument is configurable from inside the dropdown itself and persis
 
 **Dashboard tab (Tab 0)** is the default on every open. It shows two side-by-side cards:
 
-- **Weather card** — current icon, temperature, and description from `AppState`
+- **Weather card** — current icon, temperature, and description from `WeatherState`
 - **System info card** — two columns:
   - *Left*: kernel version (`uname -r`), Hyprland version (`hyprctl version`), uptime, and a package update row. When updates are available the row is clickable — clicking it closes the panel and launches a `kitty` terminal running `yay -Syu`. The row flashes white when the update count first increases.
   - *Right*: CPU / RAM / Disk percentage as thin animated progress bars (turns red above 85%).
@@ -676,14 +672,60 @@ Override on the instance in `shell.qml`: `numberToText: false`
 - **Visual Feedback**: Pulses 10 times when updates first become available
 - **Hold Mode**: Terminal stays open after `yay -Syu` completes for review
 - **Notification panel**: The update count card in `NotifDropdown` suppresses the "No notifications" empty state when updates are pending
-- **Cross-panel sync**: All three upgrade paths (bar button `runUpgrade`, notification panel `upgradeRequested`, dashboard `dashUpgradeProc`) re-check the update count after the terminal closes. The dashboard path does this by emitting `upgradeCompleted()`, which `shell.qml` wires to `systemUpdatesButton.recheckUpdates()`. The bar button and notification paths both run through `runUpgrade` in `SystemUpdatesButton` directly.
-- **`recheckUpdates()` function**: Public method added to `SystemUpdatesButton` — re-runs `systemUpdateProc` without opening a terminal. Called by `shell.qml` when `dashboardDropdown.upgradeCompleted` fires.
+- **Cross-panel sync**: All upgrade paths re-check the count after the terminal closes — see [Cross-panel update sync](#cross-panel-update-sync) in the Dashboard section for full details.
 
 ---
 
 ## Hyprland Integration
 
-Add to your `hyprland.conf`:
+### Hyprland 0.55 — Lua Config & Breaking Changes
+
+Hyprland 0.55 shipped a native Lua config system (`hyprland.lua` replaces `hyprland.conf`). Several things that previously relied on external tools or colon-delimited config paths changed:
+
+#### Night Light — `hyprshade` replaced by `shaders.lua`
+
+`hyprshade` stopped working in 0.55 because the `decoration:screen_shader` config key was renamed to a dot-path (`decoration.screen_shader`) and the way external tools were expected to apply shaders changed. The fix is a pure-Lua module loaded directly by Hyprland — no external package needed.
+
+`hyprland/shaders.lua` (symlinked / included from `hyprland.lua` via `require("config.shaders")`) handles everything:
+
+- Applies shaders with `hl.config({ decoration = { screen_shader = path } })`.
+- Persists the active shader name to `/tmp/hypr_shader_state` so the correct filter survives config reloads (e.g. triggered by matugen after a wallpaper change).
+- A `hl.on("config.reloaded", ...)` hook reads that file and re-applies the shader automatically after every reload.
+- The keybinding `SUPER + CTRL + Delete` cycles `off → 25% → 50% → 75% → 100%` filter strengths.
+- Shader `.glsl` files must be present in `~/.config/hypr/shaders/`.
+
+From the Quickshell side, the Settings night light toggle and strength slider call `hyprctl eval` to invoke `hl.config(...)` directly at runtime, bypassing any need for `hyprshade`.
+
+#### Blur Toggle — `hyprctl eval` instead of `hyprctl keyword`
+
+In Hyprland 0.55 Lua configs, `hyprctl keyword decoration:blur:enabled true` no longer works — the colon-delimited path format is gone. The blur toggle in `SettingsDropdown` now uses `hyprctl eval` to call Lua directly:
+
+```
+hyprctl eval "hl.config({ decoration = { blur = { enabled = true } } }); hl.dispatch(hl.dsp.force_renderer_reload())"
+```
+
+`force_renderer_reload()` is called immediately after to apply the change without requiring a full config reload. The same pattern is used for `animations.enabled` and `decoration.screen_shader`.
+
+#### Lua Config Structure
+
+The full Hyprland config lives in `~/.config/hypr/hyprland.lua` and loads modular files via `require()`:
+
+| File | Purpose |
+|---|---|
+| `config/colors.lua` | Color variables sourced by other modules (auto-updated by matugen) |
+| `config/decoration.lua` | Blur, rounding, opacity, shadows — uses dot-path Lua syntax |
+| `config/animations.lua` | Bezier curves and animation definitions |
+| `config/shaders.lua` | Night light / blue-light filter (hyprshade replacement) |
+| `config/keybindings.lua` | All binds; layout-aware via `workspace_data.uses_master_layout()` |
+| `config/windowrules.lua` | Table-driven window rules with helper functions |
+| `config/workspace.lua` | Workspace rules from `workspace_data.lua` |
+| `config/workspace_data.lua` | Source of truth for workspace rules and master-layout detection |
+| `config/events.lua` | Runtime hooks (opt-in via `ENABLE_EVENT_DEBUG`, `ENABLE_STARTUP_NOTIFICATION`) |
+| `config/autostart.lua` | Startup applications |
+
+---
+
+Add to your `hyprland.conf` (or equivalent Lua binds in `config/keybindings.lua`):
 ```conf
 # Quickshell global shortcuts
 bind = , escape,       global, quickshell:closeAllDropdowns
@@ -767,13 +809,13 @@ Change `barMonitor` in `Config.qml` (or via the Settings dropdown at runtime —
 | `pam` | ✅ | Lockscreen authentication |
 | `kitty` | ✅ | Terminal for package updates |
 | `upower` | recommended | Battery status |
-| `hyprshade` | ~~recommended~~ **removed** | Replaced by `shaders.lua` — see note below |
+| `hyprshade` | ~~recommended~~ **removed** | Replaced by `shaders.lua` — see [Hyprland 0.55 section](#hyprland-055--lua-config--breaking-changes) |
 | `zenity` or `kdialog` | recommended | Folder picker dialog in wallpaper panel |
 | `yay` | recommended | Package update count |
 | `matugen` | recommended | Auto-generate colors from wallpaper — 8 color scheme algorithms |
 | `lm_sensors` | recommended | CPU temperature |
 
-> **Hyprland 0.55 — `hyprshade` removal:** `hyprshade` is no longer used. It was replaced by `hyprland/shaders.lua`, a pure-Lua module loaded natively by Hyprland's Lua config system. No external tool or package is required. The shader files (`.glsl`) must still be present in `~/.config/hypr/shaders/`. The Settings night light toggle and strength slider interact with `decoration.screen_shader` directly via `hyprctl keyword` (Quickshell side) and the Lua module handles state persistence and reload restoration.
+> **Hyprland 0.55 — `hyprshade` removal:** `hyprshade` is no longer used or needed. See [Hyprland 0.55 — Lua Config & Breaking Changes](#hyprland-055--lua-config--breaking-changes) for the full explanation of what changed and how night light and blur are now handled.
 
 > **Note on Python scripts** — Two files reference personal Python scripts for controlling keyboard RGB lighting: `LockscreenSurface.qml` (sets the keyboard to red on lock, restores on unlock) and `VolumeDropdown.qml` (browser audio sink detection). The keyboard RGB scripts (`keyboard-breathing-toggle.py`, `keyboard-rgb.py`) are specific to one hardware setup and are **not needed by most users** — you can safely comment out those `Process` blocks. The `python3` inline commands in `VolumeDropdown.qml` for browser sink detection are more broadly useful and can be kept.
 

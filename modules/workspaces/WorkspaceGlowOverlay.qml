@@ -26,8 +26,7 @@ PanelWindow {
     exclusiveZone:  -30
     color: "transparent"
 
-    // Sit above every Top-layer surface (bars, dropdowns, etc.)
-    WlrLayershell.layer: WlrLayer.Overlay
+    // Layer is set dynamically below — Overlay normally, Top when fullscreen is active
     WlrLayershell.exclusionMode: ExclusionMode.Ignore
     // No keyboard interaction needed — pass all input through
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
@@ -59,6 +58,13 @@ PanelWindow {
         var fid = Hyprland.focusedWorkspace?.id ?? -1
         return monitorWorkspaces.findIndex(ws => ws.id === fid)
     }
+
+    // Drop to Top layer when focused workspace has a fullscreen window so the
+    // fullscreen app (which sits above Top but below Overlay) covers the glow.
+    readonly property bool focusedIsFullscreen:
+        Hyprland.focusedWorkspace?.lastIpcObject?.hasfullscreen === true
+
+    WlrLayershell.layer: focusedIsFullscreen ? WlrLayer.Top : WlrLayer.Overlay
 
     // Total width of the workspace row
     readonly property int _panelW: wsCount * _wsItemW + (wsCount - 1) * _wsGap

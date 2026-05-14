@@ -253,7 +253,7 @@ DropdownBase {
         id: nightLightEnable
         running: false
         command: ["sh", "-c",
-            "hyprctl eval \"hl.config({ decoration = { screen_shader = '" + settingsDrop._nlShader + "' } })\" && printf '%s' '" + settingsDrop._nlShaderName + "' > /tmp/hypr_shader_state"]
+            "hyprctl eval \"hl.config({ decoration = { screen_shader = '" + settingsDrop._nlShader + "' } }); hl.dispatch(hl.dsp.force_renderer_reload())\" && printf '%s' '" + settingsDrop._nlShaderName + "' > /tmp/hypr_shader_state"]
         onExited: nightLightCheck.running = true
     }
 
@@ -261,7 +261,7 @@ DropdownBase {
         id: nightLightDisable
         running: false
         command: ["sh", "-c",
-            "hyprctl eval \"hl.config({ decoration = { screen_shader = '' } })\" && printf '' > /tmp/hypr_shader_state"]
+            "hyprctl eval \"hl.config({ decoration = { screen_shader = '' } }); hl.dispatch(hl.dsp.force_renderer_reload())\" && printf '' > /tmp/hypr_shader_state"]
         onExited: nightLightCheck.running = true
     }
 
@@ -313,10 +313,10 @@ DropdownBase {
         id: blurProc
         running: false
         property bool target: true
-                command: ["hyprctl", "eval",
-                                    blurProc.target
-                                        ? "hl.config({ decoration = { blur = { enabled = true } } })"
-                                        : "hl.config({ decoration = { blur = { enabled = false } } })"]
+        command: ["hyprctl", "eval",
+                  blurProc.target
+                      ? "hl.config({ decoration = { blur = { enabled = true } } }); hl.dispatch(hl.dsp.force_renderer_reload())"
+                      : "hl.config({ decoration = { blur = { enabled = false } } }); hl.dispatch(hl.dsp.force_renderer_reload())"]
     }
 
     function toggleBlur() {
