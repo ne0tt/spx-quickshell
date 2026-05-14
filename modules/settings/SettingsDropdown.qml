@@ -55,8 +55,8 @@ DropdownBase {
 
             // ── Left / Right: slider control (Night Light sub-nav) ─
             if (event.key === Qt.Key_Left || event.key === Qt.Key_Right) {
+                var sdir = (event.key === Qt.Key_Right) ? 1 : -1
                 if (settingsDrop._inSubNav && settingsDrop._navFocus === 0) {
-                    var sdir = (event.key === Qt.Key_Right) ? 1 : -1
                     settingsDrop._nlSubFocus = Math.max(0, Math.min(3, settingsDrop._nlSubFocus + sdir))
                     event.accepted = true
                     return
@@ -128,7 +128,7 @@ DropdownBase {
     headerHeight:    34
 
     // ── Queryable toggle states ───────────────────────────────
-    property bool nightLight:  false   // reflected from pgrep on open
+    property bool nightLight:       false   // reflected from pgrep on open
 
     // Shared bluetooth state (AppState singleton)
     readonly property bool btPowered: BluetoothState.btPowered
@@ -144,8 +144,8 @@ DropdownBase {
 
     // Optimistic local mirrors — flip immediately so pills animate before
     // the underlying command/config write finishes.
-    property bool _nlPending:       nightLight
-    property bool _animPending:     config.animations
+    property bool _nlPending:        nightLight
+    property bool _animPending:      config.animations
     property bool _blurPending:     config.blur
     property bool _btPending:       BluetoothState.btPowered
     property bool _launcherPending: config.launcherFloating
@@ -192,25 +192,35 @@ DropdownBase {
 
     // Refresh queryable states whenever the panel opens
     onAboutToOpen: {
-        nightLightCheck.running = true
+        nightLightCheck.running   = true
         BluetoothState._btCheckProc.running = true
         _navFocus = -1
         _inSubNav = false
     }
 
     // ═══════════════════════════════════════════════════════
-    // NIGHT LIGHT — hyprshade
-    // Shader name must match a file in ~/.config/hypr/shaders/.
-    // Default: "blue-light-filter" (ships with hyprshade).
+    // NIGHT LIGHT — hyprctl eval → hl.config (shaders.lua)
+    // Shader files must exist in ~/.config/hypr/shaders/.
     // ═══════════════════════════════════════════════════════
 
-    // Derive shader name from persisted strength setting.
+    // Derive full shader path from persisted strength setting.
     readonly property string _nlShader: {
+        var dir = Quickshell.env("HOME") + "/.config/hypr/shaders/"
         switch (config.nightLightStrength) {
-            case "soft": return "blue-light-filter-25"
-            case "hot":  return "blue-light-filter-75"
-            case "max":  return "blue-light-filter-100"
-            default:     return "blue-light-filter-50"
+            case "soft": return dir + "blue-light-filter-25.glsl"
+            case "hot":  return dir + "blue-light-filter-75.glsl"
+            case "max":  return dir + "blue-light-filter-100.glsl"
+            default:     return dir + "blue-light-filter-50.glsl"
+        }
+    }
+
+    // Shader filename only (written to state file so shaders.lua survives config reloads)
+    readonly property string _nlShaderName: {
+        switch (config.nightLightStrength) {
+            case "soft": return "blue-light-filter-25.glsl"
+            case "hot":  return "blue-light-filter-75.glsl"
+            case "max":  return "blue-light-filter-100.glsl"
+            default:     return "blue-light-filter-50.glsl"
         }
     }
 
@@ -230,7 +240,7 @@ DropdownBase {
         id: nightLightCheck
         running: false
         command: ["sh", "-c",
-            "hyprctl getoption decoration:screen_shader | grep -q EMPTY && echo 0 || echo 1"]
+            "hyprctl getoption decoration.screen_shader | grep -q EMPTY && echo 0 || echo 1"]
         stdout: SplitParser {
             onRead: data => {
                 settingsDrop.nightLight = data.trim() === "1"
@@ -242,14 +252,16 @@ DropdownBase {
     Process {
         id: nightLightEnable
         running: false
-        command: ["hyprshade", "on", settingsDrop._nlShader]
+        command: ["sh", "-c",
+            "hyprctl eval \"hl.config({ decoration = { screen_shader = '" + settingsDrop._nlShader + "' } })\" && printf '%s' '" + settingsDrop._nlShaderName + "' > /tmp/hypr_shader_state"]
         onExited: nightLightCheck.running = true
     }
 
     Process {
         id: nightLightDisable
         running: false
-        command: ["hyprshade", "off"]
+        command: ["sh", "-c",
+            "hyprctl eval \"hl.config({ decoration = { screen_shader = '' } })\" && printf '' > /tmp/hypr_shader_state"]
         onExited: nightLightCheck.running = true
     }
 
@@ -273,15 +285,17 @@ DropdownBase {
     }
 
     // ═══════════════════════════════════════════════════════
-    // ANIMATIONS — hyprctl keyword
+    // ANIMATIONS — hyprctl eval
     // ═══════════════════════════════════════════════════════
 
     Process {
         id: animationsProc
         running: false
         property bool target: true
-        command: ["hyprctl", "keyword", "animations:enabled",
-                  animationsProc.target ? "true" : "false"]
+                command: ["hyprctl", "eval",
+                                    animationsProc.target
+                                        ? "hl.config({ animations = { enabled = true } })"
+                                        : "hl.config({ animations = { enabled = false } })"]
     }
 
     function toggleAnimations() {
@@ -292,15 +306,17 @@ DropdownBase {
     }
 
     // ═══════════════════════════════════════════════════════
-    // BLUR — hyprctl keyword
+    // BLUR — hyprctl eval
     // ═══════════════════════════════════════════════════════
 
     Process {
         id: blurProc
         running: false
         property bool target: true
-        command: ["hyprctl", "keyword", "decoration:blur:enabled",
-                  blurProc.target ? "true" : "false"]
+                command: ["hyprctl", "eval",
+                                    blurProc.target
+                                        ? "hl.config({ decoration = { blur = { enabled = true } } })"
+                                        : "hl.config({ decoration = { blur = { enabled = false } } })"]
     }
 
     function toggleBlur() {

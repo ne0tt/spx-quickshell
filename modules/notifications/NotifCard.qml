@@ -38,8 +38,8 @@ Rectangle {
     clip:           true
 
     radius:       8
-    color:        isCritical ? "#2d1a1a" : "#1b3534"
-    border.color: isCritical ? "#7a2020" : Colors.col_source_color
+    color:        Colors.col_background
+    border.color: isCritical ? Colors.col_error : Colors.col_source_color
     border.width: 2
 
     // ── Fade in on appear ────────────────────────────────────────────────

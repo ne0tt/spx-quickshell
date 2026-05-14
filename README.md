@@ -4,7 +4,7 @@
 
 A highly customized Wayland status bar and system interface built with [Quickshell](https://quickshell.outfoxxed.me/) for Hyprland.
 
-**Last Updated**: May 10, 2026 — Calendar starts week on Monday; PowerDropdown now includes logout action
+**Last Updated**: May 14, 2026 — `shaders.lua` replaces `hyprshade` as the night light backend (Hyprland 0.55 breaking changes)
 
 ---
 
@@ -303,7 +303,7 @@ Like `DropdownBase` but not anchored to the bar — centers on screen. Used for 
 Animated hexagonal grid painted to a `Canvas`. Repaints are rate-limited to ~20 fps via a `Timer` while the animation runs, halving CPU vs vsync-driven repaints. Call `trigger()` to run a sweep.
 
 ### `MatrixRain.qml`
-Matrix-style digital rain canvas effect with configurable cascade animation. Features adjustable speed, density, trail lengths, and character colors. Currently unused but available for background effects or easter eggs. Runs at ~20 fps with Canvas optimization. (Its a bit buggy, but I may pick it up again soon)
+Matrix-style digital rain canvas effect with configurable cascade animation. Features adjustable speed, density, trail lengths, and character colors. Currently unused but available for background effects or easter eggs. Runs at ~20 fps with Canvas optimization. (It's a bit buggy, but I may pick it up again soon)
 
 ### `SelectableCard.qml`
 Card widget used in power profile, VPN, VLAN, notification history, and power action dropdowns for single-select or informational lists.
@@ -418,7 +418,6 @@ Complete session locking system using Wayland's `WlSessionLock` protocol:
 - **Session Integration**: Proper Wayland session locking that works with power management
 > **⚠️ Bypass button** — `LockscreenSurface.qml` contains a hidden "Bypass" button in the **top-right corner** of the screen. It is invisible (`opacity: 0.0` on both background and label) but fully clickable — it calls `enableBypass()` + `tryUnlock()` to skip PAM authentication entirely. This exists purely for troubleshooting during initial setup. **Remove it (or set `visible: false`) once you are happy with your configuration.** Leaving it in place means anyone with physical access can unlock the screen without a password.
 Components:
-Components:
 - **LockscreenButton.qml** — Bar trigger button (icon: 󰌾)
 - **LockscreenService.qml** — Entry point for separate process
 - **LockscreenSurface.qml** — Multi-monitor UI with authentication
@@ -426,7 +425,7 @@ Components:
 
 > **🖼️ Wallpapers** — The lockscreen uses background wallpapers that are **not included** in this repo. You will need to supply your own and update the path in `LockscreenSurface.qml` to point to them.
 
-> **🦕 Audio** — On lock, a sound clip of Dennis Nedry from *Jurassic Park* plays ("Ah ah ah, you didn't say the magic word!", Because I am a man child.). The audio file is included in the `assets/` directory.
+> **🦕 Audio** — On lock, a sound clip of Dennis Nedry from *Jurassic Park* plays ("Ah ah ah, you didn't say the magic word!", because I am a man child.). The audio file is included in the `assets/` directory.
 
 ### VPN / VLAN
 
@@ -451,25 +450,32 @@ Power controlled via `rfkill`. Live state from `bluetoothctl monitor` parsed in 
 `SettingsDropdown` provides an expandable Night Light card plus seven rows of controls.
 
 **Night Light** (expandable card at the top of the panel):
-- Toggle pill enables / disables `hyprshade`
+- Toggle pill enables / disables the screen shader
 - Strength slider — 4 snap positions, shader selected by `config.nightLightStrength`:
 
-| Label | Value | Shader (`hyprshade on <shader>`) |
+| Label | Value | Shader file applied |
 |---|---|---|
-| Soft | `"soft"` | `blue-light-filter-25` |
-| Warm *(default)* | `"warm"` | `blue-light-filter-50` |
-| Hot | `"hot"` | `blue-light-filter-75` |
-| Max | `"max"` | `blue-light-filter-100` |
+| Soft | `"soft"` | `blue-light-filter-25.glsl` |
+| Warm *(default)* | `"warm"` | `blue-light-filter-50.glsl` |
+| Hot | `"hot"` | `blue-light-filter-75.glsl` |
+| Max | `"max"` | `blue-light-filter-100.glsl` |
+
+> **Hyprland 0.55 — `hyprshade` replaced by `shaders.lua`**
+> Hyprland 0.55 introduced breaking changes that made `hyprshade` stop working (the `decoration:screen_shader` config path and the way external tools toggled shaders both changed). Night light is now handled by `hyprland/shaders.lua` — a pure-Lua module loaded directly by Hyprland's Lua config system with no external tool required. It applies shaders via `hl.config({ decoration = { screen_shader = path } })` and persists the active shader to `/tmp/hypr_shader_state` so state survives config reloads (e.g. triggered by matugen). A `config.reloaded` hook restores the shader automatically after every reload.
+>
+> The keybinding **`SUPER + CTRL + Delete`** cycles through `off → 25% → 50% → 75% → 100%` filter strengths. Shader `.glsl` files live in `~/.config/hypr/shaders/`.
 
 **Toggle rows:**
 
 | Row | Label | Bound to |
 |---|---|---|
-| 1 | Animations | `config.animations` → `hyprctl keyword animations:enabled` |
-| 2 | Blur | `config.blur` → `hyprctl keyword decoration:blur:enabled` |
+| 1 | Animations | `config.animations` → `hyprctl keyword animations.enabled` |
+| 2 | Blur | `config.blur` → `hyprctl keyword decoration.blur.enabled` |
 | 3 | Bluetooth | `BluetoothState.btPowered` → `rfkill` |
 | 4 | Floating Launcher | `config.launcherFloating` (fullscreen vs dropdown) |
 | 5 | Workspace Glow | `config.workspaceGlow` |
+
+For Hyprland 0.55+ Lua configs, the Settings panel uses dot-path option names for `hyprctl keyword` and `hyprctl getoption` calls, e.g. `animations.enabled`, `decoration.blur.enabled`, and `decoration.screen_shader`.
 
 **Action rows:** Change Wallpaper (opens `WallpaperDropdown`) and Lock Screen.
 
@@ -761,11 +767,13 @@ Change `barMonitor` in `Config.qml` (or via the Settings dropdown at runtime —
 | `pam` | ✅ | Lockscreen authentication |
 | `kitty` | ✅ | Terminal for package updates |
 | `upower` | recommended | Battery status |
-| `hyprshade` | recommended | Night light shader toggle (4 levels: Soft/Warm/Hot/Max) |
+| `hyprshade` | ~~recommended~~ **removed** | Replaced by `shaders.lua` — see note below |
 | `zenity` or `kdialog` | recommended | Folder picker dialog in wallpaper panel |
 | `yay` | recommended | Package update count |
 | `matugen` | recommended | Auto-generate colors from wallpaper — 8 color scheme algorithms |
 | `lm_sensors` | recommended | CPU temperature |
+
+> **Hyprland 0.55 — `hyprshade` removal:** `hyprshade` is no longer used. It was replaced by `hyprland/shaders.lua`, a pure-Lua module loaded natively by Hyprland's Lua config system. No external tool or package is required. The shader files (`.glsl`) must still be present in `~/.config/hypr/shaders/`. The Settings night light toggle and strength slider interact with `decoration.screen_shader` directly via `hyprctl keyword` (Quickshell side) and the Lua module handles state persistence and reload restoration.
 
 > **Note on Python scripts** — Two files reference personal Python scripts for controlling keyboard RGB lighting: `LockscreenSurface.qml` (sets the keyboard to red on lock, restores on unlock) and `VolumeDropdown.qml` (browser audio sink detection). The keyboard RGB scripts (`keyboard-breathing-toggle.py`, `keyboard-rgb.py`) are specific to one hardware setup and are **not needed by most users** — you can safely comment out those `Process` blocks. The `python3` inline commands in `VolumeDropdown.qml` for browser sink detection are more broadly useful and can be kept.
 
@@ -897,7 +905,7 @@ import qs.modules.pomodoro
 
 10. **Notification grouping** — Repeated notifications from the same app (e.g. a build system firing many alerts) stack up as separate cards. Grouping them by `appName` with a collapse toggle would keep the popup stack tidy.
 
-
+---
 
 ## License & Credits
 
