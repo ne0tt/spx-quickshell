@@ -623,7 +623,7 @@ All gauges animate smoothly (600 ms `OutCubic`) and turn red when ≥ 85%. The t
 
 **Cross-panel update sync:** When `dashUpgradeProc` (the kitty upgrade terminal launched from the dashboard) finishes, it emits `upgradeCompleted()`. `shell.qml` connects this to `systemUpdatesButton.recheckUpdates()`, which re-runs the full `checkupdates + yay -Qua` check and updates the bar button count — so all three upgrade paths (bar button, dashboard, notifications) leave the system in a consistent state.
 
-**Network tab (Tab 4)** shows the current VLAN network connection alongside WireGuard VPN management:
+**Network tab (Tab 4)** shows the current VLAN network connection alongside WireGuard VPN management and a speed test panel:
 
 - **Network info**: detects the active VLAN interface via `nmcli`, shows IP address, gateway, and DNS servers. The VLAN ID is derived from the third IP octet (e.g. `192.168.10.x` → `VLAN10`).
 - **WireGuard VPN cards**: lists all `nmcli` WireGuard connections as `SelectableCard` items. Click (or keyboard Enter) to bring a connection up or down. Cards flash on activation; busy spinner while toggling.
@@ -631,6 +631,18 @@ All gauges animate smoothly (600 ms `OutCubic`) and turn red when ≥ 85%. The t
 - **Layout**: the WireGuard header/cards and map are contained inside a shared card-style box for consistency with other tabs.
 - **Connection Editor button**: a full-width button sits below the Network box and opens `nm-connection-editor`.
 - **Data refresh**: network info and VPN list re-fetch immediately on switching to this tab and every 3 s while the tab is visible.
+
+**Speed test panel (expandable, bottom of Network tab):**
+
+An expandable card runs the Ookla CLI speed test (`speedtest --format=json --progress=yes`):
+
+- **Header row**: shows last result summary (`↓ X.X  ↑ X.X Mbps · DD Mon HH:MM`) and a ▶ / ■ run/stop button. Clicking the header row or pressing Space toggles expand.
+- **Gauges**: two circular arc rings (download left, upload right) fill in real-time as bandwidth data streams in. The speed value and "Mbps" label are shown inside each ring in the accent color.
+- **Arrows**: a large `↓` and `↑` arrow between the gauges flash the accent color during their respective phases — `↓` during download, `↑` during upload. Both stay on accent color when their phase completes.
+- **Status text**: shows `Running…` while the test is active and `Speedtest complete` when done, pinned to the bottom of the panel.
+- **Side labels**: Download / Upload headings with ping status (`Testing…` → `Ping: X ms` on completion). Upload side shows `Waiting…` until upload phase begins.
+- **Persistence**: results (download, upload, ping, last run time) are cached to `modules/dashboard/speedtest_cache.json` and reloaded on next launch. The cache file is auto-created on first startup.
+- **Error handling**: stderr output from the CLI is captured and displayed if the test fails.
 
 **Network tab keyboard navigation:**
 
@@ -814,6 +826,7 @@ Change `barMonitor` in `Config.qml` (or via the Settings dropdown at runtime —
 | `yay` | recommended | Package update count |
 | `matugen` | recommended | Auto-generate colors from wallpaper — 8 color scheme algorithms |
 | `lm_sensors` | recommended | CPU temperature |
+| `speedtest-cli` (Ookla) | recommended | Speed test panel in Dashboard Network tab — install via `yay -S speedtest-cli` |
 
 > **Hyprland 0.55 — `hyprshade` removal:** `hyprshade` is no longer used or needed. See [Hyprland 0.55 — Lua Config & Breaking Changes](#hyprland-055--lua-config--breaking-changes) for the full explanation of what changed and how night light and blur are now handled.
 

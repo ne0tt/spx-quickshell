@@ -34,7 +34,7 @@ DropdownBase {
     readonly property int _mediaH:   _contentY + 287 + 12  // increased for volume slider at top
     readonly property int _perfH:    _contentY + 194 + 12
     readonly property int _weatherH: _contentY + 455 + 12  // current + hourly + weekly + sunrise
-    readonly property int _networkH: _contentY + 280 + 12   // vpn list + map + nm button
+    readonly property int _networkH: _contentY + 326 + 8 + 38 + (dash._stExpanded ? 8 + 176 : 0) + 12   // netCard + nmBtn + stHeader + stContent + gap
 
     panelFullHeight: {
         switch (dash._tab) {
@@ -120,6 +120,49 @@ DropdownBase {
     property int    _netFocusIdx:   -1
     property int    _netKbdFireIdx: -1   // pulses to trigger per-card toggle by index
 
+    // Speedtest state
+    property bool   _stExpanded:  false
+    property bool   _stRunning:   false
+    property real   _stDownload:  0.0   // Mbps
+    property real   _stUpload:    0.0   // Mbps
+    property real   _stPing:      0.0   // ms
+    property string _stError:     ""
+    property bool   _stHasResult: false
+    property string _stLastTime:  ""    // e.g. "14 May 14:32"
+
+    // ── Speedtest result cache (persists across shell restarts) ───
+    readonly property string _stCachePath: Quickshell.env("HOME") + "/.config/quickshell/modules/dashboard/speedtest_cache.json"
+    property var _stCacheFile: FileView {
+        path: dash._stCachePath
+        onLoaded: {
+            try {
+                var s = JSON.parse(text())
+                if (typeof s.download === "number") dash._stDownload  = s.download
+                if (typeof s.upload   === "number") dash._stUpload    = s.upload
+                if (typeof s.ping     === "number") dash._stPing      = s.ping
+                if (typeof s.lastTime === "string" && s.lastTime.length > 0) dash._stLastTime = s.lastTime
+                dash._stHasResult = dash._stDownload > 0 || dash._stUpload > 0
+            } catch (e) {}
+        }
+    }
+    function _stSaveCache() {
+        _stCacheFile.setText(JSON.stringify({
+            download: dash._stDownload,
+            upload:   dash._stUpload,
+            ping:     dash._stPing,
+            lastTime: dash._stLastTime
+        }))
+    }
+
+    // Pre-create speedtest cache file if it doesn't exist so FileView
+    // doesn't emit a warning on first launch before any test has been run.
+    Process {
+        id: _stCacheInitProc
+        running: true
+        command: ["sh", "-c",
+            "[ -f '" + dash._stCachePath + "' ] || echo '{\"download\":0,\"upload\":0,\"ping\":0,\"lastTime\":\"\"}' > '" + dash._stCachePath + "'"]
+    }
+
     // Map colorization is handled by matugen before quickshell reloads
     property int     _mapRefreshCounter: 0  // incremented to force map reload
     readonly property string _mapPath: "file://" + Quickshell.env("HOME") + "/.config/quickshell/assets/map_colorized_latest.png?v=" + _mapRefreshCounter
@@ -143,22 +186,23 @@ DropdownBase {
         inlineCal.displayYear  = now.getFullYear()
         inlineCal.displayMonth = now.getMonth()
         WeatherState.refresh()
+        // Tab 0 needs uptime + perf; updates are deferred
         uptimeProc.running       = true
         perfProc.running         = true
         updatesOpenDelay.restart()
+        // Kernel + Hyprland versions are cheap one-shots — fire once per open
         kernelProc.running       = true
         hyprlandVerProc.running  = true
-        // Prime the VPN state so tab 4 has data without waiting for the timer
-        _vpnBuf = []
-        _mapRefreshCounter++  // Force map image reload
-        _vpnProc.running = true
-        // Control CAVA based on initial state
+        // VPN / network data is only needed when the user switches to tab 4;
+        // don't fork processes for a tab the user may never visit this session.
         Audio.cava.visualizationVisible = false
     }
 
     onIsOpenChanged: {
-        if (!isOpen) Audio.cava.visualizationVisible = false
-        else if (_tab === 1 && _mediaAvail) Audio.cava.visualizationVisible = true
+        if (!isOpen) {
+            Audio.cava.visualizationVisible = false
+            _stExpanded = false
+        } else if (_tab === 1 && _mediaAvail) Audio.cava.visualizationVisible = true
     }
 
     on_TabChanged: {
@@ -167,10 +211,13 @@ DropdownBase {
             _vpnBuf = []
             _mapRefreshCounter++  // Force map image reload
             _vpnProc.running = true
-        } else if (_tab === 1) {
-            mediaProc.running = true
+            _stCacheFile.reload()  // Load persisted speedtest results
         } else {
+            // Leave tab 4 — clear keyboard focus so highlight doesn't persist
             _netFocusIdx = -1
+            if (_tab === 1) {
+                mediaProc.running = true
+            }
         }
         // Control CAVA visualization
         Audio.cava.visualizationVisible = dash.isOpen && _tab === 1 && _mediaAvail
@@ -503,24 +550,44 @@ DropdownBase {
         Keys.onLeftPressed:  { dash._tab = (dash._tab + 4) % 5; dash.triggerHex() }
         Keys.onEscapePressed: dash.closePanel()
 
-        // ── Network tab (Tab 4) up/down/enter navigation ─────
+        // ── Network tab (Tab 4) up/down/enter/space navigation ─────
         Keys.onDownPressed: {
             if (dash._tab !== 4) return
-            var total = dash._vpnConnections.length + 1  // cards + editor button
+            var total = dash._vpnConnections.length + 2  // cards + editor button + speedtest
             dash._netFocusIdx = (dash._netFocusIdx + 1 + total) % total
         }
         Keys.onUpPressed: {
             if (dash._tab !== 4) return
-            var total = dash._vpnConnections.length + 1
+            var total = dash._vpnConnections.length + 2
             dash._netFocusIdx = (dash._netFocusIdx - 1 + total) % total
         }
         Keys.onReturnPressed: {
             if (dash._tab !== 4 || dash._netFocusIdx < 0) return
             if (dash._netFocusIdx < dash._vpnConnections.length) {
                 dash._netKbdFireIdx = dash._netFocusIdx
-            } else {
+            } else if (dash._netFocusIdx === dash._vpnConnections.length) {
                 _nmConnEditor.running = true
                 dash.closePanel()
+            } else {
+                // Speedtest header — Enter toggles expand
+                dash._stExpanded = !dash._stExpanded
+            }
+        }
+        Keys.onSpacePressed: {
+            if (dash._tab !== 4 || dash._netFocusIdx !== dash._vpnConnections.length + 1) return
+            // Speedtest header — Space starts/stops the test
+            if (dash._stRunning) {
+                _speedtestProc.running = false
+                dash._stRunning = false
+            } else {
+                dash._stError     = ""
+                dash._stRunning   = true
+                dash._stDownload  = 0.0
+                dash._stUpload    = 0.0
+                dash._stPing      = 0.0
+                dash._stHasResult = false
+                if (!dash._stExpanded) dash._stExpanded = true
+                _speedtestProc.running = true
             }
         }
     }
@@ -1758,13 +1825,13 @@ DropdownBase {
         x:       16 + 14
         y:       dash._contentY
         width:   dash._cw
-        height:  280
+        height:  326 + 8 + 38 + (dash._stExpanded ? 8 + 176 : 0) + 12
         visible: dash._tab === 4
 
         Rectangle {
             id: _netCard
-            anchors.fill: parent
-            anchors.bottomMargin: _nmEditorBtn.height + 8
+            anchors { left: parent.left; top: parent.top; right: parent.right }
+            height: 280
             radius: 10
             color:        Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.08)
             border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.20)
@@ -2033,7 +2100,7 @@ DropdownBase {
             Behavior on border.color { ColorAnimation { duration: 120 } }
 
             Row {
-                anchors.centerIn: parent
+                anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter }
                 spacing: 8
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
@@ -2059,11 +2126,376 @@ DropdownBase {
                 }
             }
         }
+
+        // ── Speedtest expander header ──────────────────────────
+        Rectangle {
+            id: _stHeader
+            anchors {
+                left:       parent.left
+                right:      parent.right
+                top:        _nmEditorBtn.bottom
+                topMargin:  8
+            }
+            height: 38
+            radius: 10
+            readonly property bool _kbdFocused: dash._netFocusIdx === dash._vpnConnections.length + 1
+            color: _stHeaderArea.containsMouse || _kbdFocused
+                ? Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.22)
+                : Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.10)
+            border.color: _kbdFocused
+                ? Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.8)
+                : Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.35)
+            border.width: _kbdFocused ? 2 : 1
+            Behavior on color { ColorAnimation { duration: 120 } }
+            Behavior on border.color { ColorAnimation { duration: 120 } }
+
+            // Full-header click toggles expand — declared first so button stays on top
+            MouseArea {
+                id: _stHeaderArea
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                hoverEnabled: true
+                onClicked: dash._stExpanded = !dash._stExpanded
+            }
+
+            // Left: icon + label + summary
+            Column {
+                anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter }
+                spacing: 1
+                Row {
+                    spacing: 8
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "󰓅"; font.family: config.fontFamily; font.pixelSize: 15
+                        color: dash.accentColor
+                    }
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "Speed Test"
+                        font.pixelSize: 12; font.bold: true
+                        color: dash.textColor; font.family: config.fontFamily
+                    }
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: dash._stHasResult && !dash._stRunning
+                        text: "↓ " + dash._stDownload.toFixed(1) + "  ↑ " + dash._stUpload.toFixed(1) + " Mbps"
+                              + (dash._stLastTime !== "" ? "  ·  " + dash._stLastTime : "")
+                        font.pixelSize: 11; color: dash.dimColor; font.family: config.fontFamily
+                    }
+                }
+            }
+
+            // Right: start/stop button + chevron (declared after MouseArea so they sit on top)
+            Row {
+                anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
+                spacing: 10
+
+                Rectangle {
+                    id: _stRunBtnRect
+                    width: 26; height: 26; radius: 6
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: _stRunBtn.containsMouse
+                        ? Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.40)
+                        : Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.22)
+                    Behavior on color { ColorAnimation { duration: 120 } }
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: dash._stRunning ? "󰓛" : "󰐊"
+                        font.family: config.fontFamily; font.pixelSize: 13
+                        color: dash.accentColor
+                    }
+                    MouseArea {
+                        id: _stRunBtn
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        hoverEnabled: true
+                        onClicked: {
+                            if (dash._stRunning) {
+                                _speedtestProc.running = false
+                                dash._stRunning = false
+                            } else {
+                                dash._stError     = ""
+                                dash._stRunning   = true
+                                dash._stDownload  = 0.0
+                                dash._stUpload    = 0.0
+                                dash._stPing      = 0.0
+                                dash._stHasResult = false
+                                if (!dash._stExpanded) dash._stExpanded = true
+                                _speedtestProc.running = true
+                            }
+                        }
+                    }
+                }
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: dash._stExpanded ? "" : ""
+                    font.family: config.fontFamily; font.pixelSize: 12
+                    color: dash.dimColor
+                }
+            }
+        }
+
+        // ── Speedtest content panel (expanded) ─────────────────
+        Rectangle {
+            id: _stContent
+            anchors {
+                left:         parent.left
+                right:        parent.right
+                top:          _stHeader.bottom
+                topMargin:    8
+                bottom:       parent.bottom
+                bottomMargin: 12
+            }
+            visible: dash._stExpanded
+            radius: 10
+            color:        Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.08)
+            border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.20)
+            border.width: 1
+
+            // Idle: not yet run
+            Text {
+                anchors.centerIn: parent
+                visible: !dash._stHasResult && !dash._stRunning && dash._stError === "" && dash._stDownload === 0 && dash._stUpload === 0
+                text: "Press ▶ to run a speed test"
+                color: dash.dimColor; font.pixelSize: 12; font.family: config.fontFamily
+            }
+
+            // Repaint both canvases every 100ms while a test is running so
+            // live bandwidth values are always reflected immediately.
+            Timer {
+                interval: 100
+                running:  dash._stRunning
+                repeat:   true
+                onTriggered: { _dlCanvas.requestPaint(); _ulCanvas.requestPaint() }
+            }
+
+            // Gauges — visible while running (live) and after results arrive
+            // Layout: [DL canvas] [DL text] ... [UL text] [UL canvas]
+            // Both text columns are top-anchored to their canvas so labels
+            // always appear on the same horizontal level.
+            Item {
+                anchors { fill: parent; margins: 12 }
+                visible: dash._stRunning || dash._stHasResult
+
+                // ── Download canvas (left edge) ──────────────
+                Canvas {
+                    id: _dlCanvas
+                    width: 150; height: 150
+                    anchors { left: parent.left; verticalCenter: parent.verticalCenter }
+                    onPaint: {
+                        var ctx = getContext("2d")
+                        ctx.clearRect(0, 0, width, height)
+                        var cx = 75, cy = 75, r = 60, lw = 11
+                        ctx.beginPath()
+                        ctx.arc(cx, cy, r, 0, Math.PI * 2)
+                        ctx.strokeStyle = Colors.col_background.toString()
+                        ctx.lineWidth = lw; ctx.stroke()
+                        var p = Math.min(dash._stDownload / 1000, 1.0)
+                        if (p > 0) {
+                            ctx.beginPath()
+                            ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * p)
+                            ctx.strokeStyle = dash.accentColor.toString()
+                            ctx.lineWidth = lw; ctx.lineCap = "round"; ctx.stroke()
+                        }
+                    }
+                    Connections {
+                        target: dash
+                        function onAccentColorChanged() { _dlCanvas.requestPaint() }
+                    }
+                    Text {
+                        id: _dlValue
+                        anchors.centerIn: parent
+                        text: dash._stDownload.toFixed(0)
+                        color: dash.accentColor; font.pixelSize: 30; font.bold: true; font.family: config.fontFamily
+                    }
+                    Text {
+                        anchors.top: _dlValue.bottom
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: "Mbps"
+                        color: dash.dimColor; font.pixelSize: 10; font.family: config.fontFamily
+                    }
+                }
+
+                // ── Download text (pinned to DL canvas top) ──
+                Column {
+                    anchors { left: _dlCanvas.right; leftMargin: 12; top: _dlCanvas.top; topMargin: 10 }
+                    spacing: 4
+                    Text { text: "Download"; color: dash.textColor; font.pixelSize: 14; font.weight: Font.Medium; font.family: config.fontFamily }
+                    Text {
+                        text: dash._stHasResult
+                            ? (dash._stPing > 0 ? "Ping: " + dash._stPing.toFixed(0) + " ms" : "")
+                            : (dash._stRunning && dash._stUpload > 0 ? "Ping: —" : "Testing…")
+                        color: dash.dimColor; font.pixelSize: 12; font.family: config.fontFamily
+                        visible: dash._stRunning || dash._stHasResult
+                    }
+                    Text {
+                        id: _dlArrow
+                        text: "↓"
+                        font.pixelSize: 80; font.family: config.fontFamily
+                        color: dash.dimColor
+                        SequentialAnimation on color {
+                            running: dash._stRunning && dash._stUpload === 0
+                            loops: Animation.Infinite
+                            alwaysRunToEnd: true
+                            ColorAnimation { to: dash.dimColor; duration: 500; easing.type: Easing.InOutSine }
+                            ColorAnimation { to: dash.accentColor; duration: 500; easing.type: Easing.InOutSine }
+                        }
+                    }
+                }
+
+                // ── Upload canvas (right edge) ────────────────
+                Canvas {
+                    id: _ulCanvas
+                    width: 150; height: 150
+                    anchors { right: parent.right; verticalCenter: parent.verticalCenter }
+                    onPaint: {
+                        var ctx = getContext("2d")
+                        ctx.clearRect(0, 0, width, height)
+                        var cx = 75, cy = 75, r = 60, lw = 11
+                        ctx.beginPath()
+                        ctx.arc(cx, cy, r, 0, Math.PI * 2)
+                        ctx.strokeStyle = Colors.col_background.toString()
+                        ctx.lineWidth = lw; ctx.stroke()
+                        var p = Math.min(dash._stUpload / 1000, 1.0)
+                        if (p > 0) {
+                            ctx.beginPath()
+                            ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * p)
+                            ctx.strokeStyle = dash.accentColor.toString()
+                            ctx.lineWidth = lw; ctx.lineCap = "round"; ctx.stroke()
+                        }
+                    }
+                    Connections {
+                        target: dash
+                        function onAccentColorChanged() { _ulCanvas.requestPaint() }
+                    }
+                    Text {
+                        id: _ulValue
+                        anchors.centerIn: parent
+                        text: dash._stUpload.toFixed(0)
+                        color: dash.accentColor; font.pixelSize: 30; font.bold: true; font.family: config.fontFamily
+                    }
+                    Text {
+                        anchors.top: _ulValue.bottom
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: "Mbps"
+                        color: dash.dimColor; font.pixelSize: 10; font.family: config.fontFamily
+                    }
+                }
+
+                // ── Upload text (pinned to UL canvas top, right-aligned) ──
+                Column {
+                    anchors { right: _ulCanvas.left; rightMargin: 12; top: _ulCanvas.top; topMargin: 10 }
+                    width: 110
+                    spacing: 4
+                    Text { text: "Upload"; color: dash.textColor; font.pixelSize: 14; font.weight: Font.Medium; font.family: config.fontFamily; horizontalAlignment: Text.AlignRight; width: parent.width }
+                    Text {
+                        text: (dash._stRunning && dash._stUpload > 0) ? "Testing…" : (dash._stHasResult ? "Completed" : "Waiting…")
+                        color: dash.dimColor; font.pixelSize: 12; font.family: config.fontFamily
+                        horizontalAlignment: Text.AlignRight; width: parent.width
+                    }
+                    Text {
+                        id: _ulArrow
+                        text: "↑"
+                        font.pixelSize: 80; font.family: config.fontFamily
+                        color: dash.dimColor
+                        horizontalAlignment: Text.AlignRight; width: parent.width
+                        SequentialAnimation on color {
+                            running: dash._stRunning && dash._stUpload > 0
+                            loops: Animation.Infinite
+                            alwaysRunToEnd: true
+                            ColorAnimation { to: dash.dimColor; duration: 500; easing.type: Easing.InOutSine }
+                            ColorAnimation { to: dash.accentColor; duration: 500; easing.type: Easing.InOutSine }
+                        }
+                    }
+                }
+
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: 15
+                    text: dash._stRunning ? "Running…" : "Speedtest complete"
+                    color: dash.accentColor; font.pixelSize: 14; font.family: config.fontFamily
+                    horizontalAlignment: Text.AlignHCenter
+                }
+            }
+
+            // Error state
+            Text {
+                anchors.centerIn: parent
+                visible: dash._stError !== "" && !dash._stRunning && !dash._stHasResult
+                text: dash._stError
+                color: "#ff6b6b"; font.pixelSize: 11; font.family: config.fontFamily
+                wrapMode: Text.WordWrap
+                width: parent.width - 24
+                horizontalAlignment: Text.AlignHCenter
+            }
+        }
     }
 
     Process {
         id: _nmConnEditor
         running: false
         command: ["nm-connection-editor"]
+    }
+
+    // ── Speedtest (Ookla CLI) ─────────────────────────────────
+    // Uses `speedtest --format=json` (Ookla speedtest CLI v1.0+).
+    // Each output line is a JSON object with a "type" field.
+    // "download" / "upload" lines provide live bandwidth progress;
+    // the final "result" line carries definitive values.
+    // Bandwidth is in bytes/s — multiply by 8 / 1_000_000 for Mbps.
+    Process {
+        id: _speedtestProc
+        running: false
+        command: ["stdbuf", "-oL", "speedtest", "--format=json", "--progress=yes", "--accept-license", "--accept-gdpr"]
+        stdout: SplitParser {
+            onRead: data => {
+                var line = data.trim()
+                if (!line) return
+                try {
+                    var obj = JSON.parse(line)
+                    if (!obj || !obj.type) return
+                    if (obj.type === "download" && obj.download) {
+                        // Live download progress
+                        dash._stDownload = (obj.download.bandwidth || 0) * 8 / 1000000
+                    } else if (obj.type === "upload" && obj.upload) {
+                        // Live upload progress
+                        dash._stUpload = (obj.upload.bandwidth || 0) * 8 / 1000000
+                    } else if (obj.type === "result") {
+                        // Final result
+                        dash._stDownload  = ((obj.download && obj.download.bandwidth) || 0) * 8 / 1000000
+                        dash._stUpload    = ((obj.upload   && obj.upload.bandwidth)   || 0) * 8 / 1000000
+                        dash._stPing      = (obj.ping      && obj.ping.latency)       || 0
+                        dash._stHasResult = true
+                        dash._stRunning   = false
+                        dash._stError     = ""
+                        var now = new Date()
+                        dash._stLastTime  = now.toLocaleDateString(Qt.locale(), "d MMM") + " " + now.toLocaleTimeString(Qt.locale(), "HH:mm")
+                        dash._stSaveCache()
+                    }
+                } catch (e) {}
+            }
+        }
+        stderr: SplitParser {
+            onRead: data => {
+                var line = data.trim()
+                // Ookla CLI prints structured errors to stderr starting with a JSON object
+                // or plain text. Capture the first meaningful line as the error message.
+                if (line && dash._stError === "") {
+                    try {
+                        var obj = JSON.parse(line)
+                        if (obj && obj.message) { dash._stError = obj.message; return }
+                    } catch (e) {}
+                    if (!line.startsWith("[")) dash._stError = line.substring(0, 100)
+                }
+            }
+        }
+        onExited: (code, status) => {
+            dash._stRunning = false
+            if (code !== 0 && !dash._stHasResult && dash._stError === "")
+                dash._stError = "Speed test failed (exit code " + code + ")"
+        }
     }
 }
