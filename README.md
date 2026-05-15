@@ -4,7 +4,7 @@
 
 A highly customized Wayland status bar and system interface built with [Quickshell](https://quickshell.outfoxxed.me/) for Hyprland.
 
-**Last Updated**: May 14, 2026 — `shaders.lua` replaces `hyprshade` as the night light backend (Hyprland 0.55 breaking changes)
+**Last Updated**: May 15, 2026 — Added Ookla speed test panel to Dashboard Network tab (live gauges, animated arrows, persistent cache)
 
 ---
 
