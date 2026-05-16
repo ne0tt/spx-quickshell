@@ -12,10 +12,10 @@ import "../../state"
 // ============================================================
 // DASHBOARD DROPDOWN — tabbed info panel with:
 //   Tab 0 — Dashboard : weather card + system info + mini media + calendar
-//   Tab 1 — Media     : full-size media player
+//   Tab 1 — Network   : active interface, IP, gateway, DNS
 //   Tab 2 — Performance: CPU + RAM usage bars
-//   Tab 3 — Weather   : current conditions + 3-day forecast
-//   Tab 4 — Network   : active interface, IP, gateway, DNS
+//   Tab 3 — Media     : full-size media player
+//   Tab 4 — Weather   : current conditions + 3-day forecast
 // ============================================================
 DropdownBase {
     id: dash
@@ -30,7 +30,7 @@ DropdownBase {
     readonly property int _contentY: 16 + 10 + 36 + 8 // tab content top
 
     // Per-tab panelFullHeight: must accommodate _contentY + content + bottom-pad
-    readonly property int _dashH:    _contentY + 155 + 10 + 200 + 4  // info row + cal
+    readonly property int _dashH:    _contentY + 182 + 10 + 185 + 4  // info row + cal
     readonly property int _mediaH:   _contentY + 287 + 12  // increased for volume slider at top
     readonly property int _perfH:    _contentY + 194 + 12
     readonly property int _weatherH: _contentY + 455 + 12  // current + hourly + weekly + sunrise
@@ -39,10 +39,10 @@ DropdownBase {
     panelFullHeight: {
         switch (dash._tab) {
             case 0: return dash._dashH
-            case 1: return dash._mediaH
+            case 1: return dash._networkH
             case 2: return dash._perfH
-            case 3: return dash._weatherH
-            case 4: return dash._networkH
+            case 3: return dash._mediaH
+            case 4: return dash._weatherH
             default: return dash._mediaH
         }
     }
@@ -70,6 +70,7 @@ DropdownBase {
     property string _kernelVersion:  "…"
     property string _hyprlandVersion: "…"
     property int    _updates:     -1  // -1 = loading, 0 = up to date, >0 = count
+    property string _aurStatus:   ""  // empty = loading, then headline from status.archlinux.org
     property string _mediaTitle:  "No media playing"
     property string _mediaArtist: ""
     property string _mediaArtUrl: ""
@@ -193,7 +194,7 @@ DropdownBase {
         // Kernel + Hyprland versions are cheap one-shots — fire once per open
         kernelProc.running       = true
         hyprlandVerProc.running  = true
-        // VPN / network data is only needed when the user switches to tab 4;
+        // VPN / network data is only needed when the user switches to tab 3;
         // don't fork processes for a tab the user may never visit this session.
         Audio.cava.visualizationVisible = false
     }
@@ -202,11 +203,11 @@ DropdownBase {
         if (!isOpen) {
             Audio.cava.visualizationVisible = false
             _stExpanded = false
-        } else if (_tab === 1 && _mediaAvail) Audio.cava.visualizationVisible = true
+        } else if (_tab === 3 && _mediaAvail) Audio.cava.visualizationVisible = true
     }
 
     on_TabChanged: {
-        if (_tab === 4) {
+        if (_tab === 1) {
             _netIfaceProc.running = true
             _vpnBuf = []
             _mapRefreshCounter++  // Force map image reload
@@ -215,12 +216,12 @@ DropdownBase {
         } else {
             // Leave tab 4 — clear keyboard focus so highlight doesn't persist
             _netFocusIdx = -1
-            if (_tab === 1) {
+            if (_tab === 3) {
                 mediaProc.running = true
             }
         }
         // Control CAVA visualization
-        Audio.cava.visualizationVisible = dash.isOpen && _tab === 1 && _mediaAvail
+        Audio.cava.visualizationVisible = dash.isOpen && _tab === 3 && _mediaAvail
     }
 
     // Start update check only after dropdown finishes opening.
@@ -241,17 +242,17 @@ DropdownBase {
         repeat:   true
         onTriggered: {
             if (dash._tab === 0) uptimeProc.running = true
-            if (dash._tab === 1) mediaProc.running  = true
+            if (dash._tab === 3) mediaProc.running  = true
             if (dash._tab === 0 || dash._tab === 2) perfProc.running = true
-            if (dash._tab === 4) _netIfaceProc.running = true
-            if (dash._tab === 4) { dash._vpnBuf = []; dash._mapRefreshCounter++; _vpnProc.running = true }
+            if (dash._tab === 1) _netIfaceProc.running = true
+            if (dash._tab === 1) { dash._vpnBuf = []; dash._mapRefreshCounter++; _vpnProc.running = true }
         }
     }
 
     // Progress bar update timer - runs every second for smooth seekbar updates
     Timer {
         interval: 1000
-        running:  dash.isOpen && dash._tab === 1 && dash._mediaAvail
+        running:  dash.isOpen && dash._tab === 3 && dash._mediaAvail
         repeat:   true
         onTriggered: {
             mediaProc.running = true
@@ -294,6 +295,35 @@ DropdownBase {
             onRead: data => {
                 var v = data.trim()
                 dash._hyprlandVersion = v !== "" ? v : "?"
+            }
+        }
+    }
+
+    // ── Arch Linux service status ─────────────────────────────
+    // Fetched once at startup then refreshed every 5 minutes via aurRefreshTimer.
+    // Result persists across panel opens so the user always sees the last known state.
+    Component.onCompleted: aurStatusProc.running = true
+
+    Timer {
+        id: aurRefreshTimer
+        interval: 5 * 60 * 1000   // 5 minutes
+        repeat: true
+        running: true
+        onTriggered: aurStatusProc.running = true
+    }
+
+    Process {
+        id: aurStatusProc
+        running: false
+        command: ["bash", "-c",
+            "curl -s --max-time 10 'https://status.archlinux.org/api/getMonitorList/vmM5ruWEAB' | "
+            + "jq -r '[.data[]|select(.statusClass!=\"success\")|.name] | if length==0 then \"All Systems Operational\" else \"Degraded: \"+join(\", \") end' 2>/dev/null "
+            + "|| curl -s --max-time 10 'https://status.archlinux.org/api/getMonitorList/vmM5ruWEAB' | "
+            + "python3 -c \"import json,sys;d=json.load(sys.stdin);down=[m['name'] for m in d['data'] if m['statusClass']!='success'];print('All Systems Operational' if not down else 'Degraded: '+', '.join(down))\""]
+        stdout: SplitParser {
+            onRead: data => {
+                var s = data.trim()
+                dash._aurStatus = s !== "" ? s : "Status unavailable"
             }
         }
     }
@@ -474,7 +504,7 @@ DropdownBase {
                         dash._mediaDuration = 0
                     }
                     // Control CAVA visualization
-                    Audio.cava.visualizationVisible = dash.isOpen && dash._tab === 1 && dash._mediaAvail
+                    Audio.cava.visualizationVisible = dash.isOpen && dash._tab === 3 && dash._mediaAvail
                 } else {
                     dash._mediaStatus = "Stopped"
                     dash._mediaAvail = false
@@ -550,19 +580,19 @@ DropdownBase {
         Keys.onLeftPressed:  { dash._tab = (dash._tab + 4) % 5; dash.triggerHex() }
         Keys.onEscapePressed: dash.closePanel()
 
-        // ── Network tab (Tab 4) up/down/enter/space navigation ─────
+        // ── Network tab (Tab 1) up/down/enter/space navigation ─────
         Keys.onDownPressed: {
-            if (dash._tab !== 4) return
+            if (dash._tab !== 1) return
             var total = dash._vpnConnections.length + 2  // cards + editor button + speedtest
             dash._netFocusIdx = (dash._netFocusIdx + 1 + total) % total
         }
         Keys.onUpPressed: {
-            if (dash._tab !== 4) return
+            if (dash._tab !== 1) return
             var total = dash._vpnConnections.length + 2
             dash._netFocusIdx = (dash._netFocusIdx - 1 + total) % total
         }
         Keys.onReturnPressed: {
-            if (dash._tab !== 4 || dash._netFocusIdx < 0) return
+            if (dash._tab !== 1 || dash._netFocusIdx < 0) return
             if (dash._netFocusIdx < dash._vpnConnections.length) {
                 dash._netKbdFireIdx = dash._netFocusIdx
             } else if (dash._netFocusIdx === dash._vpnConnections.length) {
@@ -574,7 +604,7 @@ DropdownBase {
             }
         }
         Keys.onSpacePressed: {
-            if (dash._tab !== 4 || dash._netFocusIdx !== dash._vpnConnections.length + 1) return
+            if (dash._tab !== 1 || dash._netFocusIdx !== dash._vpnConnections.length + 1) return
             // Speedtest header — Space starts/stops the test
             if (dash._stRunning) {
                 _speedtestProc.running = false
@@ -605,10 +635,10 @@ DropdownBase {
         Repeater {
             model: [
                 { icon: "󰕮", label: "Dashboard"   },
-                { icon: "󰝚", label: "Media"        },
+                { icon: "󰈀", label: "Network"      },
                 { icon: "󰻠", label: "Performance"  },
-                { icon: "󰖕", label: "Weather"      },
-                { icon: "󰈀", label: "Network"      }
+                { icon: "󰝚", label: "Media"        },
+                { icon: "󰖕", label: "Weather"      }
             ]
             delegate: Rectangle {
                 id: tabItem
@@ -684,7 +714,7 @@ DropdownBase {
         // ── Weather card ──────────────────────────────────────
         Rectangle {
             x: 0; y: 0
-            width: parent.weatherW; height: 155
+            width: parent.weatherW; height: 182
             radius: 10
             color:        Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.08)
             border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.20)
@@ -721,7 +751,7 @@ DropdownBase {
         // ── System info card ──────────────────────────────────
         Rectangle {
             x: parent.weatherW + 10; y: 0
-            width: parent.sysinfoW; height: 155
+            width: parent.sysinfoW; height: 182
             radius: 10
             color:        Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.08)
             border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.20)
@@ -744,6 +774,28 @@ DropdownBase {
                     Text { text: "󰔛"; font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 14; color: dash.accentColor; anchors.verticalCenter: parent.verticalCenter }
                     Text { text: dash._uptime; color: dash.textColor; font.pixelSize: 13; font.family: config.fontFamily; anchors.verticalCenter: parent.verticalCenter }
                 }
+                Item { width: 1; height: 1 }
+                // AUR / Arch service status
+                Row {
+                    spacing: 8
+                    readonly property bool _ok: dash._aurStatus === "All Systems Operational"
+                    readonly property bool _loading: dash._aurStatus === ""
+                    Text {
+                        text: "󰖟"
+                        font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 14
+                        color: parent._loading ? dash.dimColor : dash.accentColor
+                        anchors.verticalCenter: parent.verticalCenter
+                        Behavior on color { ColorAnimation { duration: 200 } }
+                    }
+                    Text {
+                        text: dash._aurStatus === "" ? "Checking Arch status…" : dash._aurStatus
+                        color: parent._loading ? dash.dimColor : (parent._ok ? dash.textColor : "#f38ba8")
+                        font.pixelSize: 13; font.family: config.fontFamily
+                        anchors.verticalCenter: parent.verticalCenter
+                        Behavior on color { ColorAnimation { duration: 200 } }
+                    }
+                }
+
                 Item {
                     width: updatesRow.implicitWidth
                     height: updatesRow.implicitHeight
@@ -851,7 +903,7 @@ DropdownBase {
 
         // ── Clock + calendar row ──────────────────────────────
         Item {
-            x: 0; y: 155 + 10
+            x: 0; y: 182 + 10
             width: parent.width; height: 200
 
             readonly property real calW:   (parent.width - 10) * (1.25 / 2.25)
@@ -1022,7 +1074,7 @@ DropdownBase {
                                 color: modelData.overflow
                                     ? Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.25)
                                     : modelData.isToday ? dash.panelColor : dash.accentColor
-                                font.pixelSize: 13; font.bold: modelData.isToday
+                                font.pixelSize: modelData.isToday ? 11 : 13; font.bold: modelData.isToday
                                 font.family: config.fontFamily
                             }
                         }
@@ -1035,14 +1087,14 @@ DropdownBase {
     }
 
     // ══════════════════════════════════════════════════════════
-    // TAB 1: MEDIA
+    // TAB 3: MEDIA
     // ══════════════════════════════════════════════════════════
     Item {
         x:       16 + 14
         y:       dash._contentY
         width:   dash._cw
         height:  287
-        visible: dash._tab === 1
+        visible: dash._tab === 3
 
         property int _mediaDragVol: -1
         readonly property int _mediaDisplayVol: _mediaDragVol >= 0 ? _mediaDragVol : VolumeState.volume
@@ -1146,7 +1198,7 @@ DropdownBase {
             property real _artAngle: 0
             Timer {
                 interval: 50
-                running: dash._mediaStatus === "Playing" && dash.isOpen && dash._tab === 1
+                running: dash._mediaStatus === "Playing" && dash.isOpen && dash._tab === 3
                 repeat: true
                 onTriggered: bigArt._artAngle = (bigArt._artAngle + 3) % 360
             }
@@ -1199,7 +1251,7 @@ DropdownBase {
 
                     property bool needsScroll: paintedWidth > mediaTitleClip.width
                     SequentialAnimation {
-                        running: mediaTitleText.needsScroll && dash.isOpen && dash._tab === 1
+                        running: mediaTitleText.needsScroll && dash.isOpen && dash._tab === 3
                         loops: Animation.Infinite
                         PauseAnimation { duration: 2000 }
                         NumberAnimation {
@@ -1415,7 +1467,7 @@ DropdownBase {
                         id: cavaBar
                         required property int index
 
-                        property real value: (dash.isOpen && dash._tab === 1 && dash._mediaAvail) ?
+                        property real value: (dash.isOpen && dash._tab === 3 && dash._mediaAvail) ?
                             Math.max(0, Math.min(1,
                                 Audio.cava.values?.[Math.floor((index / (cavaBarsRow.barCount - 1)) * (Audio.cava.values?.length - 1 || 0))] || 0
                             )) : 0
@@ -1427,7 +1479,7 @@ DropdownBase {
                         color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.8)
 
                         Behavior on height {
-                            enabled: dash.isOpen && dash._tab === 1 && dash._mediaAvail
+                            enabled: dash.isOpen && dash._tab === 3 && dash._mediaAvail
                             NumberAnimation {
                                 duration: 30
                                 easing.type: Easing.Linear
@@ -1608,14 +1660,14 @@ DropdownBase {
     }
 
     // ══════════════════════════════════════════════════════════
-    // TAB 3: WEATHER
+    // TAB 4: WEATHER
     // ══════════════════════════════════════════════════════════
     Item {
         x:       16 + 14
         y:       dash._contentY
         width:   dash._cw
         height:  431
-        visible: dash._tab === 3
+        visible: dash._tab === 4
 
         Text {
             visible: WeatherState.wLoading
@@ -1819,14 +1871,14 @@ DropdownBase {
     }
 
     // ══════════════════════════════════════════════════════════
-    // TAB 4: NETWORK
+    // TAB 1: NETWORK
     // ══════════════════════════════════════════════════════════
     Item {
         x:       16 + 14
         y:       dash._contentY
         width:   dash._cw
         height:  326 + 8 + 38 + (dash._stExpanded ? 8 + 176 : 0) + 12
-        visible: dash._tab === 4
+        visible: dash._tab === 1
 
         Rectangle {
             id: _netCard
@@ -1984,8 +2036,8 @@ DropdownBase {
                 // Equirectangular projection offsets (image is letterboxed / centered by PreserveAspectFit)
                 readonly property real _offX:    (_mapContainer.width  - _mapImage.paintedWidth)  / 2
                 readonly property real _offY:    (_mapContainer.height - _mapImage.paintedHeight) / 2
-                readonly property real _centerX: _offX + (dash._vpnGeoLon + 180) / 360 * _mapImage.paintedWidth  - 10
-                readonly property real _centerY: _offY + (90 - dash._vpnGeoLat) / 180 * _mapImage.paintedHeight + 17
+                readonly property real _centerX: _offX + (dash._vpnGeoLon + 180) / 360 * _mapImage.paintedWidth  - 12
+                readonly property real _centerY: _offY + (90 - dash._vpnGeoLat) / 180 * _mapImage.paintedHeight + 19
 
                 // Ring 1 — first ripple
                 Rectangle {

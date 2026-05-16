@@ -4,7 +4,7 @@
 
 A highly customized Wayland status bar and system interface built with [Quickshell](https://quickshell.outfoxxed.me/) for Hyprland.
 
-**Last Updated**: May 15, 2026 — Added Ookla speed test panel to Dashboard Network tab (live gauges, animated arrows, persistent cache)
+**Last Updated**: May 16, 2026 — Added Arch Linux service status checker to Dashboard tab (polls `status.archlinux.org` every 5 minutes, shows degraded services or "All Systems Operational")
 
 ---
 
@@ -586,7 +586,7 @@ The `--type` argument is configurable from inside the dropdown itself and persis
 
 - **Weather card** — current icon, temperature, and description from `WeatherState`
 - **System info card** — two columns:
-  - *Left*: kernel version (`uname -r`), Hyprland version (`hyprctl version`), uptime, and a package update row. When updates are available the row is clickable — clicking it closes the panel and launches a `kitty` terminal running `yay -Syu`. The row flashes white when the update count first increases.
+  - *Left*: kernel version (`uname -r`), Hyprland version (`hyprctl version`), uptime, a package update row, and an **Arch Linux service status** row. When updates are available the update row is clickable — clicking it closes the panel and launches a `kitty` terminal running `yay -Syu`. The row flashes white when the update count first increases. The service status row polls `https://status.archlinux.org/api/getMonitorList/vmM5ruWEAB` on startup then every 5 minutes; it shows `All Systems Operational` when all services are healthy or `Degraded: <service names>` when any are not. The last-fetched status persists across panel opens. Uses `jq` for parsing with a `python3` fallback.
   - *Right*: CPU / RAM / Disk percentage as thin animated progress bars (turns red above 85%).
 
 Below the info cards sits a **clock + date + inline calendar** row:
