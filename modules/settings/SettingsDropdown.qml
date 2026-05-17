@@ -75,8 +75,8 @@ DropdownBase {
                     }
                 } else {
                     var next = settingsDrop._navFocus + dir
-                    if (settingsDrop._navFocus < 0) next = (dir > 0) ? 0 : 8
-                    settingsDrop._navFocus = Math.max(0, Math.min(8, next))
+                    if (settingsDrop._navFocus < 0) next = (dir > 0) ? 0 : 7
+                    settingsDrop._navFocus = Math.max(0, Math.min(7, next))
                 }
                 event.accepted = true
                 return
@@ -111,7 +111,7 @@ DropdownBase {
     // Row geometry — bump _rowCount when adding/removing toggle rows.
     // Night Light and Bar Monitor cards are counted separately below.
     // panelFullHeight is derived so implicitHeight stays correct automatically.
-    readonly property int _rowCount:  7    // 5 toggles + wallpaper + lockscreen
+    readonly property int _rowCount:  6    // 5 toggles + wallpaper
     readonly property int _rowH:      48   // SettingsToggleRow height
     readonly property int _gap:       8    // Column spacing
     readonly property int _padTop:    8    // top padding inside content area
@@ -162,10 +162,10 @@ DropdownBase {
     }
 
     // ── Keyboard navigation state ─────────────────────────
-    // _navFocus: -1 = nothing focused, 0-8 = card index
+    // _navFocus: -1 = nothing focused, 0-7 = card index
     //   0=NightLight  1=Animations  2=Blur  3=Bluetooth
     //   4=LauncherFloat  5=WorkspaceGlow  6=Wallpaper
-    //   7=BarMonitor  8=LockScreen
+    //   7=BarMonitor
     property int  _navFocus:    -1
     property bool _inSubNav:    false   // navigating items inside an expanded card
     property int  _nlSubFocus:  0       // 0=soft 1=warm 2=hot 3=max
@@ -366,30 +366,7 @@ DropdownBase {
                 }
                 _monSubFocus = mIdx
                 break
-            case 8: activateLockscreen(); break
         }
-    }
-
-    // ═══════════════════════════════════════════════════════
-    // LOCKSCREEN — launch as separate process
-    // ═══════════════════════════════════════════════════════
-
-    Process {
-        id: lockscreenProcess
-        running: false
-        command: ["quickshell", "-p", Quickshell.env("HOME") + "/dotfiles/.config/quickshell/modules/lockscreen/LockscreenService.qml"]
-        
-        onExited: (exitCode, exitStatus) => {
-            console.log("Lockscreen process exited with code:", exitCode)
-        }
-    }
-
-    function activateLockscreen() {
-        console.log("Activating lockscreen from settings...")
-        settingsDrop.closePanel()  // Close settings dropdown first
-        Qt.callLater(function() {
-            lockscreenProcess.startDetached()
-        })
     }
 
     // ═══════════════════════════════════════════════════════
@@ -1000,105 +977,6 @@ DropdownBase {
                     : "transparent"
                 border.width: 1.5
                 Behavior on border.color { ColorAnimation { duration: 150 } }
-            }
-        }
-
-        // LOCKSCREEN ACTION BUTTON
-        Item {
-            width: parent.width
-            height: 48
-
-            Rectangle {
-                anchors.fill: parent
-                radius: 10
-                color: Qt.rgba(0, 0, 0, 0.18)
-                border.color: Qt.rgba(1, 1, 1, 0.06)
-                border.width: 1
-
-                // Left icon circle
-                Rectangle {
-                    id: lockscreenIconCircle
-                    anchors {
-                        left: parent.left
-                        leftMargin: 12
-                        verticalCenter: parent.verticalCenter
-                    }
-                    width: 32; height: 32; radius: 16
-                    color: Qt.rgba(1, 1, 1, 0.05)
-                    border.color: Qt.rgba(1, 1, 1, 0.10)
-                    border.width: 1
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "󰌾"
-                        font.family: settingsDrop.fontFamily
-                        font.styleName: "Solid"
-                        font.pixelSize: 15
-                        color: settingsDrop.dimColor
-                    }
-                }
-
-                // Label
-                Column {
-                    anchors {
-                        left: lockscreenIconCircle.right
-                        leftMargin: 10
-                        right: lockscreenArrow.left
-                        rightMargin: 10
-                        verticalCenter: parent.verticalCenter
-                    }
-                    spacing: 2
-
-                    Text {
-                        text: "Lock Screen"
-                        font.family: settingsDrop.fontFamily
-                        font.pixelSize: 13
-                        font.weight: Font.DemiBold
-                        color: settingsDrop.textColor
-                        elide: Text.ElideRight
-                    }
-
-                    Text {
-                        text: "Lock the display immediately"
-                        font.family: settingsDrop.fontFamily
-                        font.pixelSize: 10
-                        color: settingsDrop.dimColor
-                        elide: Text.ElideRight
-                    }
-                }
-
-                // Right arrow
-                Text {
-                    id: lockscreenArrow
-                    anchors {
-                        right: parent.right
-                        rightMargin: 12
-                        verticalCenter: parent.verticalCenter
-                    }
-                    text: "󰅂"
-                    font.family: settingsDrop.fontFamily
-                    font.styleName: "Solid"
-                    font.pixelSize: 12
-                    color: settingsDrop.dimColor
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: settingsDrop.activateLockscreen()
-                }
-
-                // Keyboard focus ring
-                Rectangle {
-                    anchors.fill: parent
-                    radius: 10
-                    color: "transparent"
-                    border.color: settingsDrop._navFocus === 8
-                        ? Qt.rgba(settingsDrop.accentColor.r, settingsDrop.accentColor.g, settingsDrop.accentColor.b, 0.60)
-                        : "transparent"
-                    border.width: 1.5
-                    Behavior on border.color { ColorAnimation { duration: 150 } }
-                }
             }
         }
 

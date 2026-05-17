@@ -2042,7 +2042,7 @@ DropdownBase {
                 // Ring 1 — first ripple
                 Rectangle {
                     id: _ring1
-                    x: _vpnOverlay._centerX - 16; y: _vpnOverlay._centerY - 16
+                    x: _vpnOverlay._centerX - width / 2; y: _vpnOverlay._centerY - height / 2
                     width: 28; height: 28; radius: 14
                     transformOrigin: Item.Center
                     color: "transparent"
@@ -2063,7 +2063,7 @@ DropdownBase {
                 // Ring 2 — second ripple (staggered)
                 Rectangle {
                     id: _ring2
-                    x: _vpnOverlay._centerX - 16; y: _vpnOverlay._centerY - 16
+                    x: _vpnOverlay._centerX - width / 2; y: _vpnOverlay._centerY - height / 2
                     width: 28; height: 28; radius: 14
                     transformOrigin: Item.Center
                     color: "transparent"
@@ -2084,7 +2084,7 @@ DropdownBase {
                 // Ring 3 — third ripple (most staggered)
                 Rectangle {
                     id: _ring3
-                    x: _vpnOverlay._centerX - 16; y: _vpnOverlay._centerY - 16
+                    x: _vpnOverlay._centerX - width / 2; y: _vpnOverlay._centerY - height / 2
                     width: 28; height: 28; radius: 14
                     transformOrigin: Item.Center
                     color: "transparent"
@@ -2106,8 +2106,8 @@ DropdownBase {
                 // Inner dot — scales small→big and fades in/out
                 Rectangle {
                     id: _vpnMapDot
-                    x: _vpnOverlay._centerX - 6; y: _vpnOverlay._centerY - 6
-                    width: 8; height: 8; radius: 6
+                    x: _vpnOverlay._centerX - width / 2; y: _vpnOverlay._centerY - height / 2
+                    width: 6; height: 6; radius: 3
                     transformOrigin: Item.Center
                     color: "#ffffff"
                     opacity: 0; scale: 0.3

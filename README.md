@@ -4,7 +4,13 @@
 
 A highly customized Wayland status bar and system interface built with [Quickshell](https://quickshell.outfoxxed.me/) for Hyprland.
 
-**Last Updated**: May 16, 2026 — Added Arch Linux service status checker to Dashboard tab (polls `status.archlinux.org` every 5 minutes, shows degraded services or "All Systems Operational")
+**Last Updated**: May 17, 2026 — Removed the duplicate Lock Screen action from Settings and corrected VPN map pulse centering in the Dashboard Network tab
+
+## Recent Changes
+
+- **Settings dropdown cleanup** — The duplicate **Lock Screen** action was removed from `SettingsDropdown`. Session locking now lives only in the Power menu, which keeps lock/logout/reboot/shutdown in one place.
+- **Settings keyboard nav updated** — The Settings panel now has 8 focusable entries instead of 9: Night Light, 5 toggle rows, Change Wallpaper, and Bar Monitor.
+- **Dashboard VPN map polish** — The Network tab's pulsing VPN location marker now centers its ripple rings and inner dot from their actual dimensions, keeping the animation aligned to the resolved server coordinates.
 
 ---
 
@@ -31,7 +37,7 @@ Currently imported and enabled in `shell.qml`:
 - **network** — VLAN connection status and management
 - **notifications** — D-Bus notification server with popups and history
 - **power** — Battery, power profile, temperature, and power actions (lock/logout/reboot/shutdown)
-- **settings** — Quick toggles for animations, blur, night light, and more
+- **settings** — Quick toggles for animations, blur, night light, wallpaper, and bar monitor
 - **systemTray** — SNI system tray area
 - **systemUpdates** — Package update count and upgrade terminal
 - **volume** — Volume control with media player integration and audio visualizer
@@ -447,7 +453,7 @@ Power controlled via `rfkill`. Live state from `bluetoothctl monitor` parsed in 
 `PowerProfileDropdown` uses `power-profiles-daemon` (selectable cards). `PowerDropdown` provides hold-to-confirm power actions: lockscreen, logout, reboot, and shutdown. `TemperatureButton` auto-detects a processor temperature sensor by prioritizing CPU-oriented hwmon devices (`coretemp`, `k10temp`, `zenpower`, `cpu_thermal`, `x86_pkg_temp`) and falls back safely if needed. See [`### Battery`](#battery-batterybutton--batterydropdown) for battery detail.
 
 ### Settings
-`SettingsDropdown` provides an expandable Night Light card plus seven rows of controls.
+`SettingsDropdown` provides an expandable Night Light card plus six rows of controls.
 
 **Night Light** (expandable card at the top of the panel):
 - Toggle pill enables / disables the screen shader
@@ -473,7 +479,7 @@ Power controlled via `rfkill`. Live state from `bluetoothctl monitor` parsed in 
 | 4 | Floating Launcher | `config.launcherFloating` (fullscreen vs dropdown) |
 | 5 | Workspace Glow | `config.workspaceGlow` |
 
-**Action rows:** Change Wallpaper (opens `WallpaperDropdown`) and Lock Screen.
+**Action row:** Change Wallpaper (opens `WallpaperDropdown`). Locking the session now lives in `PowerDropdown`.
 
 **Bar Monitor card** (expandable): lists all detected Wayland outputs; click to reassign `config.barMonitor`.
 
@@ -481,7 +487,7 @@ Power controlled via `rfkill`. Live state from `bluetoothctl monitor` parsed in 
 
 | Key | Context | Action |
 |---|---|---|
-| Up / Down | Normal nav | Move focus between the 9 rows (0=Night Light … 8=Lock Screen) |
+| Up / Down | Normal nav | Move focus between the 8 rows (0=Night Light … 7=Bar Monitor) |
 | Enter | Normal nav | Activate / toggle the focused row; for expandable cards (Night Light, Bar Monitor) opens the sub-nav |
 | Space | Night Light focused | Toggle the Night Light on/off immediately |
 | Left / Right | Night Light sub-nav | Move the strength slider (Soft → Warm → Hot → Max) |
@@ -503,7 +509,6 @@ Card index reference for keyboard nav:
 | 5 | Workspace Glow |
 | 6 | Wallpaper (opens picker) |
 | 7 | Bar Monitor (expandable) |
-| 8 | Lock Screen |
 
 All state is persisted via the debounced JSON write in `Config.qml`; `FileView` inotify ensures changes are picked up immediately on the next reload.
 
@@ -627,7 +632,7 @@ All gauges animate smoothly (600 ms `OutCubic`) and turn red when ≥ 85%. The t
 
 - **Network info**: detects the active VLAN interface via `nmcli`, shows IP address, gateway, and DNS servers. The VLAN ID is derived from the third IP octet (e.g. `192.168.10.x` → `VLAN10`).
 - **WireGuard VPN cards**: lists all `nmcli` WireGuard connections as `SelectableCard` items. Click (or keyboard Enter) to bring a connection up or down. Cards flash on activation; busy spinner while toggling.
-- **World map**: a colorized equirectangular world map fills the right column. When no VPN is active a darker map variant is shown. When a VPN is active the map switches to the colorized version and a **pulsing geo-dot** appears at the VPN server's location (three staggered ripple rings + inner white dot). The server location is resolved via `http://ip-api.com/json` using the current external IP — when a full-tunnel VPN is active this automatically resolves to the VPN server's geographic location without needing root access.
+- **World map**: a colorized equirectangular world map fills the right column. When no VPN is active a darker map variant is shown. When a VPN is active the map switches to the colorized version and a **pulsing geo-dot** appears at the VPN server's location (three staggered ripple rings + inner white dot), centered precisely on the resolved coordinates. The server location is resolved via `http://ip-api.com/json` using the current external IP — when a full-tunnel VPN is active this automatically resolves to the VPN server's geographic location without needing root access.
 - **Layout**: the WireGuard header/cards and map are contained inside a shared card-style box for consistency with other tabs.
 - **Connection Editor button**: a full-width button sits below the Network box and opens `nm-connection-editor`.
 - **Data refresh**: network info and VPN list re-fetch immediately on switching to this tab and every 3 s while the tab is visible.
