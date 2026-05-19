@@ -15,6 +15,7 @@ local STATE_FILE = "/tmp/hypr_shader_state"
 local function apply(shader_name)
     local path = shader_name and (SHADER_DIR .. "/" .. shader_name) or ""
     hl.config({ decoration = { screen_shader = path } })
+    hl.dispatch(hl.dsp.force_renderer_reload())
     -- Persist state so it survives config reloads
     local f = io.open(STATE_FILE, "w")
     if f then f:write(shader_name or ""); f:close() end
@@ -47,6 +48,7 @@ hl.on("config.reloaded", function()
             if s == saved then _strength_idx = i; break end
         end
         hl.config({ decoration = { screen_shader = SHADER_DIR .. "/" .. saved } })
+        hl.dispatch(hl.dsp.force_renderer_reload())
     end
 end)
 

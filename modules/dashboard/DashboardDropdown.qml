@@ -2548,6 +2548,26 @@ DropdownBase {
             dash._stRunning = false
             if (code !== 0 && !dash._stHasResult && dash._stError === "")
                 dash._stError = "Speed test failed (exit code " + code + ")"
+            // Notify if the panel was closed while the test was running
+            if (!dash.isOpen) {
+                if (dash._stHasResult) {
+                    _stNotifProc.summary = "Speed Test Complete"
+                    _stNotifProc.body    = "↓ " + dash._stDownload.toFixed(1) + " Mbps  ↑ " + dash._stUpload.toFixed(1) + " Mbps  ping " + dash._stPing.toFixed(0) + " ms"
+                } else {
+                    _stNotifProc.summary = "Speed Test Failed"
+                    _stNotifProc.body    = dash._stError !== "" ? dash._stError : "Speed test did not produce a result"
+                }
+                _stNotifProc.running = true
+            }
         }
+    }
+
+    // ── Speedtest completion notification ─────────────────────
+    Process {
+        id: _stNotifProc
+        running: false
+        property string summary: ""
+        property string body:    ""
+        command: ["notify-send", "--app-name", "speedtest", "--icon", "network-transmit-receive", summary, body]
     }
 }
