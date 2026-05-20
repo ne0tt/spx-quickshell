@@ -30,6 +30,7 @@ DropdownBase {
     property string currentWallpaper: config.currentWallpaper || ""  // Initialize from settings
     property var    _findArr:         []   // array accumulator — avoids O(n²) string concat
     property bool   _applying:        false
+    property string _pendingWallpaper: ""
     property int    focusedIndex:     -1   // keyboard-nav cursor
     
     // Wallpaper folder configuration
@@ -168,29 +169,47 @@ DropdownBase {
         }
     }
 
+    Timer {
+        id: _applyAfterCloseTimer
+        interval: wpDrop.closeDuration
+        repeat: false
+        onTriggered: {
+            if (!wpDrop._pendingWallpaper) {
+                wpDrop._applying = false
+                return
+            }
+
+            var path = wpDrop._pendingWallpaper
+            wpDrop._pendingWallpaper = ""
+
+            // Save to settings using existing config system with immediate save
+            config.currentWallpaper = path
+            // Force immediate save instead of waiting for debounce timer
+            Qt.callLater(function() {
+                config._saveImmediately()
+            })
+
+            // update immediately so the highlight moves right away
+            wpDrop.currentWallpaper = path
+            awwwProc.command    = ["awww", "img", path,
+                "--transition-type", "fade",
+                "--transition-angle", "0",
+                "--transition-step", "10"]
+            matugenProc.command = ["matugen", "image", path,
+                "--source-color-index", "0",
+                "--type", config.matugenType]
+
+            awwwProc.running    = true
+            matugenProc.running = true
+        }
+    }
+
     function applyWallpaper(path) {
-        if (_applying) return
+        if (_applying || !path) return
         _applying = true
-        
-        // Save to settings using existing config system with immediate save
-        config.currentWallpaper = path
-        // Force immediate save instead of waiting for debounce timer
-        Qt.callLater(function() {
-            config._saveImmediately()
-        })
-        
-        // update immediately so the highlight moves right away
-        wpDrop.currentWallpaper = path
-        awwwProc.command    = ["awww", "img", path,
-            "--transition-type", "fade",
-            "--transition-angle", "0",
-            "--transition-duration", "0.3"]
-        matugenProc.command = ["matugen", "image", path,
-            "--source-color-index", "0",
-            "--type", config.matugenType]
-        
-        awwwProc.running    = true
-        matugenProc.running = true
+        _pendingWallpaper = path
+        closePanel()
+        _applyAfterCloseTimer.restart()
     }
 
     function ensureFocusedVisible() {

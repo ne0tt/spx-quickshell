@@ -29,6 +29,41 @@ import qs.modules.notifications
 import qs.modules.dashboard
 
 ShellRoot {
+    id: shell
+
+    property var assignedScreen: Quickshell.screens.length > 0 ? Quickshell.screens[0] : null
+
+    function isScreenValid(candidate) {
+        return !!candidate && Quickshell.screens.some(s => s === candidate)
+    }
+
+    function resolveAssignedScreen() {
+        const configured = Quickshell.screens.find(s => s.name === config.barMonitor)
+        if (configured)
+            return configured
+
+        if (shell.isScreenValid(shell.assignedScreen))
+            return shell.assignedScreen
+
+        return Quickshell.screens.length > 0 ? Quickshell.screens[0] : null
+    }
+
+    function syncAssignedScreen() {
+        const next = shell.resolveAssignedScreen()
+        if (!!next && next !== shell.assignedScreen)
+            shell.assignedScreen = next
+    }
+
+    Timer {
+        id: screenSyncDebounce
+        interval: 180
+        repeat: false
+        onTriggered: shell.syncAssignedScreen()
+    }
+
+    function requestScreenSync() {
+        screenSyncDebounce.restart()
+    }
 
     // ============================================================
     // CONFIG — SHELL-WIDE SETTINGS (font family, etc.)
@@ -183,12 +218,27 @@ ShellRoot {
     // ============================================================
     // LIFECYCLE
     // ============================================================
-    Component.onCompleted: Quickshell.inhibitReloadPopup()
+    Component.onCompleted: {
+        Quickshell.inhibitReloadPopup()
+        shell.requestScreenSync()
+    }
 
     Connections {
         target: Quickshell
         function onReloadCompleted() {
             Quickshell.inhibitReloadPopup();
+            shell.requestScreenSync()
+        }
+
+        function onScreensChanged() {
+            shell.requestScreenSync()
+        }
+    }
+
+    Connections {
+        target: config
+        function onBarMonitorChanged() {
+            shell.requestScreenSync()
         }
     }
 
@@ -206,7 +256,7 @@ ShellRoot {
     PanelWindow {
         id: root
         reloadableId: "mainBar"
-        screen: Quickshell.screens.find(s => s.name === config.barMonitor) ?? Quickshell.screens[0]
+        screen: shell.assignedScreen
 
         anchors.top: true
         anchors.left: true
