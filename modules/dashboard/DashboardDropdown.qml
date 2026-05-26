@@ -30,7 +30,7 @@ DropdownBase {
     readonly property int _contentY: 16 + 10 + 36 + 8 // tab content top
 
     // Per-tab panelFullHeight: must accommodate _contentY + content + bottom-pad
-    readonly property int _dashH:    _contentY + 182 + 10 + 185 + 4  // info row + cal
+    readonly property int _dashH:    _contentY + 182 + 10 + 200 + 10 + 48 + 12  // info row + cal + power actions
     readonly property int _mediaH:   _contentY + 287 + 12  // increased for volume slider at top
     readonly property int _perfH:    _contentY + 194 + 12
     readonly property int _weatherH: _contentY + 455 + 12  // current + hourly + weekly + sunrise
@@ -121,6 +121,10 @@ DropdownBase {
     property int    _netFocusIdx:   -1
     property int    _netKbdFireIdx: -1   // pulses to trigger per-card toggle by index
 
+    // Dashboard tab keyboard focus for power actions (-1 = none)
+    property int    _dashPowerFocusIdx:   -1
+    property bool   _dashPowerHoldArmed:  false
+
     // Speedtest state
     property bool   _stExpanded:  false
     property bool   _stRunning:   false
@@ -130,6 +134,13 @@ DropdownBase {
     property string _stError:     ""
     property bool   _stHasResult: false
     property string _stLastTime:  ""    // e.g. "14 May 14:32"
+
+    property var _powerActions: [
+        { id: "lockscreen", label: "Lockscreen", subtitle: "Lock this session", icon: "󰌾" },
+        { id: "logout", label: "Logout", subtitle: "End session", icon: "󰍃" },
+        { id: "reboot", label: "Reboot", subtitle: "Restart system", icon: "󰜉" },
+        { id: "shutdown", label: "Shutdown", subtitle: "Power off system", icon: "󰐥" }
+    ]
 
     // ── Speedtest result cache (persists across shell restarts) ───
     readonly property string _stCachePath: Quickshell.env("HOME") + "/.config/quickshell/modules/dashboard/speedtest_cache.json"
@@ -155,6 +166,28 @@ DropdownBase {
         }))
     }
 
+    function _triggerPowerAction(actionId) {
+        if (actionId === "lockscreen") {
+            dashLockscreenProcess.startDetached()
+        } else if (actionId === "logout") {
+            dashLogoutProcess.startDetached()
+        } else if (actionId === "reboot") {
+            dashRebootProcess.startDetached()
+        } else if (actionId === "shutdown") {
+            dashShutdownProcess.startDetached()
+        }
+    }
+
+    function _cancelDashPowerKeyboardHold() {
+        if (!_dashPowerHoldArmed)
+            return
+
+        var row = dashPowerRep.itemAt(_dashPowerFocusIdx)
+        if (row && row.cancelKeyboardHold)
+            row.cancelKeyboardHold()
+        _dashPowerHoldArmed = false
+    }
+
     // Pre-create speedtest cache file if it doesn't exist so FileView
     // doesn't emit a warning on first launch before any test has been run.
     Process {
@@ -175,6 +208,8 @@ DropdownBase {
     // ── Lifecycle ─────────────────────────────────────────────
     onAboutToOpen: {
         _tab      = 0
+        _dashPowerFocusIdx = -1
+        _dashPowerHoldArmed = false
         _updates  = -1
         _mediaStatus = "Stopped"
         _mediaAvail = false
@@ -207,6 +242,10 @@ DropdownBase {
     }
 
     on_TabChanged: {
+        if (_tab !== 0) {
+            _cancelDashPowerKeyboardHold()
+            _dashPowerFocusIdx = -1
+        }
         if (_tab === 1) {
             _netIfaceProc.running = true
             _vpnBuf = []
@@ -274,6 +313,30 @@ DropdownBase {
                 dash.upgradeCompleted()
             }
         }
+    }
+
+    Process {
+        id: dashLockscreenProcess
+        running: false
+        command: ["quickshell", "-p", Quickshell.env("HOME") + "/dotfiles/.config/quickshell/modules/lockscreen/LockscreenService.qml"]
+    }
+
+    Process {
+        id: dashLogoutProcess
+        running: false
+        command: ["bash", Quickshell.env("HOME") + "/dotfiles/.config/quickshell/modules/power/logout.sh"]
+    }
+
+    Process {
+        id: dashRebootProcess
+        running: false
+        command: ["bash", Quickshell.env("HOME") + "/dotfiles/.config/quickshell/modules/power/reboot.sh"]
+    }
+
+    Process {
+        id: dashShutdownProcess
+        running: false
+        command: ["bash", Quickshell.env("HOME") + "/dotfiles/.config/quickshell/modules/power/shutdown.sh"]
     }
 
     // ── Kernel version ────────────────────────────────────────
@@ -576,22 +639,72 @@ DropdownBase {
     // ── Tab key navigation ──────────────────────────────────
     Item {
         focus: true
-        Keys.onRightPressed: { dash._tab = (dash._tab + 1) % 5; dash.triggerHex() }
-        Keys.onLeftPressed:  { dash._tab = (dash._tab + 4) % 5; dash.triggerHex() }
+        Keys.onReleased: event => {
+            if (dash._tab !== 0 || dash._dashPowerFocusIdx < 0)
+                return
+
+            if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) {
+                if (event.isAutoRepeat)
+                    return
+
+                dash._cancelDashPowerKeyboardHold()
+                event.accepted = true
+            }
+        }
+        Keys.onRightPressed: {
+            if (dash._tab === 0 && dash._dashPowerFocusIdx >= 0) {
+                var total = dash._powerActions.length
+                if (total > 0)
+                    dash._dashPowerFocusIdx = (dash._dashPowerFocusIdx + 1 + total) % total
+                return
+            }
+            dash._tab = (dash._tab + 1) % 5
+            dash.triggerHex()
+        }
+        Keys.onLeftPressed:  {
+            if (dash._tab === 0 && dash._dashPowerFocusIdx >= 0) {
+                var total = dash._powerActions.length
+                if (total > 0)
+                    dash._dashPowerFocusIdx = (dash._dashPowerFocusIdx - 1 + total) % total
+                return
+            }
+            dash._tab = (dash._tab + 4) % 5
+            dash.triggerHex()
+        }
         Keys.onEscapePressed: dash.closePanel()
 
         // ── Network tab (Tab 1) up/down/enter/space navigation ─────
         Keys.onDownPressed: {
+            if (dash._tab === 0) {
+                var totalDashActions = dash._powerActions.length
+                if (totalDashActions <= 0) return
+                if (dash._dashPowerFocusIdx < 0) dash._dashPowerFocusIdx = 0
+                return
+            }
             if (dash._tab !== 1) return
             var total = dash._vpnConnections.length + 2  // cards + editor button + speedtest
             dash._netFocusIdx = (dash._netFocusIdx + 1 + total) % total
         }
         Keys.onUpPressed: {
+            if (dash._tab === 0) {
+                dash._cancelDashPowerKeyboardHold()
+                dash._dashPowerFocusIdx = -1
+                return
+            }
             if (dash._tab !== 1) return
             var total = dash._vpnConnections.length + 2
             dash._netFocusIdx = (dash._netFocusIdx - 1 + total) % total
         }
         Keys.onReturnPressed: {
+            if (dash._tab === 0 && dash._dashPowerFocusIdx >= 0) {
+                if (!dash._dashPowerHoldArmed) {
+                    var row = dashPowerRep.itemAt(dash._dashPowerFocusIdx)
+                    if (row && row.startKeyboardHold)
+                        row.startKeyboardHold()
+                    dash._dashPowerHoldArmed = true
+                }
+                return
+            }
             if (dash._tab !== 1 || dash._netFocusIdx < 0) return
             if (dash._netFocusIdx < dash._vpnConnections.length) {
                 dash._netKbdFireIdx = dash._netFocusIdx
@@ -604,6 +717,15 @@ DropdownBase {
             }
         }
         Keys.onSpacePressed: {
+            if (dash._tab === 0 && dash._dashPowerFocusIdx >= 0) {
+                if (!dash._dashPowerHoldArmed) {
+                    var row = dashPowerRep.itemAt(dash._dashPowerFocusIdx)
+                    if (row && row.startKeyboardHold)
+                        row.startKeyboardHold()
+                    dash._dashPowerHoldArmed = true
+                }
+                return
+            }
             if (dash._tab !== 1 || dash._netFocusIdx !== dash._vpnConnections.length + 1) return
             // Speedtest header — Space starts/stops the test
             if (dash._stRunning) {
@@ -705,7 +827,7 @@ DropdownBase {
         y:       dash._contentY
         width:   dash._cw
         visible: dash._tab === 0
-        height:  155 + 10 + 200
+        height:  182 + 10 + 200 + 10 + 48
 
         readonly property real colW:      (width - 10) / 2
         readonly property real weatherW:  colW / 2
@@ -1076,6 +1198,64 @@ DropdownBase {
                                     : modelData.isToday ? dash.panelColor : dash.accentColor
                                 font.pixelSize: modelData.isToday ? 11 : 13; font.bold: modelData.isToday
                                 font.family: config.fontFamily
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Power actions row ────────────────────────────────
+        Item {
+            id: dashPowerRow
+            x: 0
+            y: 182 + 10 + 200 + 10
+            width: parent.width
+            height: 48
+
+            readonly property real gap: 8
+            readonly property real cardW: (width - gap * 3) / 4
+
+            Row {
+                anchors.fill: parent
+                spacing: dashPowerRow.gap
+
+                Repeater {
+                    id: dashPowerRep
+                    model: dash._powerActions
+
+                    Item {
+                        required property var modelData
+                        required property int index
+                        width: dashPowerRow.cardW
+                        height: dashPowerRow.height
+
+                        function startKeyboardHold() {
+                            actionCard.startKeyboardHold()
+                        }
+                        function cancelKeyboardHold() {
+                            actionCard.cancelKeyboardHold()
+                        }
+
+                        SelectableCard {
+                            id: actionCard
+                            width: parent.width
+                            isActive: dash._dashPowerFocusIdx === index
+                            holdDuration: 2000
+                            cardIcon: modelData.icon
+                            label: modelData.label
+                            subtitle: ""
+                            showStatusDot: false
+                            isPanelOpen: dash.isOpen
+                            accentColor: dash.accentColor
+                            textColor: dash.textColor
+                            dimColor: dash.dimColor
+                            flashLoops: 1
+                            flashOpacityLow: 0.45
+                            flashDuration: 90
+                            onClicked: {
+                                actionCard.flash()
+                                dash._triggerPowerAction(modelData.id)
                             }
                         }
                     }

@@ -45,6 +45,7 @@ Item {
     property color  textColor:       "white"
     property color  dimColor:        "#888888"
     property color  dotActiveColor:  accentColor
+    property bool   showStatusDot:   true
     property int    holdDuration:    0
     property real   holdProgress:    0
     property real   _borderOpacity:  1.0
@@ -72,9 +73,28 @@ Item {
 
     // Public: trigger the connect / activate flash
     function flash() { _flashAnim.start() }
+    function startKeyboardHold() {
+        if (!card.holdEnabled) {
+            card.clicked()
+            return
+        }
+
+        card.holdTriggered = false
+        card.holdProgress = 0
+        _holdProgressAnim.restart()
+        _keyboardHoldTimer.restart()
+    }
+    function cancelKeyboardHold() {
+        if (!card.holdEnabled)
+            return
+
+        _keyboardHoldTimer.stop()
+        card.resetHoldState()
+    }
     function resetHoldState() {
         _holdProgressAnim.stop()
         _borderFlashAnim.stop()
+        _keyboardHoldTimer.stop()
         _holdActiveTimer.stop()
         holdProgress = 0
         holdTriggered = false
@@ -107,6 +127,21 @@ Item {
         repeat: false
         onTriggered: {
             card._holdActive = false
+        }
+    }
+
+    Timer {
+        id: _keyboardHoldTimer
+        interval: card.holdDuration
+        repeat: false
+        onTriggered: {
+            if (!card.holdEnabled)
+                return
+
+            card.holdTriggered = true
+            card.holdProgress = 1
+            card._pendingClickAfterFlash = true
+            _borderFlashAnim.start()
         }
     }
 
@@ -274,9 +309,9 @@ Item {
         Column {
             anchors {
                 left: _iconCircle.right
-                right: _dot.left
+                right: card.showStatusDot ? _dot.left : parent.right
                 leftMargin: 12
-                rightMargin: 12
+                rightMargin: card.showStatusDot ? 12 : 14
                 verticalCenter: parent.verticalCenter
             }
             spacing: 3
@@ -314,11 +349,12 @@ Item {
             id: _dot
             anchors { right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter }
             width: 8; height: 8; radius: 4
+            visible: card.showStatusDot
             color: card._selected ? card.dotActiveColor : Qt.rgba(1, 1, 1, 0.10)
             Behavior on color { ColorAnimation { duration: 260 } }
 
             SequentialAnimation {
-                running: card._selected && card.isPanelOpen && !card.holdEnabled
+                running: card.showStatusDot && card._selected && card.isPanelOpen && !card.holdEnabled
                 loops: Animation.Infinite
                 NumberAnimation { target: _dot; property: "opacity"; to: 0.25; duration: 900; easing.type: Easing.InOutSine }
                 NumberAnimation { target: _dot; property: "opacity"; to: 1.0;  duration: 900; easing.type: Easing.InOutSine }
@@ -326,7 +362,7 @@ Item {
             }
 
             SequentialAnimation {
-                running: card.holdEnabled && card.holdProgress > 0 && !card.holdTriggered
+                running: card.showStatusDot && card.holdEnabled && card.holdProgress > 0 && !card.holdTriggered
                 loops: Animation.Infinite
                 PropertyAction  { target: _dot; property: "color"; value: card.accentColor }
                 ColorAnimation  { target: _dot; property: "color"; to: Qt.rgba(card.accentColor.r, card.accentColor.g, card.accentColor.b, 0.15); duration: 300; easing.type: Easing.InOutSine }
@@ -354,6 +390,7 @@ Item {
                 if (!card.holdEnabled)
                     return
 
+                _keyboardHoldTimer.stop()
                 card.resetHoldState()
             }
             onCanceled: card.resetHoldState()

@@ -4,13 +4,42 @@
 
 A highly customized Wayland status bar and system interface built with [Quickshell](https://quickshell.outfoxxed.me/) for Hyprland.
 
-**Last Updated**: May 17, 2026 — Removed the duplicate Lock Screen action from Settings and corrected VPN map pulse centering in the Dashboard Network tab
+**Last Updated**: May 26, 2026 — Dashboard power buttons, settings cleanup, and improved keyboard navigation
+
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Overview](#overview)
+- [Module Status](#module-status)
+- [File Structure](#file-structure)
+- [Core Architecture](#core-architecture)
+- [Base Components](#base-components)
+- [Modules](#modules)
+- [Hyprland Integration](#hyprland-integration)
+- [Customization](#customization)
+- [Enabling Disabled Modules](#enabling-disabled-modules)
+- [Potential Improvements](#potential-improvements)
+
+---
+
+## Quick Start
+
+1. **Install dependencies** — See [Hyprland Integration](#hyprland-integration)
+2. **Configure bar monitor** — Edit `Config.qml` → `barMonitor` property or use Settings dropdown (Ctrl+Super+S)
+3. **Add global shortcuts** to `hyprland.conf` — See [Hyprland Integration](#hyprland-integration)
+4. **Customize appearance** — Edit `Colors.qml` or wallpaper folder → matugen auto-generates themes
+5. **Try the keyboard** — Most dropdowns support Tab/Arrows/Enter. Panels respond to Escape key.
+
+---
 
 ## Recent Changes
 
-- **Settings dropdown cleanup** — The duplicate **Lock Screen** action was removed from `SettingsDropdown`. Session locking now lives only in the Power menu, which keeps lock/logout/reboot/shutdown in one place.
-- **Settings keyboard nav updated** — The Settings panel now has 8 focusable entries instead of 9: Night Light, 5 toggle rows, Change Wallpaper, and Bar Monitor.
-- **Dashboard VPN map polish** — The Network tab's pulsing VPN location marker now centers its ripple rings and inner dot from their actual dimensions, keeping the animation aligned to the resolved server coordinates.
+**May 26, 2026:**
+
+- **Dashboard power buttons** — Four quick-access power action buttons (Lockscreen, Logout, Reboot, Shutdown) now appear at the bottom of the Dashboard tab (Tab 0) below the clock/calendar. Click to activate (hold-to-confirm, 2 second hold required). Keyboard controls: Down arrow to focus buttons, Left/Right arrows to switch between buttons, Enter/Space to trigger hold-confirm animation.
+- **Settings dropdown reorganized** — Now displays exactly 8 keyboard-navigable rows instead of 9. Removed duplicate Lock Screen action (now lives only in Power menu). Settings panel maintains consistent focus navigation with expandable Night Light and Bar Monitor cards.
+- **Dashboard VPN map polish** — The pulsing VPN location marker in the Network tab now properly centers its ripple rings and inner dot relative to their actual dimensions. This ensures the pulsing animation stays visually anchored to the resolved server coordinates on the world map.
+- **Code cleanup completed** — All hardcoded font references replaced with `config.fontFamily`, commented imports removed, unused code sections cleaned from `shell.qml`, and all modules now have proper `qmldir` exports. Language server sees no false-positive import errors.
 
 ---
 
@@ -597,6 +626,17 @@ The `--type` argument is configurable from inside the dropdown itself and persis
 Below the info cards sits a **clock + date + inline calendar** row:
 - Left side: large HH:MM display, full day name, and full date (e.g. `Sunday — 29 March 2026`), driven by `SystemClock { precision: SystemClock.Minutes }` — reactive bindings with no manual `Timer`
 - Right side: a mini month calendar with prev/next month navigation arrows. Today's date has a pulsing filled circle; overflow days (previous/next month) are rendered at low opacity.
+
+Below the clock/calendar sits a **power actions row** with four buttons:
+- **Lockscreen** (󰌾), **Logout** (󰍃), **Reboot** (󰜉), **Shutdown** (󰐥) — each uses `SelectableCard` with hold-to-confirm activation (2 second hold required, matching the mouse click behavior)
+- **Keyboard navigation** (when Dashboard tab is focused):
+  - Down arrow: focuses the power action row (first button selected)
+  - Left / Right arrows: cycle between the four power buttons
+  - Enter / Space: hold down to trigger (2-second hold just like mouse, visual border trace animation confirms hold progress)
+  - Release early to cancel
+  - Up arrow: unfocus the row (Left/Right goes back to tab switching)
+- **Mouse interaction**: click normally to begin hold, visual counter traces border clockwise, release after 2 seconds to execute
+- Single-line card display with icon + label only (no subtitle, no status dot)
 
 **Media tab (Tab 1)** provides a full media player:
 - Album art (95×95, rounded corners) with an animated cycling border color while playing
