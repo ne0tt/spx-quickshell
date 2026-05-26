@@ -77,6 +77,18 @@ Rectangle {
     property string currentWallpaper: ""
     property string originalWallpaper: ""
     property string errorWallpaper: Quickshell.env("HOME") + "/wallpaper/red/onyx-flow-red.jpg"
+
+    function toFileUrl(path) {
+        if (!path) {
+            return ""
+        }
+
+        if (path.startsWith("file://")) {
+            return path
+        }
+
+        return "file://" + encodeURI(path)
+    }
     
     FileView {
         id: settingsFile
@@ -85,13 +97,31 @@ Rectangle {
         onFileChanged: this.reload()
         onLoaded: {
             try {
-                var settings = JSON.parse(text())
+                const settings = JSON.parse(text())
                 if (typeof settings.currentWallpaper === "string") {
                     root.currentWallpaper = settings.currentWallpaper
                     root.originalWallpaper = settings.currentWallpaper
                 }
             } catch (e) {
                 console.warn("Failed to parse settings.json:", e)
+            }
+
+            wallpaperQueryProc.running = true
+        }
+    }
+
+    Process {
+        id: wallpaperQueryProc
+        running: false
+        command: ["sh", "-c", "awww query 2>/dev/null | awk -F'image: ' '{print $2}' | awk '{print $1}' | tr -d ',' | head -1"]
+
+        stdout: SplitParser {
+            onRead: data => {
+                var wallpaper = data.trim()
+                if (wallpaper) {
+                    root.currentWallpaper = wallpaper
+                    root.originalWallpaper = wallpaper
+                }
             }
         }
     }
@@ -126,7 +156,7 @@ Rectangle {
     Image {
         id: wallpaperImage
         anchors.fill: parent
-        source: root.currentWallpaper || ""
+        source: root.toFileUrl(root.currentWallpaper)
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
         cache: false
@@ -137,7 +167,7 @@ Rectangle {
                 console.warn("Failed to load wallpaper:", source)
             } else if (status === Image.Ready) {
                 // Once main wallpaper is loaded, preload the red wallpaper behind it
-                errorWallpaperImage.source = root.errorWallpaper
+                errorWallpaperImage.source = root.toFileUrl(root.errorWallpaper)
             }
         }
         

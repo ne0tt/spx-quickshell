@@ -127,7 +127,7 @@ Singleton {
         command: ["sh", "-c",
             "INFO=$(curl -sf --max-time 5 https://ipinfo.io/json || true); " +
             "LOC=$(echo \"$INFO\" | jq -r '.loc // empty'); " +
-            "if [ -n \"$LOC\" ]; then LAT=${LOC%%,*}; LON=${LOC##*,}; else LAT=51.5085; LON=-0.1257; fi; " +
+            "if [ -n \"$LOC\" ]; then LAT=${LOC%%,*}; LON=${LOC##*,}; else echo 'error=Unable to determine location'; exit 0; fi; " +
             "OM=$(curl -sf --max-time 12 \"https://api.open-meteo.com/v1/forecast?" +
             "latitude=$LAT&longitude=$LON" +
             "&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m" +

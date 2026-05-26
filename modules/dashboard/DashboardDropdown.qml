@@ -57,10 +57,10 @@ DropdownBase {
                      String(now.getDate()).padStart(2, "0") + "T" +
                      String(now.getHours()).padStart(2, "0") + ":00"
         var idx = 0
-        for (var i = 0; i < WeatherState.wHourly.length; i++) {
-            if (WeatherState.wHourly[i].time >= nowStr) { idx = i; break }
+        for (var i = 0; i < WeatherStateOpenWeather.wHourly.length; i++) {
+            if (WeatherStateOpenWeather.wHourly[i].time >= nowStr) { idx = i; break }
         }
-        return WeatherState.wHourly.slice(idx, idx + 10)
+        return WeatherStateOpenWeather.wHourly.slice(idx, idx + 10)
     }
 
     // ── Weekly: always 7 entries starting from today ─────────
@@ -73,8 +73,8 @@ DropdownBase {
 
         var byDate = {}
         var known = []
-        for (var i = 0; i < WeatherState.wForecast.length; i++) {
-            var f = WeatherState.wForecast[i]
+        for (var i = 0; i < WeatherStateOpenWeather.wForecast.length; i++) {
+            var f = WeatherStateOpenWeather.wForecast[i]
             if (f && f.date) {
                 byDate[f.date] = f
                 known.push(f)
@@ -99,10 +99,10 @@ DropdownBase {
                 var seed = carry || firstKnown
                 out.push({
                     date: key,
-                    icon: seed ? (seed.icon || "󰖙") : (dayOffset === 0 ? (WeatherState.wIcon || "󰖙") : "󰖙"),
+                    icon: seed ? (seed.icon || "󰖙") : (dayOffset === 0 ? (WeatherStateOpenWeather.wIcon || "󰖙") : "󰖙"),
                     desc: seed ? (seed.desc || "") : "",
                     min: seed ? (seed.min || "—") : "—",
-                    max: dayOffset === 0 && WeatherState.wTemp ? WeatherState.wTemp : (seed ? (seed.max || "—") : "—")
+                    max: dayOffset === 0 && WeatherStateOpenWeather.wTemp ? WeatherStateOpenWeather.wTemp : (seed ? (seed.max || "—") : "—")
                 })
             }
         }
@@ -267,7 +267,7 @@ DropdownBase {
         var now = new Date()
         inlineCal.displayYear  = now.getFullYear()
         inlineCal.displayMonth = now.getMonth()
-        WeatherState.refresh()
+        WeatherStateOpenWeather.refresh(true)
         // Tab 0 needs uptime + perf; updates are deferred
         uptimeProc.running       = true
         perfProc.running         = true
@@ -894,7 +894,7 @@ DropdownBase {
 
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: WeatherState.wIcon
+                    text: WeatherStateOpenWeather.wIcon
                     font.family: config.fontFamily
                     font.styleName: "Solid"
                     font.pixelSize: 64
@@ -902,14 +902,14 @@ DropdownBase {
                 }
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: WeatherState.wTemp
+                    text: WeatherStateOpenWeather.wTemp
                     color: dash.textColor
                     font.pixelSize: 22
                     font.bold: true
                 }
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: WeatherState.wDesc
+                    text: WeatherStateOpenWeather.wDesc
                     color: dash.dimColor
                     font.pixelSize: 11
                 }
@@ -1896,13 +1896,13 @@ DropdownBase {
         visible: dash._tab === 4
 
         Text {
-            visible: WeatherState.wLoading && !WeatherState.wHasData
+            visible: WeatherStateOpenWeather.wLoading && !WeatherStateOpenWeather.wHasData
             anchors.centerIn: parent
             text: "Fetching weather…"; color: dash.dimColor; font.pixelSize: 13; font.family: config.fontFamily
         }
 
         Column {
-            visible: WeatherState.wHasData
+            visible: WeatherStateOpenWeather.wHasData
             anchors.fill: parent
             spacing: 10
 
@@ -1916,31 +1916,31 @@ DropdownBase {
                 Text {
                     id: bigWIcon
                     anchors { left: parent.left; leftMargin: 24; verticalCenter: parent.verticalCenter }
-                    text: WeatherState.wIcon
+                    text: WeatherStateOpenWeather.wIcon
                     font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 94
                     color: dash.accentColor
                 }
                 Column {
                     anchors { left: bigWIcon.right; leftMargin: 28; verticalCenter: parent.verticalCenter }
                     spacing: 1
-                    Text { text: WeatherState.wTemp;  color: dash.textColor; font.pixelSize: 32; font.bold: true }
-                    Text { text: WeatherState.wDesc;  color: dash.dimColor;  font.pixelSize: 22 }
-                    Text { text: "Feels like " + WeatherState.wFeels; color: dash.dimColor; font.pixelSize: 18 }
+                    Text { text: WeatherStateOpenWeather.wTemp;  color: dash.textColor; font.pixelSize: 32; font.bold: true }
+                    Text { text: WeatherStateOpenWeather.wDesc;  color: dash.dimColor;  font.pixelSize: 22 }
+                    Text { text: "Feels like " + WeatherStateOpenWeather.wFeels; color: dash.dimColor; font.pixelSize: 18 }
                 }
                 Column {
                     anchors { right: parent.right; rightMargin: 18; verticalCenter: parent.verticalCenter }
                     spacing: 6
                     Row { spacing: 6
                         Text { text: "󰖝"; font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 13; color: dash.accentColor }
-                        Text { text: WeatherState.wWind; color: dash.dimColor; font.pixelSize: 13 }
+                        Text { text: WeatherStateOpenWeather.wWind; color: dash.dimColor; font.pixelSize: 13 }
                     }
                     Row { spacing: 6
                         Text { text: ""; font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 13; color: dash.accentColor }
-                        Text { text: WeatherState.wHumidity; color: dash.dimColor; font.pixelSize: 13 }
+                        Text { text: WeatherStateOpenWeather.wHumidity; color: dash.dimColor; font.pixelSize: 13 }
                     }
                     Row { spacing: 6
                         Text { text: "󰖛"; font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 13; color: dash.accentColor }
-                        Text { text: WeatherState.wSunrise; color: dash.dimColor; font.pixelSize: 13 }
+                        Text { text: WeatherStateOpenWeather.wSunrise; color: dash.dimColor; font.pixelSize: 13 }
                     }
                 }
             }
@@ -2083,7 +2083,7 @@ DropdownBase {
                     Column {
                         anchors.centerIn: parent
                         spacing: 4
-                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "󰖛  " + WeatherState.wSunrise; color: dash.textColor; font.pixelSize: 14; font.family: config.fontFamily }
+                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "󰖛  " + WeatherStateOpenWeather.wSunrise; color: dash.textColor; font.pixelSize: 14; font.family: config.fontFamily }
                         Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Sunrise"; color: dash.dimColor; font.pixelSize: 12; font.family: config.fontFamily }
                     }
                 }
@@ -2098,7 +2098,7 @@ DropdownBase {
                     Column {
                         anchors.centerIn: parent
                         spacing: 4
-                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "󰖜  " + WeatherState.wSunset; color: dash.textColor; font.pixelSize: 14; font.family: config.fontFamily }
+                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "󰖜  " + WeatherStateOpenWeather.wSunset; color: dash.textColor; font.pixelSize: 14; font.family: config.fontFamily }
                         Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Sunset"; color: dash.dimColor; font.pixelSize: 12; font.family: config.fontFamily }
                     }
                 }
