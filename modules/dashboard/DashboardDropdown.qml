@@ -49,8 +49,8 @@ DropdownBase {
 
     implicitHeight: panelFullHeight + 52
 
-    // ── Hourly: next 12 entries from current hour ──────────────
-    readonly property var _hourlyNext12: {
+    // ── Hourly: next 10 entries from current hour ──────────────
+    readonly property var _hourlyNext10: {
         var now = new Date()
         var nowStr = now.getFullYear() + "-" +
                      String(now.getMonth() + 1).padStart(2, "0") + "-" +
@@ -60,7 +60,53 @@ DropdownBase {
         for (var i = 0; i < WeatherState.wHourly.length; i++) {
             if (WeatherState.wHourly[i].time >= nowStr) { idx = i; break }
         }
-        return WeatherState.wHourly.slice(idx, idx + 12)
+        return WeatherState.wHourly.slice(idx, idx + 10)
+    }
+
+    // ── Weekly: always 7 entries starting from today ─────────
+    readonly property var _week7FromToday: {
+        function dateKey(d) {
+            return d.getFullYear() + "-" +
+                   String(d.getMonth() + 1).padStart(2, "0") + "-" +
+                   String(d.getDate()).padStart(2, "0")
+        }
+
+        var byDate = {}
+        var known = []
+        for (var i = 0; i < WeatherState.wForecast.length; i++) {
+            var f = WeatherState.wForecast[i]
+            if (f && f.date) {
+                byDate[f.date] = f
+                known.push(f)
+            }
+        }
+
+        known.sort(function(a, b) {
+            return (a.date || "").localeCompare(b.date || "")
+        })
+        var firstKnown = known.length > 0 ? known[0] : null
+
+        var today = new Date()
+        var out = []
+        var carry = null
+        for (var dayOffset = 0; dayOffset < 7; dayOffset++) {
+            var d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + dayOffset)
+            var key = dateKey(d)
+            if (byDate[key]) {
+                carry = byDate[key]
+                out.push(byDate[key])
+            } else {
+                var seed = carry || firstKnown
+                out.push({
+                    date: key,
+                    icon: seed ? (seed.icon || "󰖙") : (dayOffset === 0 ? (WeatherState.wIcon || "󰖙") : "󰖙"),
+                    desc: seed ? (seed.desc || "") : "",
+                    min: seed ? (seed.min || "—") : "—",
+                    max: dayOffset === 0 && WeatherState.wTemp ? WeatherState.wTemp : (seed ? (seed.max || "—") : "—")
+                })
+            }
+        }
+        return out
     }
 
     // ── State ─────────────────────────────────────────────────
@@ -1850,13 +1896,13 @@ DropdownBase {
         visible: dash._tab === 4
 
         Text {
-            visible: WeatherState.wLoading
+            visible: WeatherState.wLoading && !WeatherState.wHasData
             anchors.centerIn: parent
             text: "Fetching weather…"; color: dash.dimColor; font.pixelSize: 13; font.family: config.fontFamily
         }
 
         Column {
-            visible: !WeatherState.wLoading
+            visible: WeatherState.wHasData
             anchors.fill: parent
             spacing: 10
 
@@ -1899,52 +1945,49 @@ DropdownBase {
                 }
             }
 
-            // ── Hourly strip (next 24 h) ─────────────────────────────
+            // ── Hourly strip (next 10 h) ─────────────────────────────
             Item {
                 width: parent.width; height: 106
 
                 Text {
                     id: hourlyLabel
-                    text: "Next 12 hours"
+                    text: "Next 10 hours"
                     color: dash.dimColor; font.pixelSize: 10; font.family: config.fontFamily
                     anchors { top: parent.top; left: parent.left }
                 }
 
-                Flickable {
-                    anchors { top: hourlyLabel.bottom; topMargin: 4; left: parent.left; right: parent.right; bottom: parent.bottom }
-                    flickableDirection: Flickable.HorizontalFlick
-                    contentWidth: hourlyRepeater.count * 60 - 4
-                    clip: true
+                Row {
+                    id: hourlyRow
+                    anchors { top: hourlyLabel.bottom; topMargin: 4; left: parent.left; right: parent.right }
+                    height: 80
+                    spacing: 4
 
-                    Row {
-                        height: parent.height
-                        spacing: 4
-                        Repeater {
-                            id: hourlyRepeater
-                            model: ScriptModel { values: dash._hourlyNext12 }
-                            delegate: Rectangle {
-                                required property var modelData
-                                width: 56; height: 80; radius: 8
-                                color:        Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.06)
-                                border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.14)
-                                border.width: 1
+                    Repeater {
+                        id: hourlyRepeater
+                        model: ScriptModel { values: dash._hourlyNext10 }
+                        delegate: Rectangle {
+                            required property var modelData
+                            width: (hourlyRow.width - (hourlyRow.spacing * 9)) / 10
+                            height: 80; radius: 8
+                            color:        Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.06)
+                            border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.14)
+                            border.width: 1
 
-                                Text {
-                                    anchors { top: parent.top; topMargin: 7; horizontalCenter: parent.horizontalCenter }
-                                    text: (modelData.time || "").substring(11, 16)
-                                    color: dash.dimColor; font.pixelSize: 9; font.family: config.fontFamily
-                                }
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: modelData.icon || ""
-                                    font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 20
-                                    color: dash.accentColor
-                                }
-                                Text {
-                                    anchors { bottom: parent.bottom; bottomMargin: 7; horizontalCenter: parent.horizontalCenter }
-                                    text: modelData.temp || ""
-                                    color: dash.textColor; font.pixelSize: 10; font.family: config.fontFamily
-                                }
+                            Text {
+                                anchors { top: parent.top; topMargin: 7; horizontalCenter: parent.horizontalCenter }
+                                text: (modelData.time || "").substring(11, 16)
+                                color: dash.dimColor; font.pixelSize: 9; font.family: config.fontFamily
+                            }
+                            Text {
+                                anchors.centerIn: parent
+                                text: modelData.icon || ""
+                                font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 20
+                                color: dash.accentColor
+                            }
+                            Text {
+                                anchors { bottom: parent.bottom; bottomMargin: 7; horizontalCenter: parent.horizontalCenter }
+                                text: modelData.temp || ""
+                                color: dash.textColor; font.pixelSize: 10; font.family: config.fontFamily
                             }
                         }
                     }
@@ -1969,7 +2012,7 @@ DropdownBase {
                     spacing: 4
 
                     Repeater {
-                        model: ScriptModel { values: WeatherState.wForecast.slice(0, 7) }
+                        model: ScriptModel { values: dash._week7FromToday }
                         delegate: Rectangle {
                             id: dayCard
                             required property var modelData
@@ -2023,27 +2066,40 @@ DropdownBase {
                 }
             }
 
-            // ── Sunrise / Sunset / Wind summary ─────────────────────
-            Rectangle {
-                width: parent.width; height: 62; radius: 10
-                color:        Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.06)
-                border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.12)
-                border.width: 1
+            // ── Sunrise / Sunset summary ───────────────────────────
+            Item {
+                width: parent.width; height: 62
 
-                Row {
-                    anchors.centerIn: parent; spacing: 40
+                readonly property real _gap: 8
+                readonly property real _cardW: (width - _gap) / 2
 
-                    Column { spacing: 4
-                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "󰖛  " + WeatherState.wSunrise; color: dash.textColor; font.pixelSize: 12; font.family: config.fontFamily }
-                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Sunrise"; color: dash.dimColor; font.pixelSize: 10; font.family: config.fontFamily }
+                Rectangle {
+                    anchors { left: parent.left; top: parent.top }
+                    width: parent._cardW; height: parent.height; radius: 10
+                    color:        Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.06)
+                    border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.12)
+                    border.width: 1
+
+                    Column {
+                        anchors.centerIn: parent
+                        spacing: 4
+                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "󰖛  " + WeatherState.wSunrise; color: dash.textColor; font.pixelSize: 14; font.family: config.fontFamily }
+                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Sunrise"; color: dash.dimColor; font.pixelSize: 12; font.family: config.fontFamily }
                     }
-                    Column { spacing: 4
-                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "󰖜  " + WeatherState.wSunset; color: dash.textColor; font.pixelSize: 12; font.family: config.fontFamily }
-                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Sunset"; color: dash.dimColor; font.pixelSize: 10; font.family: config.fontFamily }
-                    }
-                    Column { spacing: 4
-                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "󰖝  " + WeatherState.wWind; color: dash.textColor; font.pixelSize: 12; font.family: config.fontFamily }
-                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Wind"; color: dash.dimColor; font.pixelSize: 10; font.family: config.fontFamily }
+                }
+
+                Rectangle {
+                    anchors { right: parent.right; top: parent.top }
+                    width: parent._cardW; height: parent.height; radius: 10
+                    color:        Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.06)
+                    border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.12)
+                    border.width: 1
+
+                    Column {
+                        anchors.centerIn: parent
+                        spacing: 4
+                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "󰖜  " + WeatherState.wSunset; color: dash.textColor; font.pixelSize: 14; font.family: config.fontFamily }
+                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Sunset"; color: dash.dimColor; font.pixelSize: 12; font.family: config.fontFamily }
                     }
                 }
             }

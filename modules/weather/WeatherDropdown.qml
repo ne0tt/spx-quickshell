@@ -28,6 +28,7 @@ DropdownBase {
     readonly property string wSunrise:  WeatherState.wSunrise
     readonly property string wSunset:   WeatherState.wSunset
     readonly property var    wForecast: WeatherState.wForecast
+    readonly property bool   wHasData:  WeatherState.wHasData
     readonly property bool   wLoading:  WeatherState.wLoading
 
     // ── Panel geometry ────────────────────────────────────────
@@ -51,7 +52,7 @@ DropdownBase {
         height: wDrop.panelFullHeight
 
         Text {
-            visible: wDrop.wLoading
+            visible: wDrop.wLoading && !wDrop.wHasData
             anchors.centerIn: parent
             text: "Fetching weather…"
             color: wDrop.dimColor
@@ -61,7 +62,7 @@ DropdownBase {
         // ── Current card ──────────────────────────────────────
         Rectangle {
             id: currentCard
-            visible: !wDrop.wLoading
+            visible: wDrop.wHasData
             width: parent.width
             height: 140
             radius: 10
@@ -181,7 +182,7 @@ DropdownBase {
         // ── Sunrise / sunset bar ──────────────────────────────
         Rectangle {
             id: sunRow
-            visible: !wDrop.wLoading && wDrop.wSunrise !== ""
+            visible: wDrop.wHasData && wDrop.wSunrise !== ""
             anchors.top: currentCard.bottom
             anchors.topMargin: wDrop._gapH
             width: parent.width
@@ -244,7 +245,7 @@ DropdownBase {
 
         // ── 3-day forecast ────────────────────────────────────
         Column {
-            visible: !wDrop.wLoading
+            visible: wDrop.wHasData
             anchors.top: sunRow.bottom
             anchors.topMargin: wDrop._gapH
             width: parent.width

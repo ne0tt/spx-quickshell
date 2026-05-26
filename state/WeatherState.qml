@@ -28,21 +28,34 @@ Singleton {
     property var    wForecast:    []
     property var    wHourly:      []   // next-24h hourly array: {time, temp, icon}
     property bool   wLoading:     true
+    readonly property bool wHasData: (wTemp !== "" && wTemp !== "…") || wForecast.length > 0 || wHourly.length > 0 || wSunrise !== "" || wSunset !== ""
+    property int    refreshCooldownMs: 120000
+    property double _lastFetchMs: 0
     property var    _forecastBuf: []
     property var    _hourlyBuf:   []
 
-    function refresh() {
+    function refresh(force) {
+        var now = Date.now()
+        if (_fetchProc.running) return
+        if (force !== true && wHasData && _lastFetchMs > 0 && (now - _lastFetchMs) < refreshCooldownMs) return
+
         wLoading      = true
-        wForecast     = []
-        wHourly       = []
         _forecastBuf  = []
         _hourlyBuf    = []
-        wSunrise      = ""
-        wSunset       = ""
         _fetchProc.running = true
     }
 
     function _codeToIcon(c) {
+        // wttr.in fallback weather codes
+        if (c === 113) return "󰖙"
+        if (c === 116) return "󰖕"
+        if (c === 119 || c === 122) return "󰖐"
+        if (c === 143) return "󰖐"
+        if (c === 176 || c === 263 || c === 266) return "󰖖"
+        if (c === 293 || c === 296 || c === 299 || c === 302 || c === 305 || c === 308) return "󰖗"
+        if (c === 323 || c === 326 || c === 329 || c === 332 || c === 335 || c === 338 || c === 368 || c === 371) return "󰖘"
+        if (c === 200 || c === 386 || c === 389 || c === 392 || c === 395) return "󰙾"
+
         if (c === 0)  return "󰖙"
         if (c <= 2)   return "󰖙"
         if (c === 3)  return "󰖕"
@@ -56,6 +69,17 @@ Singleton {
     }
 
     function _codeToDesc(c) {
+        // wttr.in fallback weather codes
+        if (c === 113) return "Clear sky"
+        if (c === 116) return "Partly cloudy"
+        if (c === 119) return "Cloudy"
+        if (c === 122) return "Overcast"
+        if (c === 143) return "Fog"
+        if (c === 176 || c === 263 || c === 266) return "Drizzle"
+        if (c === 293 || c === 296 || c === 299 || c === 302 || c === 305 || c === 308) return "Rain"
+        if (c === 323 || c === 326 || c === 329 || c === 332 || c === 335 || c === 338 || c === 368 || c === 371) return "Snow"
+        if (c === 200 || c === 386 || c === 389 || c === 392 || c === 395) return "Thunderstorm"
+
         if (c === 0)  return "Clear sky"
         if (c === 1)  return "Mainly clear"
         if (c === 2)  return "Partly cloudy"
@@ -69,28 +93,70 @@ Singleton {
         return "Thunderstorm"
     }
 
+    function _to24Hour(t) {
+        if (!t || typeof t !== "string") return ""
+
+        var s = t.trim()
+        if (s === "") return ""
+
+        // Already 24-hour clock (e.g. "06:12" or "06:12:00")
+        var m24 = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/)
+        if (m24) {
+            var h24 = Math.max(0, Math.min(23, parseInt(m24[1])))
+            return String(h24).padStart(2, "0") + ":" + m24[2]
+        }
+
+        // 12-hour clock with suffix (e.g. "6:12 AM", "6:12PM")
+        var m12 = s.match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/)
+        if (m12) {
+            var h = parseInt(m12[1])
+            var mins = m12[2]
+            var ampm = m12[3].toUpperCase()
+
+            if (h === 12) h = 0
+            if (ampm === "PM") h += 12
+
+            return String(h).padStart(2, "0") + ":" + mins
+        }
+
+        return s
+    }
+
     property var _fetchProc: Process {
         running: false
         command: ["sh", "-c",
-            "INFO=$(curl -sf --max-time 5 https://ipinfo.io/json); " +
-            "LOC=$(echo \"$INFO\" | jq -r '.loc'); " +
-            "LAT=${LOC%%,*}; LON=${LOC##*,}; " +
-            "curl -sf --max-time 10 \"https://api.open-meteo.com/v1/forecast?" +
+            "INFO=$(curl -sf --max-time 5 https://ipinfo.io/json || true); " +
+            "LOC=$(echo \"$INFO\" | jq -r '.loc // empty'); " +
+            "if [ -n \"$LOC\" ]; then LAT=${LOC%%,*}; LON=${LOC##*,}; else LAT=51.5085; LON=-0.1257; fi; " +
+            "OM=$(curl -sf --max-time 12 \"https://api.open-meteo.com/v1/forecast?" +
             "latitude=$LAT&longitude=$LON" +
-            "&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m,relative_humidity_2m" +
-            "&daily=weathercode,temperature_2m_max,temperature_2m_min,sunrise,sunset" +
-            "&hourly=temperature_2m,weathercode" +
-            "&timezone=auto&forecast_days=7\" | " +
-            "jq -r '\"code=\"+(.current.weathercode|tostring)," +
-            "\"temp=\"+(.current.temperature_2m|tostring)," +
-            "\"feels=\"+(.current.apparent_temperature|tostring)," +
-            "\"humidity=\"+(.current.relative_humidity_2m|tostring)," +
-            "\"wind=\"+(.current.windspeed_10m|tostring)," +
-            "\"sunrise=\"+(.daily.sunrise[0] | split(\"T\")[1])," +
-            "\"sunset=\"+(.daily.sunset[0] | split(\"T\")[1])," +
-            "(.daily.time[] as $i | \"day=\"+$i+\"|\"+(.daily.weathercode[(.daily.time|index($i))]|tostring)+\"|\"+(.daily.temperature_2m_min[(.daily.time|index($i))]|tostring)+\"|\"+(.daily.temperature_2m_max[(.daily.time|index($i))]|tostring))," +
-            "([.hourly.time,.hourly.temperature_2m,.hourly.weathercode]|transpose|.[]" +
-            "|\"hour=\"+.[0]+\"|\"+(.[1]|round|tostring)+\"|\"+(.[2]|tostring))'"]
+            "&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m" +
+            "&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset" +
+            "&hourly=temperature_2m,weather_code" +
+            "&timezone=auto&forecast_days=7\" || true); " +
+            "if [ -n \"$OM\" ] && echo \"$OM\" | jq -e '.current and .daily and .hourly' >/dev/null 2>&1; then " +
+            "  echo \"$OM\" | jq -r '\"code=\"+((.current.weather_code // .current.weathercode // 0)|tostring)," +
+            "\"temp=\"+((.current.temperature_2m // 0)|tostring)," +
+            "\"feels=\"+((.current.apparent_temperature // 0)|tostring)," +
+            "\"humidity=\"+((.current.relative_humidity_2m // 0)|tostring)," +
+            "\"wind=\"+((.current.wind_speed_10m // .current.windspeed_10m // 0)|tostring)," +
+            "\"sunrise=\"+((.daily.sunrise[0] // \"\") | split(\"T\")[1])," +
+            "\"sunset=\"+((.daily.sunset[0] // \"\") | split(\"T\")[1])," +
+            "(.daily.time[] as $i | \"day=\"+$i+\"|\"+((.daily.weather_code // .daily.weathercode)[(.daily.time|index($i))]|tostring)+\"|\"+(.daily.temperature_2m_min[(.daily.time|index($i))]|tostring)+\"|\"+(.daily.temperature_2m_max[(.daily.time|index($i))]|tostring))," +
+            "([.hourly.time,.hourly.temperature_2m,((.hourly.weather_code // .hourly.weathercode))]|transpose|.[]" +
+            "|\"hour=\"+.[0]+\"|\"+(.[1]|round|tostring)+\"|\"+(.[2]|tostring))'; " +
+            "else " +
+            "  WT=$(curl -sf --max-time 12 \"https://wttr.in/${LAT},${LON}?format=j1\" || curl -sf --max-time 12 \"https://wttr.in/?format=j1\" || true); " +
+            "  echo \"$WT\" | jq -r '\"code=\"+((.current_condition[0].weatherCode // 0)|tostring)," +
+            "\"temp=\"+((.current_condition[0].temp_C // 0)|tostring)," +
+            "\"feels=\"+((.current_condition[0].FeelsLikeC // 0)|tostring)," +
+            "\"humidity=\"+((.current_condition[0].humidity // 0)|tostring)," +
+            "\"wind=\"+((.current_condition[0].windspeedKmph // 0)|tostring)," +
+            "\"sunrise=\"+(.weather[0].astronomy[0].sunrise // \"\")," +
+            "\"sunset=\"+(.weather[0].astronomy[0].sunset // \"\")," +
+            "(.weather[] | \"day=\"+.date+\"|\"+((.hourly[0].weatherCode // 0)|tostring)+\"|\"+(.mintempC|tostring)+\"|\"+(.maxtempC|tostring))," +
+            "(.weather[] as $d | $d.hourly[] | .time as $t | \"hour=\"+$d.date+\"T\"+((((($t|tonumber)/100)|floor|tostring) as $hh | if ($hh|length)==1 then \"0\"+$hh else $hh end))+\":00\"+\"|\"+((.tempC // 0)|tostring)+\"|\"+((.weatherCode // 0)|tostring))'; " +
+            "fi"]
 
         stdout: SplitParser {
             onRead: data => {
@@ -118,10 +184,10 @@ Singleton {
                     weatherState.wWind = val + " km/h"
                     break
                 case "sunrise":
-                    weatherState.wSunrise = val
+                    weatherState.wSunrise = weatherState._to24Hour(val)
                     break
                 case "sunset":
-                    weatherState.wSunset = val
+                    weatherState.wSunset = weatherState._to24Hour(val)
                     break
                 case "day": {
                     var parts = val.split("|")
@@ -155,6 +221,7 @@ Singleton {
             weatherState.wHourly      = weatherState._hourlyBuf.slice()
             weatherState._hourlyBuf   = []
             weatherState.wLoading     = false
+            if (weatherState.wHasData) weatherState._lastFetchMs = Date.now()
         }
     }
 

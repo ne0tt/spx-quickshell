@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.Fusion
 import Qt5Compat.GraphicalEffects
+import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
 
@@ -32,7 +33,7 @@ Rectangle {
     Process {
         id: keyboardBreathingProc
         running: false
-        command: ["python3", "/home/sispx/.config/hypr/scripts/keyboard-breathing-toggle.py", "#ff0000", "100"]
+        command: ["python3", Quickshell.env("HOME") + "/.config/hypr/scripts/keyboard-breathing-toggle.py", "#ff0000", "100"]
         
         onStarted: {
             console.log("Lockscreen: Keyboard breathing process started")
@@ -51,7 +52,7 @@ Rectangle {
     Process {
         id: keyboardRgbProc
         running: false
-        command: ["python3", "/home/sispx/.config/hypr/scripts/keyboard-rgb.py"]
+        command: ["python3", Quickshell.env("HOME") + "/.config/hypr/scripts/keyboard-rgb.py"]
         
         onStarted: {
             console.log("Lockscreen: Keyboard RGB restoration process started")
@@ -75,11 +76,11 @@ Rectangle {
     // Settings file reader
     property string currentWallpaper: ""
     property string originalWallpaper: ""
-    property string errorWallpaper: "/home/sispx/wallpaper/red/onyx-flow-red.jpg"
+    property string errorWallpaper: Quickshell.env("HOME") + "/wallpaper/red/onyx-flow-red.jpg"
     
     FileView {
         id: settingsFile
-        path: "/home/sispx/dotfiles/.config/quickshell/modules/settings/settings.json"
+        path: Quickshell.env("HOME") + "/dotfiles/.config/quickshell/modules/settings/settings.json"
         watchChanges: true
         onFileChanged: this.reload()
         onLoaded: {

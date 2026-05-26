@@ -4,7 +4,7 @@
 
 A highly customized Wayland status bar and system interface built with [Quickshell](https://quickshell.outfoxxed.me/) for Hyprland.
 
-**Last Updated**: May 26, 2026 — Dashboard power buttons, settings cleanup, and improved keyboard navigation
+**Last Updated**: May 26, 2026 — Weather/notification hardening, dashboard weather UX polish, and path privacy cleanup
 
 ## Table of Contents
 
@@ -28,7 +28,7 @@ A highly customized Wayland status bar and system interface built with [Quickshe
 2. **Configure bar monitor** — Edit `Config.qml` → `barMonitor` property or use Settings dropdown (Ctrl+Super+S)
 3. **Add global shortcuts** to `hyprland.conf` — See [Hyprland Integration](#hyprland-integration)
 4. **Customize appearance** — Edit `Colors.qml` or wallpaper folder → matugen auto-generates themes
-5. **Try the keyboard** — Most dropdowns support Tab/Arrows/Enter. Panels respond to Escape key.
+5. **Try the keyboard** — Most dropdowns support Tab/Arrows/Enter. Panels respond to Escape.
 
 ---
 
@@ -36,10 +36,19 @@ A highly customized Wayland status bar and system interface built with [Quickshe
 
 **May 26, 2026:**
 
-- **Dashboard power buttons** — Four quick-access power action buttons (Lockscreen, Logout, Reboot, Shutdown) now appear at the bottom of the Dashboard tab (Tab 0) below the clock/calendar. Click to activate (hold-to-confirm, 2 second hold required). Keyboard controls: Down arrow to focus buttons, Left/Right arrows to switch between buttons, Enter/Space to trigger hold-confirm animation.
+- **Dashboard power buttons** — Four quick-access power action buttons (Lockscreen, Logout, Reboot, Shutdown) now appear at the bottom of the Dashboard tab (Tab 0) below the clock/calendar. Click to activate (hold-to-confirm, 2-second hold required). Keyboard controls: Down arrow to focus buttons, Left/Right arrows to switch between buttons, Enter/Space to trigger hold-confirm animation.
 - **Settings dropdown reorganized** — Now displays exactly 8 keyboard-navigable rows instead of 9. Removed duplicate Lock Screen action (now lives only in Power menu). Settings panel maintains consistent focus navigation with expandable Night Light and Bar Monitor cards.
 - **Dashboard VPN map polish** — The pulsing VPN location marker in the Network tab now properly centers its ripple rings and inner dot relative to their actual dimensions. This ensures the pulsing animation stays visually anchored to the resolved server coordinates on the world map.
 - **Code cleanup completed** — All hardcoded font references replaced with `config.fontFamily`, commented imports removed, unused code sections cleaned from `shell.qml`, and all modules now have proper `qmldir` exports. Language server sees no false-positive import errors.
+- **Weather pipeline hardened** — `WeatherState` now uses `open-meteo` as primary and automatically falls back to `wttr.in` when the upstream API is unavailable. Location still resolves from `ipinfo.io`, with fixed coordinates used only as a final fallback.
+- **Weather refresh UX improved** — Cached weather remains visible during refresh instead of blanking the panel. `wHasData` was added to state so weather views can keep showing the last successful pull while new data is loading.
+- **Dashboard weather tab improved** — Hourly strip changed from 12 to 10 hours and sized to fit cleanly. Weekly forecast now always renders 7 cards starting from today and fills missing provider days with carried-forward values.
+- **Time formatting normalized** — Sunrise and sunset values are normalized to 24-hour format (`HH:MM`) across weather views.
+- **Weather rendering optimized** — Dashboard weather hourly cards now render in a fixed 10-card row (no horizontal scroll container), reducing UI overhead while keeping the same visual output.
+- **Weather refresh optimized** — `WeatherState.refresh()` now applies a short cooldown and skips duplicate in-flight pulls, reducing unnecessary API requests when weather views are reopened quickly.
+- **Weather footer simplified** — Dashboard weather summary now uses two separate boxes (Sunrise and Sunset) and removes wind from the footer section.
+- **Notification null-safety hardened** — `NotifCard` now guards against transient null delegate data during mount/unmount, preventing runtime TypeErrors for `appIcon`, `summary`, `body`, `actions`, and urgency fields.
+- **Home path sanitization** — Hardcoded `/home/<user>` paths in Lockscreen and settings were replaced with HOME-based paths/values to improve portability and avoid embedding user-specific filesystem paths.
 
 ---
 
@@ -99,7 +108,7 @@ quickshell/
 │
 ├── state/
 │   ├── VolumeState.qml              # Singleton: PipeWire default-sink volume & mute
-│   ├── WeatherState.qml             # Singleton: open-meteo weather fetch & forecast data
+│   ├── WeatherState.qml             # Singleton: weather fetch (open-meteo + wttr fallback) & forecast data
 │   ├── BluetoothState.qml           # Singleton: rfkill power control + bluetoothctl monitor
 │   └── Audio.qml                    # Singleton: CAVA audio visualizer service
 │
@@ -226,16 +235,17 @@ Reactive `Quickshell.Services.Pipewire` binding — zero polling, updates instan
 | `setVolume(v)` | Set volume to 0–100, clamped |
 
 #### `WeatherState.qml`
-`open-meteo` API (no key required). Auto-detects location via `ipinfo.io`. Fetched once on `Component.onCompleted`, then refreshed hourly via `SystemClock { precision: SystemClock.Hours }`.
+Primary source is `open-meteo` (no key required) with automatic fallback to `wttr.in` if `open-meteo` fails. Location is auto-detected via `ipinfo.io`; if geo lookup fails, fixed coordinates are used as a last resort fallback. Data is fetched once on `Component.onCompleted`, then refreshed hourly via `SystemClock { precision: SystemClock.Hours }`.
 
 | Property | Description |
 |---|---|
 | `wIcon`, `wDesc`, `wTemp`, `wFeels` | Current conditions |
-| `wHumidity`, `wWind`, `wSunrise`, `wSunset` | Extra current detail |
+| `wHumidity`, `wWind`, `wSunrise`, `wSunset` | Extra current detail (sun times normalized to 24-hour `HH:MM`) |
 | `wForecast` | 7-day array `{date, icon, desc, min, max}` |
-| `wHourly` | 24-hour array `{time, temp, icon}` |
+| `wHourly` | Hourly array `{time, temp, icon}` |
 | `wLoading` | `true` while the fetch is in-flight |
-| `refresh()` | Force an immediate re-fetch |
+| `wHasData` | `true` when previously fetched weather exists (used for stale-while-refresh UI) |
+| `refresh(force)` | Re-fetch weather. Skips duplicate/in-flight pulls and respects cooldown unless `force === true` |
 
 #### `BluetoothState.qml`
 `rfkill` for power control, `bluetoothctl monitor` as a long-lived process for live state updates, power re-read debounced 600 ms. A 400 ms delay after `rfkill unblock` gives the adapter time to initialize.
@@ -393,7 +403,7 @@ Icon circle + label + optional subtitle + animated toggle pill. Has an `isBusy` 
 | Component | Purpose |
 |---|---|
 | `NotifService` | D-Bus server; holds `list` (all notifications) and `popups` (active, non-closed). Provides `clearAll()` and `dnd` toggle. |
-| `NotifCard` | Visual card per notification. Fades in on appear; dragging or timeout fades it out. Hover pauses the expire timer. Summary/body are bounded and ellipsized to prevent overflow. |
+| `NotifCard` | Visual card per notification. Fades in on appear; dragging or timeout fades it out. Hover pauses the expire timer. Summary/body are bounded and ellipsized to prevent overflow. Defensive null-guards handle transient delegate teardown safely. |
 | `NotifPopups` | `PanelWindow` on `WlrLayer.Overlay`, top-right corner. `ListView` backed by `NotifService.popups`. Cards fade in/out; wrapper collapses height to pull remaining cards up. |
 | `NotifButton` | Bell icon (`󰂚`) in the bar. Shows a count badge when there are unread notifications. Click opens `NotifDropdown`. |
 | `NotifDropdown` | History panel extending `DropdownBase`. Shows all non-closed notifications as `SelectableCard` items with strict single-line ellipsis truncation for long titles/subtitles. Includes a `systemUpdateCount` card at the top when updates are pending — clicking it closes the panel then launches the system upgrade terminal. |
@@ -613,7 +623,7 @@ The `--type` argument is configurable from inside the dropdown itself and persis
 | Dashboard | `󰕮` | Weather card, system info card, clock + inline calendar |
 | Media | `󰝚` | Full media player with album art |
 | Performance | `󰻠` | CPU / RAM / Disk circular gauges |
-| Weather | `󰖕` | Full weather: current + 12-hour strip + 7-day forecast |
+| Weather | `󰖕` | Full weather: current + 10-hour strip + 7-day forecast |
 | Network | `󰈀` | VLAN IP/gateway/DNS info + WireGuard VPN cards + world map |
 
 **Dashboard tab (Tab 0)** is the default on every open. It shows two side-by-side cards:
@@ -628,7 +638,7 @@ Below the info cards sits a **clock + date + inline calendar** row:
 - Right side: a mini month calendar with prev/next month navigation arrows. Today's date has a pulsing filled circle; overflow days (previous/next month) are rendered at low opacity.
 
 Below the clock/calendar sits a **power actions row** with four buttons:
-- **Lockscreen** (󰌾), **Logout** (󰍃), **Reboot** (󰜉), **Shutdown** (󰐥) — each uses `SelectableCard` with hold-to-confirm activation (2 second hold required, matching the mouse click behavior)
+- **Lockscreen** (󰌾), **Logout** (󰍃), **Reboot** (󰜉), **Shutdown** (󰐥) — each uses `SelectableCard` with hold-to-confirm activation (2-second hold required, matching the mouse click behavior)
 - **Keyboard navigation** (when Dashboard tab is focused):
   - Down arrow: focuses the power action row (first button selected)
   - Left / Right arrows: cycle between the four power buttons
@@ -656,9 +666,10 @@ All gauges animate smoothly (600 ms `OutCubic`) and turn red when ≥ 85%. The t
 
 **Weather tab (Tab 3)** pulls all data from `WeatherState` (same source as the standalone WeatherDropdown):
 - Current conditions card: big icon, temp, feels-like, wind, humidity, sunrise
-- Hourly strip: next 12 hours from the current hour (horizontally scrollable Flickable, label "Next 12 hours")
-- 7-day weekly forecast grid: day name, date, icon, high/low temps. Today/Tomorrow are labelled explicitly.
-- Sunrise / Sunset / Wind summary row at the bottom
+- Hourly strip: next 10 hours from the current hour (fixed 10-card row, no horizontal scrolling)
+- 7-day weekly forecast grid: always 7 cards starting from today; day name, date, icon, high/low temps. Today/Tomorrow are labelled explicitly.
+- Two-box sunrise/sunset summary row at the bottom (wind removed from footer)
+- Stale-while-refresh behavior: if a refresh is in-flight, the last successful weather snapshot remains visible until fresh data arrives
 
 **Data refresh:**
 - On open: all processes run immediately except update checks (`uptimeProc`, `mediaProc`, `perfProc`, `kernelProc`, `hyprlandVerProc`)

@@ -1,0 +1,4 @@
+singleton Audio 1.0 Audio.qml
+singleton BluetoothState 1.0 BluetoothState.qml
+singleton WeatherState 1.0 WeatherState.qml
+singleton VolumeState 1.0 VolumeState.qml

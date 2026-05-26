@@ -23,10 +23,27 @@ Rectangle {
     id: root
 
     required property var modelData
+    readonly property var notif: (modelData && typeof modelData === "object") ? modelData : null
 
-    readonly property bool hasImage:   modelData.image.length > 0
-    readonly property bool hasAppIcon: modelData.appIcon.length > 0
-    readonly property bool isCritical: modelData.urgency === NotificationUrgency.Critical
+    readonly property bool hasImage:   !!(notif && notif.image && notif.image.length > 0)
+    readonly property bool hasAppIcon: !!(notif && notif.appIcon && notif.appIcon.length > 0)
+    readonly property bool isCritical: !!(notif && notif.urgency === NotificationUrgency.Critical)
+    readonly property string appName:  (notif && notif.appName) ? notif.appName : ""
+    readonly property string summary:  (notif && notif.summary) ? notif.summary : ""
+    readonly property string body:     (notif && notif.body) ? notif.body : ""
+    readonly property var actions:     (notif && notif.actions) ? notif.actions : []
+
+    function _timerStop() {
+        if (notif && notif.timer) notif.timer.stop()
+    }
+
+    function _timerStart() {
+        if (notif && notif.timer) notif.timer.start()
+    }
+
+    function _closeNotif() {
+        if (notif && notif.close) notif.close()
+    }
 
     // Dimensions
     readonly property int cardWidth:  360
@@ -45,10 +62,12 @@ Rectangle {
     // ── Fade in on appear ────────────────────────────────────────────────
     opacity: 0
     Component.onCompleted: {
-        fadeIn.start();
-        modelData.lock(root);
+        fadeIn.start()
+        if (notif && notif.lock) notif.lock(root)
     }
-    Component.onDestruction: modelData.unlock(root)
+    Component.onDestruction: {
+        if (notif && notif.unlock) notif.unlock(root)
+    }
 
     NumberAnimation {
         id: fadeIn
@@ -73,27 +92,27 @@ Rectangle {
         drag.target: root
         drag.axis:   Drag.XAxis
 
-        onEntered: root.modelData.timer.stop()
-        onExited:  { if (!pressed) root.modelData.timer.start(); }
+        onEntered: root._timerStop()
+        onExited:  { if (!pressed) root._timerStart() }
 
         onPressed: event => {
             if (event.button === Qt.MiddleButton) {
-                root.modelData.close();
-                return;
+                root._closeNotif()
+                return
             }
-            root.modelData.timer.stop();
-            startX = event.x;
+            root._timerStop()
+            startX = event.x
         }
 
         onReleased: {
             if (!containsMouse)
-                root.modelData.timer.start();
+                root._timerStart()
 
             // Spring back if not dragged far enough, otherwise dismiss.
             if (Math.abs(root.x) < root.cardWidth * 0.4)
-                root.x = 0;
+                root.x = 0
             else
-                root.modelData.popup = false;
+                if (root.notif) root.notif.popup = false
         }
     }
 
@@ -131,7 +150,7 @@ Rectangle {
                 Image {
                     anchors.fill:    parent
                     anchors.margins: 3
-                    source:          root.hasAppIcon ? Quickshell.iconPath(root.modelData.appIcon) : ""
+                    source:          root.hasAppIcon ? Quickshell.iconPath(root.notif.appIcon) : ""
                     fillMode:        Image.PreserveAspectFit
                     smooth:          true
                     visible:         root.hasAppIcon && status !== Image.Error
@@ -150,8 +169,8 @@ Rectangle {
 
             // App name
             Text {
-                text:              root.modelData.appName.length > 0
-                                       ? root.modelData.appName
+                text:              root.appName.length > 0
+                                       ? root.appName
                                        : "Notification"
                 color:             root.isCritical ? "#ff9090" : "#80d5d4"
                 font.family:       config.fontFamily
@@ -180,14 +199,14 @@ Rectangle {
                     anchors.fill:    parent
                     anchors.margins: -6
                     hoverEnabled:    true
-                    onClicked:       root.modelData.close()
+                    onClicked:       root._closeNotif()
                 }
             }
         }
 
         // ── Summary ───────────────────────────────────────────────────────
         Text {
-            text:                root.modelData.summary
+            text:                root.summary
             color:               "#e8f5f4"
             font.family:         config.fontFamily
             font.pixelSize:      13
@@ -202,7 +221,7 @@ Rectangle {
 
         // ── Body (full width, flush left) ─────────────────────────────────
         Text {
-            text:                root.modelData.body
+            text:                root.body
             color:               "#a8cccb"
             font.family:         config.fontFamily
             font.pixelSize:      12
@@ -219,10 +238,10 @@ Rectangle {
         RowLayout {
             Layout.fillWidth: true
             spacing:          6
-            visible:          root.modelData.actions.length > 0
+            visible:          root.actions.length > 0
 
             Repeater {
-                model: root.modelData.actions
+                model: root.actions
 
                 delegate: Rectangle {
                     id: actionBtn
@@ -256,8 +275,9 @@ Rectangle {
                         anchors.fill: parent
                         hoverEnabled: true
                         onClicked: {
-                            actionBtn.modelData.invoke();
-                            root.modelData.close();
+                            if (actionBtn.modelData && actionBtn.modelData.invoke)
+                                actionBtn.modelData.invoke()
+                            root._closeNotif()
                         }
                     }
                 }
