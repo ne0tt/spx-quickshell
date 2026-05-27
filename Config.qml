@@ -49,6 +49,19 @@ QtObject {
 
     // ── Load guard — prevents saves firing during initial read ──
     property bool _loaded: false
+    property bool _settingsLoaded: false
+    property bool _localLoaded: false
+
+    function _finalizeLoadIfReady() {
+        if (_loaded)
+            return
+        if (!_settingsLoaded || !_localLoaded)
+            return
+
+        _loaded = true
+        // Persist once after both files are loaded to avoid clobbering local secrets.
+        _doSave()
+    }
 
     // ── Debounce handlers — restart timer on any persisted change ──
     onBarMonitorChanged:       { if (_loaded) _saveTimer.restart() }
@@ -93,8 +106,21 @@ QtObject {
             }
             _settingsFile.setText(JSON.stringify(settingsData, null, 2))
 
+            // Never blank local secret on incidental saves; keep existing file value
+            // unless a non-empty value is currently set in config.
+            var existingLocalKey = ""
+            try {
+                var existingLocal = JSON.parse(_localSettingsFile.text())
+                if (typeof existingLocal.openWeatherApiKey === "string")
+                    existingLocalKey = existingLocal.openWeatherApiKey
+            } catch (e) {}
+
+            var keyToWrite = cfg.openWeatherApiKey
+            if (typeof keyToWrite !== "string" || keyToWrite.trim().length === 0)
+                keyToWrite = existingLocalKey
+
             var localSettings = {
-                openWeatherApiKey: cfg.openWeatherApiKey
+                openWeatherApiKey: keyToWrite
             }
             _localSettingsFile.setText(JSON.stringify(localSettings, null, 2))
         } catch (error) {
@@ -129,10 +155,8 @@ QtObject {
                 // load it once and it will be moved to settings.local.json on next save.
                 if (typeof s.openWeatherApiKey === "string") cfg.openWeatherApiKey = s.openWeatherApiKey
             } catch (e) {}
-            cfg._loaded = true
-            // Eagerly write back: creates the file on first run and captures
-            // any reload-safe state that differs from an outdated file.
-            cfg._doSave()
+            cfg._settingsLoaded = true
+            cfg._finalizeLoadIfReady()
         }
     }
 
@@ -145,6 +169,8 @@ QtObject {
                 var ls = JSON.parse(text())
                 if (typeof ls.openWeatherApiKey === "string") cfg.openWeatherApiKey = ls.openWeatherApiKey
             } catch (e) {}
+            cfg._localLoaded = true
+            cfg._finalizeLoadIfReady()
         }
     }
 }
