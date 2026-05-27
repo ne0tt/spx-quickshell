@@ -13,7 +13,7 @@ import Quickshell.Io
 Singleton {
     id: weatherState
 
-    property string openWeatherApiKey: "b8b6e9546ea90be49827966cca412dcc"
+    property string openWeatherApiKey: "YOUR API KEY HERE"
 
     property string wIcon:        "…"
     property string wDesc:        ""
