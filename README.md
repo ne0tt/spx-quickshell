@@ -106,13 +106,18 @@ quickshell/
 ├── Config.qml                       # Global settings (font, barMonitor, animations, blur)
 ├── NumbersToText.qml                # Global utility: converts integers to English words
 ├── cava.conf                        # CAVA audio visualizer configuration
+├── .gitignore                       # Ignore rules (includes local-only secret settings)
 ├── qmldir                           # Root module exports (Colors, Config, utilities)
+├── assets/                          # Screenshots, map assets, lockscreen audio, helper scripts
+├── hyprland/                        # Shader assets and shader Lua helper for night light
 │
 ├── state/
 │   ├── VolumeState.qml              # Singleton: PipeWire default-sink volume & mute
 │   ├── WeatherState.qml             # Singleton: weather fetch (open-meteo + wttr fallback) & forecast data
+│   ├── WeatherStateOpenWeather.qml  # Optional OpenWeather-backed weather singleton
 │   ├── BluetoothState.qml           # Singleton: rfkill power control + bluetoothctl monitor
-│   └── Audio.qml                    # Singleton: CAVA audio visualizer service
+│   ├── Audio.qml                    # Singleton: CAVA audio visualizer service
+│   └── qmldir                       # State module exports
 │
 ├── base/                            # Shared primitives used across modules
 │   ├── DropdownBase.qml             # Base for all dropdown panels
@@ -137,7 +142,8 @@ quickshell/
     │   └── qmldir                       # Module exports
     ├── dashboard/
     │   ├── DashboardButton.qml      # Dashboard icon button in bar
-    │   └── DashboardDropdown.qml    # Tabbed info panel (Dashboard / Media / Performance / Weather / Network)
+    │   ├── DashboardDropdown.qml    # Tabbed info panel (Dashboard / Media / Performance / Weather / Network)
+    │   └── speedtest_cache.json     # Cached latest speed test results
     ├── clock/
     │   └── ClockPanel.qml           # Time/date display (driven by SystemClock)
     ├── lockscreen/
@@ -170,6 +176,7 @@ quickshell/
     │   ├── PowerProfileButton.qml   # Power profile icon in bar
     │   ├── PowerProfileDropdown.qml # Power profile selector
     │   ├── TemperatureButton.qml    # CPU temperature indicator in bar
+    │   ├── TemperatureDropdown.qml  # Temperature details dropdown
     │   ├── logout.sh                # Logout helper script invoked by PowerDropdown
     │   ├── reboot.sh                # Reboot helper script invoked by PowerDropdown
     │   └── shutdown.sh              # Shutdown helper script invoked by PowerDropdown
@@ -183,7 +190,9 @@ quickshell/
     ├── settings/
     │   ├── SettingsButton.qml       # Settings gear button in bar
     │   ├── SettingsDropdown.qml     # Quick toggles (night light, animations, blur…)
-    │   └── settings.json            # Persisted settings (animations, blur, monitor…)
+    │   ├── settings.json            # Persisted non-secret settings (animations, blur, monitor…)
+    │   ├── settings.local.example.json # Tracked template for local secrets
+    │   └── settings.local.json      # Local-only secrets (gitignored)
     ├── systemTray/
     │   ├── SystemTrayPanel.qml      # SNI system tray area
     │   └── TrayMenu.qml             # Right-click context menu for tray icons
@@ -223,7 +232,7 @@ Entry point. Hosts the `PanelWindow` (70px tall, 50px exclusive zone), instantia
 The `dropdowns` array is the single registry for all panels — add a new dropdown there and both `closeAllDropdowns` and `isAnyPanelOpen` handle it automatically.
 
 ### State Singletons (`state/`)
-Reactive state is split into one `Singleton` per concern. All three are registered in the `qs.state` module and accessed directly by name from any file that imports `"../../state"` or `qs.state`.
+Reactive state is split into one `Singleton` per concern. Core state singletons are registered in the `qs.state` module and accessed directly by name from any file that imports `"../../state"` or `qs.state`.
 
 #### `VolumeState.qml`
 Reactive `Quickshell.Services.Pipewire` binding — zero polling, updates instantly on any PipeWire sink change. Volume capped at 100.
