@@ -10,6 +10,8 @@ import QtQuick
 // launcherFloating) are read from and written to
 // modules/settings/settings.json via FileView.write() —
 // no external processes required.
+// Secrets (OpenWeather API key) are stored separately in
+// modules/settings/settings.local.json so they can be gitignored.
 //
 // A 500 ms debounce timer coalesces rapid changes into a
 // single file write. reloadableId preserves in-flight
@@ -59,6 +61,7 @@ QtObject {
     onCurrentWallpaperChanged:      { if (_loaded) _saveTimer.restart() }
     onNightLightStrengthChanged:    { if (_loaded) _saveTimer.restart() }
     onMatugenTypeChanged:           { if (_loaded) _saveTimer.restart() }
+    onOpenWeatherApiKeyChanged:     { if (_loaded) _saveTimer.restart() }
 
     // ── 750 ms debounce timer (increased for reliability) ─────────────────────────────
     property var _saveTimer: Timer {
@@ -86,10 +89,14 @@ QtObject {
                 wallpaperSubdirs:     cfg.wallpaperSubdirs,
                 currentWallpaper:     cfg.currentWallpaper,
                 nightLightStrength:   cfg.nightLightStrength,
-                matugenType:          cfg.matugenType,
-                openWeatherApiKey:    cfg.openWeatherApiKey
+                matugenType:          cfg.matugenType
             }
             _settingsFile.setText(JSON.stringify(settingsData, null, 2))
+
+            var localSettings = {
+                openWeatherApiKey: cfg.openWeatherApiKey
+            }
+            _localSettingsFile.setText(JSON.stringify(localSettings, null, 2))
         } catch (error) {
             // Retry after a short delay
             Qt.callLater(function() {
@@ -118,12 +125,26 @@ QtObject {
                 if (typeof s.nightLightStrength === "string" && ["soft","warm","hot","max"].indexOf(s.nightLightStrength) >= 0) cfg.nightLightStrength = s.nightLightStrength
                 var _validMatugenTypes = ["scheme-tonal-spot","scheme-content","scheme-expressive","scheme-fidelity","scheme-fruit-salad","scheme-monochrome","scheme-neutral","scheme-rainbow"]
                 if (typeof s.matugenType === "string" && _validMatugenTypes.indexOf(s.matugenType) >= 0) cfg.matugenType = s.matugenType
+                // Backward-compat migration path: if key still exists in settings.json,
+                // load it once and it will be moved to settings.local.json on next save.
                 if (typeof s.openWeatherApiKey === "string") cfg.openWeatherApiKey = s.openWeatherApiKey
             } catch (e) {}
             cfg._loaded = true
             // Eagerly write back: creates the file on first run and captures
             // any reload-safe state that differs from an outdated file.
             cfg._doSave()
+        }
+    }
+
+    property var _localSettingsFile: FileView {
+        path: Qt.resolvedUrl("modules/settings/settings.local.json").toString().replace("file://", "")
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: {
+            try {
+                var ls = JSON.parse(text())
+                if (typeof ls.openWeatherApiKey === "string") cfg.openWeatherApiKey = ls.openWeatherApiKey
+            } catch (e) {}
         }
     }
 }

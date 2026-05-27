@@ -125,9 +125,11 @@ Singleton {
     property var _fetchProc: Process {
         running: false
         command: ["sh", "-c",
-            "INFO=$(curl -sf --max-time 5 https://ipinfo.io/json || true); " +
-            "LOC=$(echo \"$INFO\" | jq -r '.loc // empty'); " +
-            "if [ -n \"$LOC\" ]; then LAT=${LOC%%,*}; LON=${LOC##*,}; else echo 'error=Unable to determine location'; exit 0; fi; " +
+            "IP=$(curl -sf --max-time 5 https://ip.me || true); " +
+            "GEO=$(curl -sf --max-time 8 \"http://ip-api.com/json/$IP\" || true); " +
+            "LAT=$(echo \"$GEO\" | jq -r '.lat // empty'); " +
+            "LON=$(echo \"$GEO\" | jq -r '.lon // empty'); " +
+            "if [ -z \"$LAT\" ] || [ -z \"$LON\" ]; then echo 'error=Unable to determine location'; exit 0; fi; " +
             "OM=$(curl -sf --max-time 12 \"https://api.open-meteo.com/v1/forecast?" +
             "latitude=$LAT&longitude=$LON" +
             "&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m" +

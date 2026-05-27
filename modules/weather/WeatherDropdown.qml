@@ -8,7 +8,7 @@ import "../.."
 // ============================================================
 // WEATHER DROPDOWN — extends DropdownBase.
 // Uses open-meteo (free, no API key, not blocked).
-// Auto-detects location from ipinfo.io.
+// Auto-detects location via ip.me + ip-api.
 // ============================================================
 DropdownBase {
     id: wDrop

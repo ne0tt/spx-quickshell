@@ -6,14 +6,16 @@ import Quickshell.Io
 
 // ============================================================
 // WEATHER STATE — OpenWeather One Call test version.
-// Uses ipinfo.io for location, then OpenWeather for current,
+// Uses ip.me + ip-api for location, then OpenWeather for current,
 // hourly, and daily forecast data.
-// Reads openWeatherApiKey from modules/settings/settings.json.
+// Reads openWeatherApiKey from OPENWEATHER_API_KEY env var,
+// then modules/settings/settings.local.json, then settings.json.
 // ============================================================
 Singleton {
     id: weatherState
 
     readonly property string settingsPath: Quickshell.env("HOME") + "/dotfiles/.config/quickshell/modules/settings/settings.json"
+    readonly property string localSettingsPath: Quickshell.env("HOME") + "/dotfiles/.config/quickshell/modules/settings/settings.local.json"
     property string openWeatherApiKey: ""
 
     property string wIcon:        "…"
@@ -110,28 +112,55 @@ Singleton {
         return s
     }
 
+    function _keyFromJson(rawText) {
+        try {
+            var parsed = JSON.parse(rawText)
+            return typeof parsed.openWeatherApiKey === "string" ? parsed.openWeatherApiKey : ""
+        } catch (error) {
+            return ""
+        }
+    }
+
+    function _refreshApiKey() {
+        var envKey = Quickshell.env("OPENWEATHER_API_KEY")
+        if (typeof envKey === "string" && envKey.length > 0) {
+            weatherState.openWeatherApiKey = envKey
+            return
+        }
+
+        var localKey = weatherState._keyFromJson(weatherState._localSettingsFile.text())
+        if (localKey.length > 0) {
+            weatherState.openWeatherApiKey = localKey
+            return
+        }
+
+        weatherState.openWeatherApiKey = weatherState._keyFromJson(weatherState._settingsFile.text())
+    }
+
     property var _settingsFile: FileView {
         path: weatherState.settingsPath
         watchChanges: true
-        onFileChanged: reload()
-        onLoaded: {
-            try {
-                var settings = JSON.parse(text())
-                weatherState.openWeatherApiKey = typeof settings.openWeatherApiKey === "string" ? settings.openWeatherApiKey : ""
-            } catch (error) {
-                weatherState.openWeatherApiKey = ""
-            }
-        }
+        onFileChanged: { reload(); weatherState._refreshApiKey() }
+        onLoaded: weatherState._refreshApiKey()
+    }
+
+    property var _localSettingsFile: FileView {
+        path: weatherState.localSettingsPath
+        watchChanges: true
+        onFileChanged: { reload(); weatherState._refreshApiKey() }
+        onLoaded: weatherState._refreshApiKey()
     }
 
     property var _fetchProc: Process {
         running: false
         command: ["sh", "-c",
             "API_KEY=\"" + weatherState.openWeatherApiKey + "\"; " +
-            "if [ -z \"$API_KEY\" ]; then echo 'error=Missing OpenWeather API key in settings.json'; exit 0; fi; " +
-            "INFO=$(curl -sf --max-time 5 https://ipinfo.io/json || true); " +
-            "LOC=$(echo \"$INFO\" | jq -r '.loc // empty'); " +
-            "if [ -n \"$LOC\" ]; then LAT=${LOC%%,*}; LON=${LOC##*,}; else echo 'error=Unable to determine location'; exit 0; fi; " +
+            "if [ -z \"$API_KEY\" ]; then echo 'error=Missing OpenWeather API key (set OPENWEATHER_API_KEY or settings.local.json)'; exit 0; fi; " +
+            "IP=$(curl -sf --max-time 5 https://ip.me || true); " +
+            "GEO=$(curl -sf --max-time 8 \"http://ip-api.com/json/$IP\" || true); " +
+            "LAT=$(echo \"$GEO\" | jq -r '.lat // empty'); " +
+            "LON=$(echo \"$GEO\" | jq -r '.lon // empty'); " +
+            "if [ -z \"$LAT\" ] || [ -z \"$LON\" ]; then echo 'error=Unable to determine location'; exit 0; fi; " +
             "OW=$(curl -s --max-time 12 \"https://api.openweathermap.org/data/3.0/onecall?lat=$LAT&lon=$LON&exclude=minutely,alerts&units=metric&appid=$API_KEY\" || true); " +
             "if [ -z \"$OW\" ]; then echo 'error=OpenWeather request failed'; exit 0; fi; " +
             "if ! echo \"$OW\" | jq -e '.current and .hourly and .daily' >/dev/null 2>&1; then ERR=$(echo \"$OW\" | jq -r '.message // empty'); if [ -n \"$ERR\" ]; then echo \"error=$ERR\"; else echo 'error=OpenWeather request failed'; fi; exit 0; fi; " +

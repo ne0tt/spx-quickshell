@@ -4,7 +4,7 @@
 
 A highly customized Wayland status bar and system interface built with [Quickshell](https://quickshell.outfoxxed.me/) for Hyprland.
 
-**Last Updated**: May 26, 2026 — Weather/notification hardening, dashboard weather UX polish, and path privacy cleanup
+**Last Updated**: May 27, 2026 — Weather location/provider update, OpenWeather secret migration, docs sync, and network-map asset refresh
 
 ## Table of Contents
 
@@ -36,19 +36,21 @@ A highly customized Wayland status bar and system interface built with [Quickshe
 
 **May 26, 2026:**
 
-- **Dashboard power buttons** — Four quick-access power action buttons (Lockscreen, Logout, Reboot, Shutdown) now appear at the bottom of the Dashboard tab (Tab 0) below the clock/calendar. Click to activate (hold-to-confirm, 2-second hold required). Keyboard controls: Down arrow to focus buttons, Left/Right arrows to switch between buttons, Enter/Space to trigger hold-confirm animation.
-- **Settings dropdown reorganized** — Now displays exactly 8 keyboard-navigable rows instead of 9. Removed duplicate Lock Screen action (now lives only in Power menu). Settings panel maintains consistent focus navigation with expandable Night Light and Bar Monitor cards.
-- **Dashboard VPN map polish** — The pulsing VPN location marker in the Network tab now properly centers its ripple rings and inner dot relative to their actual dimensions. This ensures the pulsing animation stays visually anchored to the resolved server coordinates on the world map.
-- **Code cleanup completed** — All hardcoded font references replaced with `config.fontFamily`, commented imports removed, unused code sections cleaned from `shell.qml`, and all modules now have proper `qmldir` exports. Language server sees no false-positive import errors.
-- **Weather pipeline hardened** — `WeatherState` now uses `open-meteo` as primary and automatically falls back to `wttr.in` when the upstream API is unavailable. Location still resolves from `ipinfo.io`, with fixed coordinates used only as a final fallback.
-- **Weather refresh UX improved** — Cached weather remains visible during refresh instead of blanking the panel. `wHasData` was added to state so weather views can keep showing the last successful pull while new data is loading.
-- **Dashboard weather tab improved** — Hourly strip changed from 12 to 10 hours and sized to fit cleanly. Weekly forecast now always renders 7 cards starting from today and fills missing provider days with carried-forward values.
-- **Time formatting normalized** — Sunrise and sunset values are normalized to 24-hour format (`HH:MM`) across weather views.
-- **Weather rendering optimized** — Dashboard weather hourly cards now render in a fixed 10-card row (no horizontal scroll container), reducing UI overhead while keeping the same visual output.
-- **Weather refresh optimized** — `WeatherState.refresh()` now applies a short cooldown and skips duplicate in-flight pulls, reducing unnecessary API requests when weather views are reopened quickly.
-- **Weather footer simplified** — Dashboard weather summary now uses two separate boxes (Sunrise and Sunset) and removes wind from the footer section.
-- **Notification null-safety hardened** — `NotifCard` now guards against transient null delegate data during mount/unmount, preventing runtime TypeErrors for `appIcon`, `summary`, `body`, `actions`, and urgency fields.
-- **Home path sanitization** — Hardcoded `/home/<user>` paths in Lockscreen and settings were replaced with HOME-based paths/values to improve portability and avoid embedding user-specific filesystem paths.
+- **Dashboard interaction updates** — Added hold-to-confirm power buttons (Lockscreen/Logout/Reboot/Shutdown) to Dashboard Tab 0 with keyboard support; settings panel was reorganized to 8 consistent keyboard-navigable rows.
+- **Dashboard Network polish** — VPN map marker alignment/ripple centering was fixed so pulse effects stay anchored to resolved server coordinates.
+- **Weather UX + performance pass** — Kept stale weather visible during refresh (`wHasData`), reduced duplicate/in-flight fetches via cooldown, normalized sunrise/sunset to `HH:MM`, moved hourly cards to a fixed 10-card row, and simplified footer layout.
+- **Forecast presentation improvements** — Hourly strip tuned from 12 to 10 cards; weekly forecast always renders 7 days from today with safe fill behavior when providers return fewer days.
+- **Codebase cleanup** — Replaced remaining hardcoded fonts with `config.fontFamily`, removed stale commented code/imports, and completed missing `qmldir` exports.
+- **Stability + portability hardening** — Added notification null guards and removed hardcoded home paths in favor of HOME-based values.
+
+**May 27, 2026:**
+
+- **Unified location resolution** — Both `WeatherState` and `WeatherStateOpenWeather` now resolve coordinates via `ip.me` + `ip-api`.
+- **Secret handling migration** — OpenWeather key lookup now prefers `OPENWEATHER_API_KEY`, then `modules/settings/settings.local.json` (gitignored), with `settings.json` retained only as legacy fallback.
+- **Settings split by sensitivity** — Non-secret settings remain in `modules/settings/settings.json`; OpenWeather key moved to local-only `modules/settings/settings.local.json`.
+- **Repo leak protection** — Added ignore rule for `modules/settings/settings.local.json` and added tracked template `modules/settings/settings.local.example.json`.
+- **Docs and comments synchronized** — Updated README and weather module comments to match the new location and secret-loading behavior.
+- **Asset refresh** — Updated dashboard world-map images: `assets/map_colorized_latest.png` and `assets/map_colorized_latest_dark.png`.
 
 ---
 
@@ -235,7 +237,7 @@ Reactive `Quickshell.Services.Pipewire` binding — zero polling, updates instan
 | `setVolume(v)` | Set volume to 0–100, clamped |
 
 #### `WeatherState.qml`
-Primary source is `open-meteo` (no key required) with automatic fallback to `wttr.in` if `open-meteo` fails. Location is auto-detected via `ipinfo.io`; if geo lookup fails, fixed coordinates are used as a last resort fallback. Data is fetched once on `Component.onCompleted`, then refreshed hourly via `SystemClock { precision: SystemClock.Hours }`.
+Primary source is `open-meteo` (no key required) with automatic fallback to `wttr.in` if `open-meteo` fails. Location is auto-detected via `ip.me` + `ip-api` (IP-to-lat/lon). Data is fetched once on `Component.onCompleted`, then refreshed hourly via `SystemClock { precision: SystemClock.Hours }`.
 
 | Property | Description |
 |---|---|
@@ -470,7 +472,7 @@ Components:
 
 > **🖼️ Wallpapers** — The lockscreen uses background wallpapers that are **not included** in this repo. You will need to supply your own and update the path in `LockscreenSurface.qml` to point to them.
 
-> **🦕 Audio** — On lock, a sound clip of Dennis Nedry from *Jurassic Park* plays ("Ah ah ah, you didn't say the magic word!", because I am a man child.). The audio file is included in the `assets/` directory.
+> **🦕 Audio** — On lock, a sound clip of Dennis Nedry from *Jurassic Park* plays ("Ah ah ah, you didn't say the magic word!", because I am a man-child). The audio file is included in the `assets/` directory.
 
 ### VPN / VLAN
 
@@ -549,7 +551,7 @@ Card index reference for keyboard nav:
 | 6 | Wallpaper (opens picker) |
 | 7 | Bar Monitor (expandable) |
 
-All state is persisted via the debounced JSON write in `Config.qml`; `FileView` inotify ensures changes are picked up immediately on the next reload.
+All non-secret state is persisted via the debounced JSON write in `Config.qml`; `FileView` inotify ensures changes are picked up immediately on the next reload.
 
 Settings file lives at `modules/settings/settings.json`:
 ```json
@@ -566,6 +568,30 @@ Settings file lives at `modules/settings/settings.json`:
   "matugenType": "scheme-tonal-spot"
 }
 ```
+
+### Secrets (OpenWeather API key)
+
+To avoid leaking API keys in commits, keep OpenWeather credentials in:
+
+- `modules/settings/settings.local.json` (gitignored)
+
+Template file (tracked):
+
+- `modules/settings/settings.local.example.json`
+
+Lookup priority for the OpenWeather key is:
+
+1. `OPENWEATHER_API_KEY` environment variable
+2. `modules/settings/settings.local.json`
+3. `modules/settings/settings.json` (legacy fallback only)
+
+Recommended setup:
+
+```sh
+cp modules/settings/settings.local.example.json modules/settings/settings.local.json
+```
+
+Then put your real key into `modules/settings/settings.local.json`.
 
 ### Wallpaper (`WallpaperButton` + `WallpaperDropdown`)
 `WallpaperButton` is an icon-only button (`󰸉`) that opens `WallpaperDropdown` — a scrollable 4-column thumbnail grid for browsing and applying wallpapers. The button component exists but is not currently placed in the bar; the picker is accessible via the `toggleWallpaperDropdown` global shortcut (`SUPER CTRL + W`) or the **Change Wallpaper** action row in `SettingsDropdown`.

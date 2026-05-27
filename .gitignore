@@ -1,1 +1,2 @@
 .env
+modules/settings/settings.local.json
