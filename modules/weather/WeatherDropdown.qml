@@ -200,7 +200,7 @@ DropdownBase {
                     spacing: 7
                     anchors.verticalCenter: parent.verticalCenter
                     Text {
-                        text: ""
+                        text: ""
                         font.family: fontFamily
                         font.styleName: "Solid"
                         font.pixelSize: 26
@@ -226,7 +226,7 @@ DropdownBase {
                     spacing: 7
                     anchors.verticalCenter: parent.verticalCenter
                     Text {
-                        text: ""
+                        text: ""
                         font.family: fontFamily
                         font.styleName: "Solid"
                         font.pixelSize: 26

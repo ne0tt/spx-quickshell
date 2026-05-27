@@ -31,13 +31,16 @@ import qs.modules.dashboard
 ShellRoot {
     id: shell
 
-    property var assignedScreen: Quickshell.screens.length > 0 ? Quickshell.screens[0] : null
+    property var assignedScreen: null
 
     function isScreenValid(candidate) {
         return !!candidate && Quickshell.screens.some(s => s === candidate)
     }
 
     function resolveAssignedScreen() {
+        if (!config || !config._loaded)
+            return null
+
         const configured = Quickshell.screens.find(s => s.name === config.barMonitor)
         if (configured)
             return configured
@@ -50,19 +53,15 @@ ShellRoot {
 
     function syncAssignedScreen() {
         const next = shell.resolveAssignedScreen()
-        if (!!next && next !== shell.assignedScreen)
+        if (next !== shell.assignedScreen)
             shell.assignedScreen = next
     }
 
-    Timer {
-        id: screenSyncDebounce
-        interval: 180
-        repeat: false
-        onTriggered: shell.syncAssignedScreen()
-    }
-
     function requestScreenSync() {
-        screenSyncDebounce.restart()
+        if (!config || !config._loaded)
+            return
+
+        shell.syncAssignedScreen()
     }
 
     // ============================================================
@@ -237,6 +236,11 @@ ShellRoot {
 
     Connections {
         target: config
+        function on_LoadedChanged() {
+            if (config._loaded)
+                shell.requestScreenSync()
+        }
+
         function onBarMonitorChanged() {
             shell.requestScreenSync()
         }
@@ -278,7 +282,7 @@ ShellRoot {
         readonly property color dimPrimary: Qt.rgba(Colors.col_primary.r, Colors.col_primary.g, Colors.col_primary.b, 0.4)
 
         // Cached focused screen lookup (avoids repeated array searches)
-        readonly property var focusedScreen: Quickshell.screens.find(s => s.name === Hyprland.focusedMonitor?.name) ?? root.screen
+        readonly property var focusedScreen: Quickshell.screens.find(s => s.name === Hyprland.focusedMonitor?.name) ?? shell.assignedScreen
 
         // State for sequenced panel switching (used by switchPanel)
         property var pendingOpen: null
@@ -662,7 +666,7 @@ ShellRoot {
     PanelWindow {
         id: _dropdownScrim
         reloadableId: "dropdownScrim"
-        screen: root.screen
+        screen: shell.assignedScreen
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
         anchors.top: true
@@ -700,57 +704,57 @@ ShellRoot {
     // CalendarPanel — drops down from the clock
     CalendarPanel {
         id: calendarPanel
-        screen: root.screen
+        screen: shell.assignedScreen
     }
 
     // VolumeDropdown — drops down from the volume button
     VolumeDropdown {
         id: volumeDropdown
-        screen: root.screen
+        screen: shell.assignedScreen
     }
 
     // VlanDropdown — drops down from the VLAN panel
     VlanDropdown {
         id: vlanDropdown
-        screen: root.screen
+        screen: shell.assignedScreen
     }
 
     // PowerProfileDropdown — drops down from the power profile icon
     PowerProfileDropdown {
         id: powerProfileDropdown
-        screen: root.screen
+        screen: shell.assignedScreen
         currentProfile: powerProfileWidget.currentProfile
     }
 
     // PowerDropdown — drops down from the power icon
     PowerDropdown {
         id: powerDropdown
-        screen: root.screen
+        screen: shell.assignedScreen
     }
 
     // BluetoothDropdown — drops down from the bluetooth icon
     BluetoothDropdown {
         id: bluetoothDropdown
-        screen: root.screen
+        screen: shell.assignedScreen
     }
 
     // WallpaperDropdown — drops down from the wallpaper button
     WallpaperDropdown {
         id: wpDropdown
-        screen: root.screen
+        screen: shell.assignedScreen
     }
 
     // TemperatureDropdown — drops down from the temperature button
     TemperatureDropdown {
         id: temperatureDropdown
-        screen: root.screen
+        screen: shell.assignedScreen
         panelIcon: tempButton._icon
     }
 
     // DashboardDropdown — tabbed dashboard panel
     DashboardDropdown {
         id: dashboardDropdown
-        screen: root.screen
+        screen: shell.assignedScreen
         onAboutToOpen: systemUpdatesButton.recheckUpdates()
         onUpgradeCompleted: systemUpdatesButton.recheckUpdates()
     }
@@ -758,7 +762,7 @@ ShellRoot {
     // NotifDropdown — notification history panel
     NotifDropdown {
         id: notifDropdown
-        screen: root.screen
+        screen: shell.assignedScreen
         systemUpdateCount: systemUpdatesButton.systemUpdateCount
         onUpgradeRequested: {
             notifDropdown.closePanel();
@@ -776,25 +780,25 @@ ShellRoot {
     // SettingsDropdown — drops down from the settings gear icon
     SettingsDropdown {
         id: settingsDropdown
-        screen: root.screen
+        screen: shell.assignedScreen
     }
 
     // AppLauncher — centred rofi-style launcher (Super+Space or launcher button)
     AppLauncher {
         id: appLauncher
-        screen: root.screen
+        screen: shell.assignedScreen
     }
 
     // AppLaunchDropdown — centred under the workspace switcher
     AppLaunchDropdown {
         id: appLaunchDropdown
-        screen: root.screen
+        screen: shell.assignedScreen
     }
 
     // TrayMenu — custom themed context menu for system tray icons
     TrayMenu {
         id: trayMenu
-        screen: root.screen
+        screen: shell.assignedScreen
 
         // Use proper coordination like other dropdowns
         property var pendingMenuData: null
@@ -832,12 +836,12 @@ ShellRoot {
     // WorkspaceGlowOverlay — glow effect that sits above all other layers
     WorkspaceGlowOverlay {
         id: workspaceGlow
-        screen: root.screen
+        screen: shell.assignedScreen
         visible: config.workspaceGlow
     }
 
     // NotifPopups — floating overlay for D-Bus notification popups
     NotifPopups {
-        screen: root.screen
+        screen: shell.assignedScreen
     }
 }

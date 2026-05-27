@@ -1939,7 +1939,7 @@ DropdownBase {
                         Text { text: WeatherStateOpenWeather.wHumidity; color: dash.dimColor; font.pixelSize: 13 }
                     }
                     Row { spacing: 6
-                        Text { text: "󰖛"; font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 13; color: dash.accentColor }
+                        Text { text: "󰖜"; font.family: config.fontFamily; font.styleName: "Solid"; font.pixelSize: 13; color: dash.accentColor }
                         Text { text: WeatherStateOpenWeather.wSunrise; color: dash.dimColor; font.pixelSize: 13 }
                     }
                 }
@@ -2083,7 +2083,7 @@ DropdownBase {
                     Column {
                         anchors.centerIn: parent
                         spacing: 4
-                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "󰖛  " + WeatherStateOpenWeather.wSunrise; color: dash.textColor; font.pixelSize: 14; font.family: config.fontFamily }
+                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "󰖜  " + WeatherStateOpenWeather.wSunrise; color: dash.textColor; font.pixelSize: 24; font.family: config.fontFamily }
                         Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Sunrise"; color: dash.dimColor; font.pixelSize: 12; font.family: config.fontFamily }
                     }
                 }
@@ -2098,7 +2098,7 @@ DropdownBase {
                     Column {
                         anchors.centerIn: parent
                         spacing: 4
-                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "󰖜  " + WeatherStateOpenWeather.wSunset; color: dash.textColor; font.pixelSize: 14; font.family: config.fontFamily }
+                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "󰖛  " + WeatherStateOpenWeather.wSunset; color: dash.textColor; font.pixelSize: 24; font.family: config.fontFamily }
                         Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Sunset"; color: dash.dimColor; font.pixelSize: 12; font.family: config.fontFamily }
                     }
                 }
