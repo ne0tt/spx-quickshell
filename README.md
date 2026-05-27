@@ -1022,25 +1022,33 @@ import qs.modules.pomodoro
 
 ## Potential Improvements
 
-1. **Multi-monitor support** — The bar currently targets a single monitor (`barMonitor`). `ShellRoot` could use `Variants` over `Quickshell.screens` to spawn one bar per monitor, with workspace filtering already per-monitor ready to go.
+### Implemented Recently
 
-2. **Error states in panels** — External processes (`yay`, `nmcli`, weather fetch) silently produce empty UI on failure. Adding a visible error/retry state to each panel would make failures obvious and recoverable.
+1. **Process timeouts (network/weather)** — Weather and geo lookups now use bounded `curl --max-time` requests, so those fetches fail fast instead of hanging indefinitely.
 
-3. **Process timeouts** — Long-running fetches (weather, NM scan) have no timeout guard. A hung process keeps the loading state forever; a `Timer`-based cancel would fix this.
+2. **Keyboard navigation in major panels** — Dashboard and Settings now support keyboard navigation (arrows/enter/escape), including sub-navigation and focused actions.
 
-4. **Hardcoded positioning magic numbers** — Several dropdown `panelX` calculations (`pos.x + width/2 - panelWidth/2 - 16 + 250`) are inline in `shell.qml`. Extracting these into a small `alignDropdown(anchor, drop)` helper would remove the duplication and make positioning easier to tune.
+3. **Settings parsing hardening** — `Config.qml` now applies typed guards for persisted values and validates enum-like settings (for example `nightLightStrength` and `matugenType`) before applying them.
 
-5. **Transition type UI** — The `awww` transition type (`fade`, `wipe`, `wave`, `grow`, etc.) and duration are hardcoded in `WallpaperDropdown.qml`. Exposing them in the wallpaper panel (similar to the matugen scheme picker) would let users tune the transition without editing QML.
+4. **Panel resilience upgrades** — Weather stale-while-refresh behavior, speedtest error surfacing, and notification null-guards reduce blank-state and teardown edge-case failures.
 
-6. **`settings.json` schema validation** — The JSON is parsed with a bare `JSON.parse` and no schema check. Corrupted or partially-written JSON silently resets all settings. Adding a validation step before applying would prevent this.
+### Still Pending
 
-7. **Keyboard navigation in dropdowns** — Dropdowns currently require mouse interaction. Tab/arrow key support and a visible focus ring would improve usability and make the launcher more keyboard-friendly beyond the search field.
+1. **Hardcoded positioning magic numbers** *(High impact, low effort)* — Several dropdown `panelX` calculations are duplicated inline in `shell.qml`. A shared helper (for example `alignDropdown(anchor, drop, mode)`) would reduce bugs and make placement tuning much easier.
 
-8. **spring/overshoot animations** — The open/close animations use `OutCubic`/`InCubic`. Replacing the open easing with `OutBack` or a spring curve would give the panels a more playful, polished feel consistent with the hex sweep aesthetic.
+2. **Broader per-panel retry UX** *(High impact, medium effort)* — Some external process failures (`yay`, `nmcli`, and non-dashboard helpers) still degrade into weak/empty UI states. A shared retry/error component would improve recoverability and consistency.
 
-9. **`AppLauncher` launch history** — The launcher ranks results purely by string match. Tracking recently launched apps and surfacing them at the top would make it noticeably faster to use day-to-day.
+3. **Full `settings.json` schema + recovery path** *(High impact, medium effort)* — Basic typed guards exist, but full schema validation (with invalid-key reporting and safe auto-repair) would make corrupted config handling predictable.
 
-10. **Notification grouping** — Repeated notifications from the same app (e.g. a build system firing many alerts) stack up as separate cards. Grouping them by `appName` with a collapse toggle would keep the popup stack tidy.
+4. **`AppLauncher` launch history** *(Medium impact, medium effort)* — Ranking is currently string-match-only. Storing recent launches and boosting them would improve daily usability.
+
+5. **Notification grouping** *(Medium impact, medium effort)* — Repeated notifications from the same app still stack as separate cards. Grouping by `appName` with collapse/expand would keep popup/history views cleaner.
+
+6. **Transition type UI** *(Medium impact, low effort)* — `awww` transition type and duration are still hardcoded in `WallpaperDropdown.qml`. Exposing both in the wallpaper panel would make this user-configurable.
+
+7. **Spring/overshoot animation profile** *(Low impact, low effort)* — Most open/close animations still use `OutCubic`/`InCubic`. Optional springier easing (for example `OutBack`) could better match the visual style.
+
+8. **Multi-monitor support** *(High impact, high effort)* — The bar still targets a single monitor (`barMonitor`). `ShellRoot` could use `Variants` over `Quickshell.screens` to spawn one bar per monitor, with workspace filtering already per-monitor ready.
 
 ---
 
