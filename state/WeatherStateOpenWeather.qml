@@ -8,12 +8,13 @@ import Quickshell.Io
 // WEATHER STATE — OpenWeather One Call test version.
 // Uses ipinfo.io for location, then OpenWeather for current,
 // hourly, and daily forecast data.
-// Set OPENWEATHER_API_KEY or WEATHER_API_KEY in the shell env.
+// Reads openWeatherApiKey from modules/settings/settings.json.
 // ============================================================
 Singleton {
     id: weatherState
 
-    property string openWeatherApiKey: "YOUR API KEY HERE"
+    readonly property string settingsPath: Quickshell.env("HOME") + "/dotfiles/.config/quickshell/modules/settings/settings.json"
+    property string openWeatherApiKey: ""
 
     property string wIcon:        "…"
     property string wDesc:        ""
@@ -109,15 +110,31 @@ Singleton {
         return s
     }
 
+    property var _settingsFile: FileView {
+        path: weatherState.settingsPath
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: {
+            try {
+                var settings = JSON.parse(text())
+                weatherState.openWeatherApiKey = typeof settings.openWeatherApiKey === "string" ? settings.openWeatherApiKey : ""
+            } catch (error) {
+                weatherState.openWeatherApiKey = ""
+            }
+        }
+    }
+
     property var _fetchProc: Process {
         running: false
         command: ["sh", "-c",
             "API_KEY=\"" + weatherState.openWeatherApiKey + "\"; " +
+            "if [ -z \"$API_KEY\" ]; then echo 'error=Missing OpenWeather API key in settings.json'; exit 0; fi; " +
             "INFO=$(curl -sf --max-time 5 https://ipinfo.io/json || true); " +
             "LOC=$(echo \"$INFO\" | jq -r '.loc // empty'); " +
             "if [ -n \"$LOC\" ]; then LAT=${LOC%%,*}; LON=${LOC##*,}; else echo 'error=Unable to determine location'; exit 0; fi; " +
-            "OW=$(curl -sf --max-time 12 \"https://api.openweathermap.org/data/3.0/onecall?lat=$LAT&lon=$LON&exclude=minutely,alerts&units=metric&appid=$API_KEY\" || true); " +
-            "if [ -z \"$OW\" ] || ! echo \"$OW\" | jq -e '.current and .hourly and .daily' >/dev/null 2>&1; then echo 'error=OpenWeather request failed'; exit 0; fi; " +
+            "OW=$(curl -s --max-time 12 \"https://api.openweathermap.org/data/3.0/onecall?lat=$LAT&lon=$LON&exclude=minutely,alerts&units=metric&appid=$API_KEY\" || true); " +
+            "if [ -z \"$OW\" ]; then echo 'error=OpenWeather request failed'; exit 0; fi; " +
+            "if ! echo \"$OW\" | jq -e '.current and .hourly and .daily' >/dev/null 2>&1; then ERR=$(echo \"$OW\" | jq -r '.message // empty'); if [ -n \"$ERR\" ]; then echo \"error=$ERR\"; else echo 'error=OpenWeather request failed'; fi; exit 0; fi; " +
             "OFF=$(echo \"$OW\" | jq -r '.timezone_offset // 0'); " +
             "echo \"$OW\" | jq -r --argjson off \"$OFF\" '" +
             "def ts($v): ($v + $off) | strftime(\"%Y-%m-%dT%H:%M\"); " +

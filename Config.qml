@@ -42,6 +42,9 @@ QtObject {
     // Matugen colour scheme algorithm
     property string matugenType:          "scheme-tonal-spot"
 
+    // OpenWeather API key for the optional OpenWeather-based weather state
+    property string openWeatherApiKey:    ""
+
     // ── Load guard — prevents saves firing during initial read ──
     property bool _loaded: false
 
@@ -83,7 +86,8 @@ QtObject {
                 wallpaperSubdirs:     cfg.wallpaperSubdirs,
                 currentWallpaper:     cfg.currentWallpaper,
                 nightLightStrength:   cfg.nightLightStrength,
-                matugenType:          cfg.matugenType
+                matugenType:          cfg.matugenType,
+                openWeatherApiKey:    cfg.openWeatherApiKey
             }
             _settingsFile.setText(JSON.stringify(settingsData, null, 2))
         } catch (error) {
@@ -114,6 +118,7 @@ QtObject {
                 if (typeof s.nightLightStrength === "string" && ["soft","warm","hot","max"].indexOf(s.nightLightStrength) >= 0) cfg.nightLightStrength = s.nightLightStrength
                 var _validMatugenTypes = ["scheme-tonal-spot","scheme-content","scheme-expressive","scheme-fidelity","scheme-fruit-salad","scheme-monochrome","scheme-neutral","scheme-rainbow"]
                 if (typeof s.matugenType === "string" && _validMatugenTypes.indexOf(s.matugenType) >= 0) cfg.matugenType = s.matugenType
+                if (typeof s.openWeatherApiKey === "string") cfg.openWeatherApiKey = s.openWeatherApiKey
             } catch (e) {}
             cfg._loaded = true
             // Eagerly write back: creates the file on first run and captures
