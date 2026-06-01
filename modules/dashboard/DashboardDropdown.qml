@@ -2218,7 +2218,7 @@ DropdownBase {
                 fillMode: Image.PreserveAspectFit
                 smooth: true
                 asynchronous: true
-                opacity: Object.keys(dash._vpnActiveSet).length > 0 ? 0.96 : 0.55
+                opacity: Object.keys(dash._vpnActiveSet).length > 0 ? 0.75 : 0.55
                 Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
             }
 
