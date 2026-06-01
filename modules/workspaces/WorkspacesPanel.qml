@@ -57,7 +57,7 @@ Item {
             Rectangle {
                 id: wsRect
                 anchors.fill: parent
-                radius: 6
+                radius: 5
                 border.color: "black"
                 border.width: 1
                 color: Hyprland.focusedWorkspace?.id === parent.wsId

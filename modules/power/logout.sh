@@ -5,4 +5,4 @@ set -euo pipefail
 killall chrome --wait || true
 
 # Safely log out from Hyprland
-hyprctl dispatch exit
+hyprctl eval "hl.dispatch(hl.dsp.exit())"

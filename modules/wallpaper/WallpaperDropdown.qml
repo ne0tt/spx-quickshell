@@ -212,6 +212,17 @@ DropdownBase {
         _applyAfterCloseTimer.restart()
     }
 
+    function regenerateMatugenForCurrentWallpaper() {
+        var path = wpDrop.currentWallpaper || config.currentWallpaper || ""
+        if (!path || matugenProc.running) return
+
+        wpDrop._applying = true
+        matugenProc.command = ["matugen", "image", path,
+            "--source-color-index", "0",
+            "--type", config.matugenType]
+        matugenProc.running = true
+    }
+
     function ensureFocusedVisible() {
         if (wpDrop.focusedIndex < 0) return
         var row       = Math.floor(wpDrop.focusedIndex / wpDrop._cols)
@@ -377,7 +388,7 @@ DropdownBase {
                         anchors.centerIn: parent
                         text: "Browse"
                         font.pixelSize: 10
-                        color: "white"
+                        color: Colors.col_background
                         font.bold: true
                     }
 
@@ -650,6 +661,7 @@ DropdownBase {
                                 onClicked: {
                                     config.matugenType = modelData
                                     Qt.callLater(function() { config._saveImmediately() })
+                                    wpDrop.regenerateMatugenForCurrentWallpaper()
                                 }
                             }
                         }

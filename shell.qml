@@ -20,8 +20,8 @@ import qs.modules.lockscreen
 import qs.modules.network
 import qs.modules.power
 import qs.modules.settings
+import qs.modules.systemGraphs
 import qs.modules.systemTray
-import qs.modules.volume
 import qs.modules.wallpaper
 import qs.modules.workspaces
 import qs.modules.systemUpdates
@@ -64,6 +64,24 @@ ShellRoot {
         shell.syncAssignedScreen()
     }
 
+    function toggleAppLauncher(panelRoot, targetScreen) {
+        if (config.launcherFloating) {
+            if (appLauncher.isOpen) {
+                appLauncher.closeLauncher();
+            } else {
+                appLauncher.screen = targetScreen ?? shell.assignedScreen;
+                panelRoot.switchPanel(() => appLauncher.openLauncher());
+            }
+        } else {
+            if (appLaunchDropdown.isOpen) {
+                appLaunchDropdown.closePanel();
+            } else {
+                appLaunchDropdown.panelX = Math.max(0, (panelRoot.screen.width / 2) - (appLaunchDropdown.panelWidth / 2) - 16);
+                panelRoot.switchPanel(() => appLaunchDropdown.openPanel());
+            }
+        }
+    }
+
     // ============================================================
     // CONFIG — SHELL-WIDE SETTINGS (font family, etc.)
     // ============================================================
@@ -86,7 +104,6 @@ ShellRoot {
     //   bind = SUPER, Space,   global, quickshell:toggleAppLauncher
     //   bind = SUPER, L,       global, quickshell:lockScreen
     //   bind = SUPER CTRL, S,  global, quickshell:toggleSettingsDropdown
-    //   bind = SUPER CTRL, V,  global, quickshell:toggleVolumeDropdown
     //   bind = SUPER CTRL, N,  global, quickshell:toggleNotifDropdown
     //   bind = SUPER CTRL, D,  global, quickshell:toggleDashboardDropdown
     // ============================================================
@@ -113,23 +130,7 @@ ShellRoot {
     GlobalShortcut {
         name: "toggleAppLauncher"
         description: "Open/close the app launcher"
-        onPressed: {
-            if (config.launcherFloating) {
-                if (appLauncher.isOpen) {
-                    appLauncher.closeLauncher();
-                } else {
-                    appLauncher.screen = root.focusedScreen;
-                    root.switchPanel(() => appLauncher.openLauncher());
-                }
-            } else {
-                if (appLaunchDropdown.isOpen) {
-                    appLaunchDropdown.closePanel();
-                } else {
-                    appLaunchDropdown.panelX = Math.max(0, (root.screen.width / 2) - (appLaunchDropdown.panelWidth / 2) - 16);
-                    root.switchPanel(() => appLaunchDropdown.openPanel());
-                }
-            }
-        }
+        onPressed: shell.toggleAppLauncher(root, root.focusedScreen)
     }
 
     GlobalShortcut {
@@ -158,20 +159,6 @@ ShellRoot {
                 settingsDropdown.closePanel();
             } else {
                 root.switchPanel(() => settingsDropdown.openPanel());
-            }
-        }
-    }
-
-    GlobalShortcut {
-        name: "toggleVolumeDropdown"
-        description: "Open/close the volume dropdown"
-        onPressed: {
-            var pos = volumeWidget.mapToItem(null, volumeWidget.width / 2, 0);
-            volumeDropdown.panelX = pos.x - volumeDropdown.panelWidth / 2 - 16;
-            if (volumeDropdown.isOpen) {
-                volumeDropdown.closePanel();
-            } else {
-                root.switchPanel(() => volumeDropdown.openPanel());
             }
         }
     }
@@ -289,9 +276,9 @@ ShellRoot {
 
         // Single source of truth for all panels that use closePanel()
         // appLauncher is excluded here because it uses closeLauncher() instead
-        readonly property var dropdowns: [calendarPanel, volumeDropdown, vlanDropdown, powerProfileDropdown,
+        readonly property var dropdowns: [calendarPanel, vlanDropdown, powerProfileDropdown,
             powerDropdown, bluetoothDropdown, wpDropdown, settingsDropdown, appLaunchDropdown,
-            trayMenu, notifDropdown, dashboardDropdown, temperatureDropdown]
+            trayMenu, notifDropdown, dashboardDropdown]
 
         // Close every open dropdown/drawer in one call
         function closeAllDropdowns() {
@@ -343,11 +330,12 @@ ShellRoot {
                 left: parent.left
                 right: parent.right
                 topMargin: 16
-                leftMargin: 12
-                rightMargin: 12
+                leftMargin: 15
+                rightMargin: 15
             }
-            height: 38
-            radius: 12
+            height: 37
+            //radius: 12
+            radius: 0
             color: "#000000"
 
             layer.enabled: true
@@ -368,8 +356,8 @@ ShellRoot {
                 left: parent.left
                 right: parent.right
                 topMargin: 18
-                leftMargin: 15
-                rightMargin: 15
+                leftMargin: 17
+                rightMargin: 17
             }
             height: 32
 
@@ -379,7 +367,8 @@ ShellRoot {
             Rectangle {
                 id: mainBar
                 anchors.fill: parent
-                radius: 10
+                //radius: 10
+                radius: 0
                 // Qt.rgba keeps children fully opaque — unlike `opacity` which cascades
                 color: Colors.col_main
                 opacity: 1
@@ -402,59 +391,31 @@ ShellRoot {
                     id: leftRow
                     anchors {
                         left: parent.left
-                        leftMargin: 4
+                        leftMargin: 8
                         verticalCenter: parent.verticalCenter
                     }
                     spacing: 10
 
-                    // ---------------- App Launcher Button ----------------
-                    Rectangle {
-                        id: launcherButton
-                        width: 75
+                    Item {
+                        width: appLauncherButton.width
                         height: 24
-                        radius: 7
-                        color: Colors.col_background
-                        border.color: "black"
-                        border.width: 1
 
-                        Text {
+                        AppLauncherButton {
+                            id: appLauncherButton
+                            anchors.centerIn: parent
+                            isActive: config.launcherFloating ? appLauncher.isOpen : appLaunchDropdown.isOpen
+                            onClicked: shell.toggleAppLauncher(root, root.focusedScreen)
+                        }
+                    }
+
+                    Item {
+                        width: systemGraphsPanel.width
+                        height: 24
+
+                        SystemGraphsPanel {
+                            id: systemGraphsPanel
                             anchors.centerIn: parent
                             anchors.verticalCenterOffset: 0
-                            text: ""
-                            font.family: root.fontFamily
-                            font.pixelSize: 17
-                            font.weight: Font.Bold
-                            color: appLaunchDropdown.isOpen || appLauncher.isOpen || launcherBtnArea.containsMouse ? Colors.col_source_color : Colors.col_primary
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: 160
-                                }
-                            }
-                        }
-
-                        MouseArea {
-                            id: launcherBtnArea
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            hoverEnabled: true
-                            onClicked: {
-                                if (config.launcherFloating) {
-                                    if (appLauncher.isOpen) {
-                                        appLauncher.closeLauncher();
-                                    } else {
-                                        root.closeAllDropdowns();
-                                        appLauncher.screen = root.focusedScreen;
-                                        appLauncher.openLauncher();
-                                    }
-                                } else {
-                                    if (appLaunchDropdown.isOpen) {
-                                        appLaunchDropdown.closePanel();
-                                    } else {
-                                        appLaunchDropdown.panelX = Math.max(0, (root.screen.width / 2) - (appLaunchDropdown.panelWidth / 2) - 16);
-                                        root.switchPanel(() => appLaunchDropdown.openPanel());
-                                    }
-                                }
-                            }
                         }
                     }
                 }
@@ -502,21 +463,6 @@ ShellRoot {
                         }
                     }
 
-                    // VOLUME BUTTON
-                    VolumeButton {
-                        id: volumeWidget
-                        anchors.verticalCenterOffset: 1
-                        isActive: volumeDropdown.isOpen
-                        onClicked: function (clickX) {
-                            volumeDropdown.panelX = clickX - volumeDropdown.panelWidth / 2 - 16;
-                            if (volumeDropdown.isOpen) {
-                                volumeDropdown.closePanel();
-                            } else {
-                                root.switchPanel(() => volumeDropdown.openPanel());
-                            }
-                        }
-                    }
-
                     // POWER PROFILE BUTTON
                     PowerProfileButton {
                         id: powerProfileWidget
@@ -528,28 +474,6 @@ ShellRoot {
                                 powerProfileDropdown.closePanel();
                             } else {
                                 root.switchPanel(() => powerProfileDropdown.openPanel());
-                            }
-                        }
-                    }
-
-                    // TEMPERATURE BUTTON
-                    TemperatureButton {
-                        id: tempButton
-                        anchors.verticalCenterOffset: 1
-                        isActive: temperatureDropdown.isOpen
-                        onTemperatureChanged: {
-                            if (temperatureDropdown.isOpen) {
-                                temperatureDropdown.cpuTemp = temperature
-                                temperatureDropdown.refresh()
-                            }
-                        }
-                        onClicked: function (clickX) {
-                            temperatureDropdown.cpuTemp = temperature
-                            temperatureDropdown.panelX = Math.max(0, clickX - temperatureDropdown.panelWidth / 2 + 16);
-                            if (temperatureDropdown.isOpen) {
-                                temperatureDropdown.closePanel();
-                            } else {
-                                root.switchPanel(() => temperatureDropdown.openPanel());
                             }
                         }
                     }
@@ -678,7 +602,7 @@ ShellRoot {
 
         // Reactive: becomes true the moment any dropdown opens.
         // QML resolves the IDs lazily, so forward refs (calendarPanel etc.) are fine.
-        readonly property bool anyOpen: (typeof calendarPanel !== "undefined" && calendarPanel.isOpen) || (typeof volumeDropdown !== "undefined" && volumeDropdown.isOpen) || (typeof vlanDropdown !== "undefined" && vlanDropdown.isOpen) || (typeof powerProfileDropdown !== "undefined" && powerProfileDropdown.isOpen) || (typeof powerDropdown !== "undefined" && powerDropdown.isOpen) || (typeof bluetoothDropdown !== "undefined" && bluetoothDropdown.isOpen) || (typeof wpDropdown !== "undefined" && wpDropdown.isOpen) || (typeof settingsDropdown !== "undefined" && settingsDropdown.isOpen) || (typeof appLaunchDropdown !== "undefined" && appLaunchDropdown.isOpen) || (typeof appLauncher !== "undefined" && appLauncher.isOpen) || (typeof temperatureDropdown !== "undefined" && temperatureDropdown.isOpen)
+        readonly property bool anyOpen: (typeof calendarPanel !== "undefined" && calendarPanel.isOpen) || (typeof vlanDropdown !== "undefined" && vlanDropdown.isOpen) || (typeof powerProfileDropdown !== "undefined" && powerProfileDropdown.isOpen) || (typeof powerDropdown !== "undefined" && powerDropdown.isOpen) || (typeof bluetoothDropdown !== "undefined" && bluetoothDropdown.isOpen) || (typeof wpDropdown !== "undefined" && wpDropdown.isOpen) || (typeof settingsDropdown !== "undefined" && settingsDropdown.isOpen) || (typeof appLaunchDropdown !== "undefined" && appLaunchDropdown.isOpen) || (typeof appLauncher !== "undefined" && appLauncher.isOpen)
 
         mask: Region {
             item: _scrimMask
@@ -704,12 +628,6 @@ ShellRoot {
     // CalendarPanel — drops down from the clock
     CalendarPanel {
         id: calendarPanel
-        screen: shell.assignedScreen
-    }
-
-    // VolumeDropdown — drops down from the volume button
-    VolumeDropdown {
-        id: volumeDropdown
         screen: shell.assignedScreen
     }
 
@@ -742,13 +660,6 @@ ShellRoot {
     WallpaperDropdown {
         id: wpDropdown
         screen: shell.assignedScreen
-    }
-
-    // TemperatureDropdown — drops down from the temperature button
-    TemperatureDropdown {
-        id: temperatureDropdown
-        screen: shell.assignedScreen
-        panelIcon: tempButton._icon
     }
 
     // DashboardDropdown — tabbed dashboard panel

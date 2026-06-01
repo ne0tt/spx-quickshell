@@ -32,6 +32,10 @@ Rectangle {
     readonly property string summary:  (notif && notif.summary) ? notif.summary : ""
     readonly property string body:     (notif && notif.body) ? notif.body : ""
     readonly property var actions:     (notif && notif.actions) ? notif.actions : []
+    readonly property color accentColor: Colors.col_source_color
+    readonly property color textPrimary: Colors.col_primary
+    readonly property color textSecondary: Qt.rgba(Colors.col_primary.r, Colors.col_primary.g, Colors.col_primary.b, 0.78)
+    readonly property color criticalAccent: Qt.lighter(Colors.col_source_color, 1.25)
 
     function _timerStop() {
         if (notif && notif.timer) notif.timer.stop()
@@ -56,7 +60,7 @@ Rectangle {
 
     radius:       8
     color:        Colors.col_background
-    border.color: isCritical ? Colors.col_error : Colors.col_source_color
+    border.color: isCritical ? criticalAccent : accentColor
     border.width: 2
 
     // ── Fade in on appear ────────────────────────────────────────────────
@@ -143,7 +147,9 @@ Rectangle {
                 width:            22
                 height:           22
                 radius:           4
-                color:            root.isCritical ? "#5c2020" : "#234442"
+                color:            root.isCritical
+                                      ? Qt.rgba(root.criticalAccent.r, root.criticalAccent.g, root.criticalAccent.b, 0.28)
+                                      : Qt.rgba(root.accentColor.r, root.accentColor.g, root.accentColor.b, 0.28)
                 visible:          root.hasAppIcon
                 Layout.alignment: Qt.AlignVCenter
 
@@ -160,7 +166,7 @@ Rectangle {
             // Fallback bell icon when no appIcon is set
             Text {
                 text:             "󰂚"
-                color:            root.isCritical ? "#ff8080" : "#80d5d4"
+                color:            root.isCritical ? root.criticalAccent : root.accentColor
                 font.family:      config.fontFamily
                 font.pixelSize:   16
                 visible:          !root.hasAppIcon
@@ -172,7 +178,7 @@ Rectangle {
                 text:              root.appName.length > 0
                                        ? root.appName
                                        : "Notification"
-                color:             root.isCritical ? "#ff9090" : "#80d5d4"
+                color:             root.isCritical ? root.criticalAccent : root.accentColor
                 font.family:       config.fontFamily
                 font.pixelSize:    14
                 font.bold:         true
@@ -185,7 +191,7 @@ Rectangle {
             // Close button
             Text {
                 text:             "󰅖"
-                color:            closeMouseArea.containsMouse ? "#ffffff" : "#80d5d4"
+                color:            closeMouseArea.containsMouse ? root.textPrimary : root.accentColor
                 font.family:      config.fontFamily
                 font.pixelSize:   14
                 Layout.alignment: Qt.AlignVCenter
@@ -207,7 +213,7 @@ Rectangle {
         // ── Summary ───────────────────────────────────────────────────────
         Text {
             text:                root.summary
-            color:               "#e8f5f4"
+            color:               root.textPrimary
             font.family:         config.fontFamily
             font.pixelSize:      13
             font.bold:           true
@@ -222,7 +228,7 @@ Rectangle {
         // ── Body (full width, flush left) ─────────────────────────────────
         Text {
             text:                root.body
-            color:               "#a8cccb"
+            color:               root.textSecondary
             font.family:         config.fontFamily
             font.pixelSize:      12
             wrapMode:            Text.WrapAtWordBoundaryOrAnywhere
@@ -249,7 +255,9 @@ Rectangle {
                     required property var modelData
 
                     radius:         6
-                    color:          actionMouse.containsMouse ? "#2a5a58" : "#1f4442"
+                    color:          actionMouse.containsMouse
+                                        ? Qt.rgba(root.accentColor.r, root.accentColor.g, root.accentColor.b, 0.38)
+                                        : Qt.rgba(root.accentColor.r, root.accentColor.g, root.accentColor.b, 0.24)
                     Layout.fillWidth: true
                     implicitWidth:  actionLabel.implicitWidth + 20
                     implicitHeight: 26
@@ -262,7 +270,7 @@ Rectangle {
                         id: actionLabel
                         anchors.centerIn: parent
                         text:             actionBtn.modelData.text
-                        color:            "#80d5d4"
+                        color:            root.accentColor
                         font.family:      config.fontFamily
                         font.pixelSize:   11
                         width:            Math.max(0, actionBtn.width - 12)

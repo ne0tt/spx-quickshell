@@ -880,13 +880,9 @@ DropdownBase {
         readonly property real sysinfoW:  width - weatherW - 10
 
         // ── Weather card ──────────────────────────────────────
-        Rectangle {
+        Item {
             x: 0; y: 0
             width: parent.weatherW; height: 182
-            radius: 10
-            color:        Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.08)
-            border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.20)
-            border.width: 1
 
             Column {
                 anchors.centerIn: parent
@@ -917,13 +913,9 @@ DropdownBase {
         }
 
         // ── System info card ──────────────────────────────────
-        Rectangle {
+        Item {
             x: parent.weatherW + 10; y: 0
             width: parent.sysinfoW; height: 182
-            radius: 10
-            color:        Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.08)
-            border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.20)
-            border.width: 1
 
             // Left: system info text
             Column {
@@ -1324,13 +1316,6 @@ DropdownBase {
 
         property int _mediaDragVol: -1
         readonly property int _mediaDisplayVol: _mediaDragVol >= 0 ? _mediaDragVol : VolumeState.volume
-
-        Rectangle {
-            anchors.fill: parent; radius: 10
-            color:        Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.06)
-            border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.15)
-            border.width: 1
-        }
 
         // ── Volume slider at top ──────────────────────────────────────
         Item {
@@ -1739,14 +1724,6 @@ DropdownBase {
             return gb + " GB"
         }
 
-        Rectangle {
-            anchors.fill: parent
-            radius: 10
-            color:        Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.08)
-            border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.20)
-            border.width: 1
-        }
-
         Column {
             anchors.fill: parent
             anchors.margins: 10
@@ -1907,11 +1884,8 @@ DropdownBase {
             spacing: 10
 
             // ── Current conditions card ──────────────────────────────
-            Rectangle {
-                width: parent.width; height: 125; radius: 10
-                color:        Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.08)
-                border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.18)
-                border.width: 1
+            Item {
+                width: parent.width; height: 125
 
                 Text {
                     id: bigWIcon
@@ -1965,13 +1939,10 @@ DropdownBase {
                     Repeater {
                         id: hourlyRepeater
                         model: ScriptModel { values: dash._hourlyNext10 }
-                        delegate: Rectangle {
+                        delegate: Item {
                             required property var modelData
                             width: (hourlyRow.width - (hourlyRow.spacing * 9)) / 10
-                            height: 80; radius: 8
-                            color:        Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.06)
-                            border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.14)
-                            border.width: 1
+                            height: 80
 
                             Text {
                                 anchors { top: parent.top; topMargin: 7; horizontalCenter: parent.horizontalCenter }
@@ -2013,7 +1984,7 @@ DropdownBase {
 
                     Repeater {
                         model: ScriptModel { values: dash._week7FromToday }
-                        delegate: Rectangle {
+                        delegate: Item {
                             id: dayCard
                             required property var modelData
                             readonly property string _dayName: {
@@ -2038,10 +2009,7 @@ DropdownBase {
                                 return parts[2] + "/" + parts[1]
                             }
                             width:  (weeklyRow.width - 6 * weeklyRow.spacing) / 7
-                            height: 112; radius: 8
-                            color:        Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.06)
-                            border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.14)
-                            border.width: 1
+                            height: 112
 
                             // Day name pinned to top
                             Text {
@@ -2073,12 +2041,9 @@ DropdownBase {
                 readonly property real _gap: 8
                 readonly property real _cardW: (width - _gap) / 2
 
-                Rectangle {
+                Item {
                     anchors { left: parent.left; top: parent.top }
-                    width: parent._cardW; height: parent.height; radius: 10
-                    color:        Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.06)
-                    border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.12)
-                    border.width: 1
+                    width: parent._cardW; height: parent.height
 
                     Column {
                         anchors.centerIn: parent
@@ -2088,12 +2053,9 @@ DropdownBase {
                     }
                 }
 
-                Rectangle {
+                Item {
                     anchors { right: parent.right; top: parent.top }
-                    width: parent._cardW; height: parent.height; radius: 10
-                    color:        Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.06)
-                    border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.12)
-                    border.width: 1
+                    width: parent._cardW; height: parent.height
 
                     Column {
                         anchors.centerIn: parent
@@ -2116,14 +2078,10 @@ DropdownBase {
         height:  326 + 8 + 38 + (dash._stExpanded ? 8 + 176 : 0) + 12
         visible: dash._tab === 1
 
-        Rectangle {
+        Item {
             id: _netCard
             anchors { left: parent.left; top: parent.top; right: parent.right }
             height: 280
-            radius: 10
-            color:        Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.08)
-            border.color: Qt.rgba(dash.accentColor.r, dash.accentColor.g, dash.accentColor.b, 0.20)
-            border.width: 1
         }
 
         readonly property real _colGap:  10

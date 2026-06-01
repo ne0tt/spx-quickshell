@@ -7,8 +7,8 @@ import QtQuick
 // Access from any QML file that imports the root module:
 //   Colors.col_primary  Colors.col_source_color  etc.
 Singleton {
-    property color col_background: "#0e1514"
-    property color col_source_color: "#2decec"
-    property color col_primary: "#80d5d4"
-    property color col_main: "#1b3534"
+    property color col_background: "#161311"
+    property color col_source_color: "#eb7e01"
+    property color col_primary: "#ffcf99"
+    property color col_main: "#2e251e"
 }
