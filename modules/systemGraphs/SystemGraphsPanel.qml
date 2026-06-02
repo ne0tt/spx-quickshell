@@ -16,16 +16,16 @@ Item {
     property int tempC: 0
     property string tempText: "--°C"
     readonly property int tempPercent: _clampPercent(tempC)
-    property int panelHeight: 10
-    property int labelFontSize: 10
+    property int panelHeight: 12
+    property int labelFontSize: 11
     property int iconFontSize: 12
     property bool showLabelText: true
     property color graphBackgroundColor: Colors.col_background
     property color graphFillColor: Colors.col_source_color
     property bool cpuGlowOn: false
     property bool tempGlowOn: false
-    readonly property color cpuGraphFillColor: cpuPercent >= 80 ? "#ff0000" : graphs.graphFillColor
-    readonly property color tempGraphFillColor: tempC >= 80 ? "#ff0000" : graphs.graphFillColor
+    readonly property color cpuGraphFillColor: cpuPercent >= 80 ? "#ff4444" : graphs.graphFillColor
+    readonly property color tempGraphFillColor: tempC >= 80 ? "#ff4444" : graphs.graphFillColor
     property color graphTextColor: Colors.col_primary
     readonly property int barWidth: 75
     readonly property int labelGap: 5

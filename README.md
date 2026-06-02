@@ -8,6 +8,16 @@ Last Updated: June 1, 2026
 
 ## What Changed Recently
 
+- Removed network status flash effects in `modules/network/CommStatusButton.qml` and `modules/network/SecureCommStatusButton.qml` while keeping bar fill animations.
+- Aligned network status row text/graph vertically and resized mini graphs in `modules/network/CommStatusButton.qml` and `modules/network/SecureCommStatusButton.qml` to match `systemGraphs` bar size (75x12).
+- Replaced status words in `modules/network/CommStatusButton.qml` and `modules/network/SecureCommStatusButton.qml` with SystemGraphs-style mini bar indicators.
+- Added connected status animation for `modules/network/CommStatusButton.qml` and `modules/network/SecureCommStatusButton.qml`: flashes white 3 times, then fades to the source color.
+- Added disconnected status animation for `modules/network/CommStatusButton.qml` and `modules/network/SecureCommStatusButton.qml`: flashes red 3 times, then fades to the primary color.
+- Adjusted `modules/network/SecureCommStatusButton.qml` so the ESTABLISHED/DISCONNECTED status text is rendered 1px lower for visual alignment.
+- Adjusted `modules/network/CommStatusButton.qml` so the ACTIVE/DISCONNECTED status text is rendered 1px lower for visual alignment.
+- Aligned `modules/network/SecureCommStatusButton.qml` VPN detection with dashboard network tab logic by checking active WireGuard connections from `nmcli`.
+- Fixed false-positive VPN detection in `modules/network/SecureCommStatusButton.qml` by removing process-name checks and requiring actual connected status.
+- Updated `modules/network/SecureCommStatusButton.qml` to check Surfshark active/disconnected status every second.
 - Added and integrated system graphs in the left bar section (`CPU`, `RAM`, `Volume`, `Temp`) via `modules/systemGraphs/SystemGraphsPanel.qml`.
 - Updated the top bar composition in `shell.qml`:
   - `SystemGraphsPanel` is now active.

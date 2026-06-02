@@ -329,11 +329,11 @@ ShellRoot {
                 top: parent.top
                 left: parent.left
                 right: parent.right
-                topMargin: 16
-                leftMargin: 15
-                rightMargin: 15
+                topMargin: 15
+                leftMargin: 14
+                rightMargin: 14
             }
-            height: 37
+            height: 39
             //radius: 12
             radius: 0
             color: "#000000"
@@ -438,12 +438,22 @@ ShellRoot {
                         rightMargin: 4
                         verticalCenter: parent.verticalCenter
                     }
-                    spacing: 12
+                    spacing: 10
 
                     // SYSTEM UPDATES BUTTON
                     SystemUpdatesButton {
                         id: systemUpdatesButton
                         numberToText: false
+                    }
+
+                    // COMM STATUS BUTTON
+                    CommStatusButton {
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    // SECURE COMM STATUS BUTTON
+                    SecureCommStatusButton {
+                        anchors.verticalCenter: parent.verticalCenter
                     }
 
                     // BLUETOOTH BUTTON
